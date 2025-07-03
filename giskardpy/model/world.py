@@ -873,6 +873,7 @@ class WorldTree(WorldTreeInterface):
             for child_joint_name in link.child_joint_names:
                 self._raise_if_joint_does_not_exist(child_joint_name)
 
+
     def _fix_root_link(self):
         # search for links with no parent joint
         orphans = []
@@ -988,6 +989,14 @@ class WorldTree(WorldTreeInterface):
                     get_middleware().loginfo(f'Deleted group \'{group_name}\', because it\'s root link got removed.')
             for child_joint_name in link.child_joint_names:
                 child_joint = self.joints.pop(child_joint_name)  # type: Joint
+                if isinstance(child_joint, MovableJoint):
+                    for v in child_joint.free_variables:
+                        self.free_variables.pop(v.name)
+                        del self.state[v.name]
+                if isinstance(child_joint, VirtualFreeVariables):
+                    for v in child_joint.virtual_free_variables:
+                        self.virtual_free_variables.pop(v.name)
+                        del self.state[v.name]
                 helper(child_joint.child_link_name)
 
         helper(joint.child_link_name)

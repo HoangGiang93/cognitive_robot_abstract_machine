@@ -249,7 +249,7 @@ class MaxManipulabilityAsEq3(Task):
         tip_Q_tipCurrent = c_R_r_eval.dot(frame_R_current).to_quaternion()[:3]
 
         symbols = root_P_tip.free_symbols()
-        e = cas.vstack([root_P_tip, tip_Q_tipCurrent])
+        e = cas.vstack([root_P_tip])
         J = cas.jacobian(e, symbols)
         JJT = J.dot(J.T)
         m = cas.sqrt(cas.det(JJT))

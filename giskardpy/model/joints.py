@@ -153,7 +153,10 @@ class Joint(ABC):
         orientation = self.parent_T_child.to_quaternion()
         return cas.vstack([position, orientation]).T
 
+
 class VirtualFreeVariables(ABC):
+    virtual_free_variables: List[FreeVariable]
+
     @abc.abstractmethod
     def update_state(self, dt: float) -> None: ...
 
@@ -177,7 +180,7 @@ class FixedJoint(Joint):
         self.parent_T_child = parent_T_child or cas.TransMatrix()
 
 
-class Joint6DOF(Joint):
+class Joint6DOF(Joint, VirtualFreeVariables):
     def __init__(self,
                  name: PrefixName,
                  parent_link_name: PrefixName,
@@ -201,6 +204,10 @@ class Joint6DOF(Joint):
                                          self.qz.get_symbol(Derivatives.position),
                                          self.qw.get_symbol(Derivatives.position))).to_rotation_matrix()
         self.parent_T_child = cas.TransMatrix.from_point_rotation_matrix(parent_P_child, parent_R_child)
+        self.virtual_free_variables = [self.x, self.y, self.z, self.qx, self.qy, self.qz, self.qw]
+
+    def update_state(self, dt: float) -> None:
+        pass
 
     def update_transform(self, parent_T_child: cas.TransMatrix) -> None:
         position = parent_T_child.to_position().to_np()
@@ -416,6 +423,7 @@ class OmniDrive(MovableJoint, VirtualFreeVariables):
                                                      upper_limits=self.translation_limits,
                                                      is_base=True)
         self.free_variables = [self.x_vel, self.y_vel, self.yaw]
+        self.virtual_free_variables = [self.x, self.y, self.z, self.roll, self.pitch]
 
     def update_transform(self, new_parent_T_child: cas.TransMatrix) -> None:
         position = new_parent_T_child.to_position()
@@ -508,6 +516,7 @@ class DiffDrive(MovableJoint, VirtualFreeVariables):
                                                    lower_limits=rotation_lower_limits,
                                                    upper_limits=self.rotation_limits)
         self.free_variables = [self.x_vel, self.yaw]
+        self.virtual_free_variables = [self.x, self.y, self.z, self.roll, self.pitch]
 
     def update_transform(self, new_parent_T_child: cas.TransMatrix) -> None:
         position = new_parent_T_child.to_position()
@@ -614,6 +623,7 @@ class OmniDrivePR22(MovableJoint, VirtualFreeVariables):
         self.yaw1_vel.quadratic_weights[Derivatives.velocity] = 0.0001
         self.yaw1_vel.quadratic_weights[Derivatives.acceleration] = 0
         self.yaw1_vel.quadratic_weights[Derivatives.jerk] = 0.1
+        self.virtual_free_variables = [self.x, self.y, self.z, self.roll, self.pitch, self.yaw]
 
     def get_free_variable_names(self) -> List[PrefixName]:
         return [self.forward_vel.name, self.yaw1_vel.name, self.yaw.name]
