@@ -76,7 +76,7 @@ class ExternalCA(Goal):
                                      lower_limit_limited + cas.max(0, actual_distance - (hard_threshold)),
                                      lower_limit_limited)
         # undo factor in A
-        upper_slack /= (sample_period) * self.control_horizon
+        upper_slack /= sample_period
 
         upper_slack = cas.if_greater(actual_distance, 50,  # assuming that distance of unchecked closest points is 100
                                      1e4,
@@ -185,7 +185,7 @@ class SelfCA(Goal):
                                      lower_limit_limited)
 
         # undo factor in A
-        upper_slack /= (sample_period) * self.control_horizon
+        upper_slack /= sample_period
 
         upper_slack = cas.if_greater(actual_distance, 50,  # assuming that distance of unchecked closest points is 100
                                      1e4,

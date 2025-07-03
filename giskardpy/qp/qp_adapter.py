@@ -1004,8 +1004,7 @@ class EqualityModel(ProblemDataPart):
                 model[:, horizontal_offset * 0:horizontal_offset * 1] = J_hstack
 
                 # slack variable for total error
-                slack_model = cas.diag(
-                    cas.Expression([self.dt * self.control_horizon for c in self.equality_constraints]))
+                slack_model = cas.diag(cas.Expression([self.dt for c in self.equality_constraints]))
                 return model, slack_model
         else:
             if self.qp_formulation.is_implicit:
@@ -1027,8 +1026,7 @@ class EqualityModel(ProblemDataPart):
                         model[:, horizontal_offset * 0:horizontal_offset * 1] = J_hstack
 
                 # slack variable for total error
-                slack_model = cas.diag(
-                    cas.Expression([self.dt * self.control_horizon for c in self.equality_constraints]))
+                slack_model = cas.diag(cas.Expression([self.dt for c in self.equality_constraints]))
                 return model, slack_model
         return cas.Expression(), cas.Expression()
 
@@ -1284,7 +1282,7 @@ class InequalityModel(ProblemDataPart):
 
                 # slack variable for total error
                 slack_model = cas.diag(
-                    cas.Expression([self.dt * self.control_horizon for c in self.inequality_constraints]))
+                    cas.Expression([self.dt for c in self.inequality_constraints]))
                 return model, slack_model
         else:
             if self.qp_formulation.is_implicit:
@@ -1307,7 +1305,7 @@ class InequalityModel(ProblemDataPart):
 
             # slack variable for total error
             slack_model = cas.diag(
-                cas.Expression([self.dt * self.control_horizon for c in self.inequality_constraints]))
+                cas.Expression([self.dt for c in self.inequality_constraints]))
             return model, slack_model
         return cas.Expression(), cas.Expression()
 
