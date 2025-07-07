@@ -15,7 +15,7 @@ class WiggleInsert(Task):
     def __init__(self, *,
                  root_link: PrefixName,
                  tip_link: PrefixName,
-                 hole_point: cas.TransMatrix,
+                 hole_point: cas.Point3,
                  noise_translation: float,
                  noise_angle: float,
                  down_velocity: float,
@@ -52,7 +52,6 @@ class WiggleInsert(Task):
             hole_normal = cas.Vector3().from_xyz(0, 0, -1, god_map.world.root_link_name)
         self.root_link = root_link
         self.tip_link = tip_link
-        self.hole_point = hole_point
         self.hole_normal = hole_normal
         self.noise_translation = noise_translation
         self.noise_angle = noise_angle
@@ -93,7 +92,7 @@ class WiggleInsert(Task):
         self.v2 = cas.Vector3().from_xyz(*v2, reference_frame=hole_normal.reference_frame)
 
         r_P_c = god_map.world.compose_fk_expression(self.root_link, self.tip_link).to_position()
-        r_P_g = god_map.world.transform(self.root_link, self.hole_point).to_position()
+        r_P_g = god_map.world.transform(self.root_link, hole_point)
 
         rand_v = symbol_manager.get_expr(self.ref_str +
                                          vector_function,
@@ -118,13 +117,11 @@ class WiggleInsert(Task):
                                                                axis=tip_V_hole_normal)
         root_R_hole_normal = god_map.world.compute_fk(self.root_link, self.tip_link).dot(tip_R_hole_normal)
 
-        c_R_r_eval = god_map.world.compose_fk_evaluated_expression(self.tip_link, self.root_link).to_rotation()
         r_T_c = god_map.world.compose_fk_expression(self.root_link, self.tip_link)
         r_R_c = r_T_c.to_rotation()
 
         self.add_rotation_goal_constraints(frame_R_current=r_R_c,
                                            frame_R_goal=root_R_hole_normal,
-                                           current_R_frame_eval=c_R_r_eval,
                                            reference_velocity=down_velocity,
                                            weight=weight + 1)
 
