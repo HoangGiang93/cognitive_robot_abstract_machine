@@ -394,6 +394,7 @@ def test_nested_goals():
 
     # tick 1: start trigger begins running
     msg.tick()
+    msg.draw()
     assert msg.observation_state[node1] == msg.observation_state.TrinaryUnknown
     assert msg.observation_state[sub_node1] == msg.observation_state.TrinaryUnknown
     assert msg.observation_state[sub_node2] == msg.observation_state.TrinaryUnknown
@@ -411,6 +412,7 @@ def test_nested_goals():
 
     # tick 2: start trigger turns true; inner sub_node1 already resolves to True and sub_node2 starts
     msg.tick()
+    msg.draw()
     assert msg.observation_state[node1] == msg.observation_state.TrinaryTrue
     assert msg.observation_state[sub_node1] == msg.observation_state.TrinaryUnknown
     assert msg.observation_state[sub_node2] == msg.observation_state.TrinaryUnknown
@@ -428,6 +430,7 @@ def test_nested_goals():
 
     # tick 3: inner sub_node2 turns true (inner goal still evaluating)
     msg.tick()
+    msg.draw()
     assert msg.observation_state[node1] == msg.observation_state.TrinaryTrue
     assert msg.observation_state[sub_node1] == msg.observation_state.TrinaryTrue
     assert msg.observation_state[sub_node2] == msg.observation_state.TrinaryUnknown
@@ -445,6 +448,7 @@ def test_nested_goals():
 
     # tick 4: inner sub_node2 turns true
     msg.tick()
+    msg.draw()
     assert msg.observation_state[node1] == msg.observation_state.TrinaryTrue
     assert msg.observation_state[sub_node1] == msg.observation_state.TrinaryTrue
     assert msg.observation_state[sub_node2] == msg.observation_state.TrinaryTrue
@@ -462,6 +466,7 @@ def test_nested_goals():
 
     # tick 5: inner goal becomes true, outer still running, end starts running
     msg.tick()
+    msg.draw()
     assert msg.observation_state[node1] == msg.observation_state.TrinaryTrue
     assert msg.observation_state[sub_node1] == msg.observation_state.TrinaryTrue
     assert msg.observation_state[sub_node2] == msg.observation_state.TrinaryTrue
@@ -479,6 +484,7 @@ def test_nested_goals():
 
     # tick 6: outer goal becomes true; end still running
     msg.tick()
+    msg.draw()
     assert msg.observation_state[node1] == msg.observation_state.TrinaryTrue
     assert msg.observation_state[sub_node1] == msg.observation_state.TrinaryTrue
     assert msg.observation_state[sub_node2] == msg.observation_state.TrinaryTrue
@@ -496,6 +502,7 @@ def test_nested_goals():
 
     # tick 7: end motion becomes true
     msg.tick()
+    msg.draw()
     assert msg.observation_state[end] == msg.observation_state.TrinaryTrue
     assert msg.is_end_motion()
 

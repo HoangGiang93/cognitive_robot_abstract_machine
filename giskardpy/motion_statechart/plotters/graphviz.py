@@ -119,6 +119,9 @@ class MotionStatechartGraphviz:
     motion_statechart: MotionStatechart
     graph: pydot.Graph = field(init=False)
     compact: bool = False
+    _cluster_map: Dict[MotionStatechartNode, pydot.Cluster] = field(
+        init=False, default_factory=dict
+    )
 
     def __post_init__(self):
         self.graph = pydot.Dot(
@@ -211,7 +214,7 @@ class MotionStatechartGraphviz:
                 break
         return node_cluster
 
-    def add_node(
+    def _add_node(
         self,
         graph: pydot.Graph,
         node: MotionStatechartNode,
@@ -254,39 +257,50 @@ class MotionStatechartGraphviz:
         return pydot_node
 
     def to_dot_graph(self) -> pydot.Graph:
+        self._cluster_map[None] = self.graph
         top_level_nodes = [
             node for node in self.motion_statechart.nodes if not node.parent_node
         ]
-        self.add_goal_cluster(self.graph, top_level_nodes)
+        self.add_nodes(self.graph, top_level_nodes)
         self.add_edges()
         return self.graph
 
-    def add_goal_cluster(
+    def add_nodes(
         self,
         parent_cluster: Union[pydot.Graph, pydot.Cluster],
         nodes: List[MotionStatechartNode],
     ):
         for i, node in enumerate(nodes):
             if isinstance(node, Goal):
-                goal_cluster = pydot.Cluster(
-                    graph_name=str(node.name),
-                    fontname=FONT,
-                    fontsize=Fontsize,
-                    style=GoalClusterStyle,
-                    color="black",
-                    fillcolor="white",
-                    penwidth=LineWidth,
-                )
-                self.add_node(
+                goal_cluster = self._add_cluster(node, parent_cluster)
+                self._add_node(
                     graph=goal_cluster,
                     node=node,
                 )
-                parent_cluster.add_subgraph(goal_cluster)
-                self.add_goal_cluster(goal_cluster, node.nodes)
-            self.add_node(
+                self.add_nodes(goal_cluster, node.nodes)
+
+            self._add_node(
                 parent_cluster,
                 node=node,
             )
+
+    def _add_cluster(
+        self,
+        node: MotionStatechartNode,
+        parent_cluster: Union[pydot.Graph, pydot.Cluster],
+    ):
+        goal_cluster = pydot.Cluster(
+            graph_name=str(node.name),
+            fontname=FONT,
+            fontsize=Fontsize,
+            style=GoalClusterStyle,
+            color="black",
+            fillcolor="white",
+            penwidth=LineWidth,
+        )
+        parent_cluster.add_subgraph(goal_cluster)
+        self._cluster_map[node] = goal_cluster
+        return goal_cluster
 
     def add_edges(self):
         for edge_index, (
@@ -300,24 +314,14 @@ class MotionStatechartGraphviz:
             child_node = self.motion_statechart.rx_graph.get_node_data(child_node_index)
             if not self._are_nodes_in_same_cluster(parent_node, child_node):
                 continue
-            graph = self._get_cluster_of_edge(parent_node)
             if isinstance(transition, StartCondition):
-                self.add_start_condition_edge(graph, parent_node, child_node)
+                self.add_start_condition_edge(parent_node, child_node)
             if isinstance(transition, PauseCondition):
-                self.add_pause_condition_edge(graph, parent_node, child_node)
+                self.add_pause_condition_edge(parent_node, child_node)
             if isinstance(transition, EndCondition):
-                self.add_end_condition_edge(graph, parent_node, child_node)
+                self.add_end_condition_edge(parent_node, child_node)
             if isinstance(transition, ResetCondition):
-                self.add_reset_condition_edge(graph, parent_node, child_node)
-
-    def _get_cluster_of_edge(
-        self,
-        node: MotionStatechartNode,
-    ) -> Union[pydot.Graph, pydot.Cluster]:
-        if node.parent_node is None:
-            return self.graph
-        else:
-            return self.graph.get_subgraph("cluster_" + str(node.parent_node.name))[0]
+                self.add_reset_condition_edge(parent_node, child_node)
 
     def _are_nodes_in_same_cluster(
         self, parent_node: MotionStatechartNode, child_node: MotionStatechartNode
@@ -332,10 +336,10 @@ class MotionStatechartGraphviz:
 
     def add_start_condition_edge(
         self,
-        graph: pydot.Graph,
         parent_node: MotionStatechartNode,
         child_node: MotionStatechartNode,
     ):
+        graph = self._cluster_map[parent_node.parent_node]
         destination_node = child_node
         source_node = parent_node
         source_node_name = str(destination_node.name)
@@ -363,10 +367,10 @@ class MotionStatechartGraphviz:
 
     def add_pause_condition_edge(
         self,
-        graph: pydot.Graph,
         parent_node: MotionStatechartNode,
         child_node: MotionStatechartNode,
     ):
+        graph = self._cluster_map[parent_node.parent_node]
         destination_node = child_node
         source_node = parent_node
         source_node_name = str(destination_node.name)
@@ -395,10 +399,10 @@ class MotionStatechartGraphviz:
 
     def add_end_condition_edge(
         self,
-        graph: pydot.Graph,
         parent_node: MotionStatechartNode,
         child_node: MotionStatechartNode,
     ):
+        graph = self._cluster_map[parent_node.parent_node]
         destination_node = child_node
         source_node = parent_node
         source_node_name = str(destination_node.name)
@@ -429,10 +433,10 @@ class MotionStatechartGraphviz:
 
     def add_reset_condition_edge(
         self,
-        graph: pydot.Graph,
         parent_node: MotionStatechartNode,
         child_node: MotionStatechartNode,
     ):
+        graph = self._cluster_map[parent_node.parent_node]
         destination_node = child_node
         source_node = parent_node
         source_node_name = str(destination_node.name)
