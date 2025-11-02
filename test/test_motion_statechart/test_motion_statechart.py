@@ -1,4 +1,6 @@
 import pytest
+import time
+from dataclasses import dataclass
 
 import semantic_digital_twin.spatial_types.spatial_types as cas
 from giskardpy.motion_statechart.data_types import LifeCycleValues
@@ -8,10 +10,12 @@ from giskardpy.motion_statechart.graph_node import (
     EndMotion,
     CancelMotion,
 )
+from giskardpy.motion_statechart.graph_node import ThreadPayloadMonitor
 from giskardpy.motion_statechart.monitors.monitors import TrueMonitor
 from giskardpy.motion_statechart.monitors.payload_monitors import Print
 from giskardpy.motion_statechart.motion_statechart import (
     MotionStatechart,
+    ObservationState,
 )
 from giskardpy.motion_statechart.tasks.joint_tasks import JointPositionList
 from semantic_digital_twin.datastructures.prefixed_name import PrefixedName
@@ -505,6 +509,64 @@ def test_nested_goals():
     msg.draw()
     assert msg.observation_state[end] == msg.observation_state.TrinaryTrue
     assert msg.is_end_motion()
+
+
+@dataclass(eq=False, repr=False)
+class _TestThreadMonitor(ThreadPayloadMonitor):
+    delay: float = 0.05
+    return_value: float = ObservationState.TrinaryTrue
+
+    def _compute_observation(self):
+        time.sleep(self.delay)
+        return self.return_value
+
+
+def test_thread_payload_monitor_non_blocking_and_caching():
+    msg = MotionStatechart(World())
+    mon = _TestThreadMonitor(name=PrefixedName("thread_mon"), motion_statechart=msg, delay=0.05,
+                             return_value=ObservationState.TrinaryTrue)
+    # First call should be non-blocking and return Unknown until worker completes at least once
+    start = time.perf_counter()
+    val0 = mon.compute_observation()
+    elapsed = time.perf_counter() - start
+    assert elapsed < mon.delay / 4.0
+    assert val0 == ObservationState.TrinaryUnknown
+    # Wait for worker to finish and cache
+    time.sleep(mon.delay * 2)
+    val1 = mon.compute_observation()
+    assert val1 == ObservationState.TrinaryTrue
+
+
+def test_thread_payload_monitor_integration():
+    msg = MotionStatechart(World())
+    mon = _TestThreadMonitor(name=PrefixedName("thread_mon2"), motion_statechart=msg, delay=0.03,
+                             return_value=ObservationState.TrinaryTrue)
+    end = EndMotion(name=PrefixedName("done thread"), motion_statechart=msg)
+    end.start_condition = mon
+
+    msg.compile()
+
+    # tick 1: monitor not started yet becomes RUNNING; end not started
+    msg.tick()
+    assert msg.observation_state[mon] == ObservationState.TrinaryUnknown
+    assert msg.life_cycle_state[mon] == LifeCycleValues.RUNNING
+    assert msg.life_cycle_state[end] == LifeCycleValues.NOT_STARTED
+
+    # tick 2: compute_observation is triggered asynchronously; still Unknown immediately
+    msg.tick()
+    assert msg.observation_state[mon] == ObservationState.TrinaryUnknown
+    assert msg.life_cycle_state[mon] == LifeCycleValues.RUNNING
+    assert msg.life_cycle_state[end] == LifeCycleValues.NOT_STARTED
+
+    # allow background to finish and propagate on next tick
+    time.sleep(mon.delay * 2)
+    msg.tick()
+    assert msg.observation_state[mon] == ObservationState.TrinaryTrue
+    assert msg.life_cycle_state[end] == LifeCycleValues.RUNNING
+
+    # next tick the EndMotion should turn true
+    msg.tick()
+    assert msg.observation_state[end] == ObservationState.TrinaryTrue
 
 
 def test_goal():

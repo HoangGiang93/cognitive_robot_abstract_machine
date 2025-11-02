@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import field, dataclass
+import threading
 
 from random_events.utils import SubclassJSONSerializer
 from typing_extensions import (
@@ -332,6 +333,67 @@ class PayloadMonitor(Monitor, ABC):
         .. warning:: This method must return essentially instantly and not block the main thread.
         :return:
         """
+
+
+@dataclass(eq=False, repr=False)
+class ThreadPayloadMonitor(PayloadMonitor, ABC):
+    """
+    Payload monitor that evaluates _compute_observation in a background thread.
+
+    - compute_observation triggers an async evaluation and immediately returns.
+    - Until the first successful completion, returns TrinaryUnknown.
+    - Afterwards, returns the last successfully computed value.
+    """
+
+    # Internal threading primitives
+    _request_event: threading.Event = field(
+        default_factory=threading.Event, init=False, repr=False
+    )
+    _stop_event: threading.Event = field(
+        default_factory=threading.Event, init=False, repr=False
+    )
+    _thread: threading.Thread = field(init=False, repr=False)
+
+    # Cache of last successful result from _compute_observation
+    _has_result: bool = field(default=False, init=False, repr=False)
+    _last_result: float = field(
+        default=float(ObservationState.TrinaryUnknown), init=False, repr=False
+    )
+
+    def __post_init__(self):
+        super().__post_init__()
+        # Start a daemon worker thread that computes observations when requested
+        self._thread = threading.Thread(
+            target=self._worker_loop,
+            name=f"{self.__class__.__name__}-worker",
+            daemon=True,
+        )
+        self._thread.start()
+
+    def compute_observation(
+        self,
+    ) -> float:
+        # Signal the worker to compute a fresh value if it is not already signaled.
+        self._request_event.set()
+        # Return the last known result (initialized to Unknown until first success)
+        return self._last_result
+
+    def _worker_loop(self):
+        while not self._stop_event.is_set():
+            # Wait until a request is made (wake periodically to check for stop)
+            triggered = self._request_event.wait(timeout=0.1)
+            if not triggered:
+                continue
+            # Clear early to allow new requests while we compute
+            self._request_event.clear()
+            try:
+                result = self._compute_observation()
+                # Accept only valid trinary values (floats expected)
+                self._last_result = result
+                self._has_result = True
+            except Exception:
+                # On failure, keep previous result and mark as having no new value
+                pass
 
 
 @dataclass(eq=False, repr=False)
