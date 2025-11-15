@@ -447,6 +447,7 @@ def test_reset():
 
     kin_sim = Executor(motion_statechart=msc, world=World())
     kin_sim.compile()
+    msc.draw("muh.pdf")
 
     kin_sim.tick()
     assert node1.observation_state == ObservationStateValues.UNKNOWN

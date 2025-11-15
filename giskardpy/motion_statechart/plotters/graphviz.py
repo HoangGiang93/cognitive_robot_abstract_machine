@@ -448,8 +448,8 @@ class MotionStatechartGraphviz:
         child_node: MotionStatechartNode,
     ):
         graph = self._cluster_map[parent_node.parent_node]
-        destination_node = child_node
-        source_node = parent_node
+        destination_node = parent_node
+        source_node = child_node
         source_node_name = str(destination_node.name)
         destination_node_name = str(source_node.name)
         node_cluster = self._get_cluster_of_node(destination_node_name, graph)
