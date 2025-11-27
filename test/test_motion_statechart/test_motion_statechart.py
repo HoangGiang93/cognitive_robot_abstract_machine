@@ -1652,9 +1652,7 @@ class TestCollisionAvoidance:
         )
         assert contact_distance > 0.049
 
-    def test_hard_constraints_violated(self, box_bot_world: World, rclpy_node):
-        viz = VizMarkerPublisher(world=box_bot_world, node=rclpy_node)
-
+    def test_hard_constraints_violated(self, box_bot_world: World):
         root = box_bot_world.root
         with box_bot_world.modify_world():
             env2 = Body(
