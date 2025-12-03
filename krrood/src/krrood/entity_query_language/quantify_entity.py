@@ -7,7 +7,7 @@ from .match import EntityType, Match
 from .result_quantification_constraint import (
     ResultQuantificationConstraint,
 )
-from .symbolic import An, The, ResultQuantifier, Count
+from .symbolic import An, The, ResultQuantifier
 
 
 def an(
