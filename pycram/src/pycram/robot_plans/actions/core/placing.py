@@ -10,7 +10,12 @@ from typing_extensions import Union, Optional, Type, Any, Iterable
 from .pick_up import ReachActionDescription
 from ....config.action_conf import ActionConfig
 from ...motions.gripper import MoveTCPMotion, MoveGripperMotion, ReachMotion
-from ....datastructures.enums import Arms, GripperState, ApproachDirection, VerticalAlignment
+from ....datastructures.enums import (
+    Arms,
+    GripperState,
+    ApproachDirection,
+    VerticalAlignment,
+)
 from ....datastructures.grasp import GraspDescription
 from ....datastructures.partial_designator import PartialDesignator
 from ....datastructures.pose import PoseStamped
@@ -53,7 +58,13 @@ class PlaceAction(ActionDescription):
     def execute(self) -> None:
         SequentialPlan(
             self.context,
-            ReachActionDescription(self.target_location, self.arm, GraspDescription(ApproachDirection.FRONT, VerticalAlignment.NoAlignment)),
+            ReachActionDescription(
+                self.target_location,
+                self.arm,
+                GraspDescription(
+                    ApproachDirection.FRONT, VerticalAlignment.NoAlignment
+                ),
+            ),
             MoveGripperMotion(GripperState.OPEN, self.arm),
         ).perform()
 

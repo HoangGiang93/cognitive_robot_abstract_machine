@@ -80,7 +80,7 @@ class Plan:
     """
 
     def __init__(
-            self, root: PlanNode, context: Context
+        self, root: PlanNode, context: Context
     ):  # world: World, robot: AbstractRobot, super_plan: Plan = None):
         super().__init__()
         self.plan_graph = rx.PyDiGraph()
@@ -181,7 +181,7 @@ class Plan:
             self.super_plan.add_edge(u_of_edge, v_of_edge)
 
     def add_edges_from(
-            self, ebunch_to_add: Iterable[Tuple[PlanNode, PlanNode]], **attr
+        self, ebunch_to_add: Iterable[Tuple[PlanNode, PlanNode]], **attr
     ):
         """
         Adds edges to the plan from an iterable of tuples. If one or both nodes are not in the plan, they will be added to the plan.
@@ -263,7 +263,7 @@ class Plan:
         return rx.layers(self.plan_graph, [self.root.index], index_output=False)
 
     def bfs_layout(
-            self, scale: float = 1.0, align: PlotAlignment = PlotAlignment.VERTICAL
+        self, scale: float = 1.0, align: PlotAlignment = PlotAlignment.VERTICAL
     ) -> Dict[int, np.array]:
         """
         Generate a bfs layout for this circuit.
@@ -301,7 +301,7 @@ class Plan:
         return pos
 
     def plot_plan_structure(
-            self, scale: float = 1.0, align: PlotAlignment = PlotAlignment.HORIZONTAL
+        self, scale: float = 1.0, align: PlotAlignment = PlotAlignment.HORIZONTAL
     ) -> None:
         """
         Plots the kinematic structure of the world.
@@ -326,9 +326,9 @@ class Plan:
 
     @classmethod
     def add_on_start_callback(
-            cls,
-            callback: Callable[[PlanNode], None],
-            action_type: Optional[Type[ActionDescription], Type[PlanNode]] = None,
+        cls,
+        callback: Callable[[PlanNode], None],
+        action_type: Optional[Type[ActionDescription], Type[PlanNode]] = None,
     ):
         """
         Adds a callback to be called when an action of the given type is started.
@@ -344,9 +344,9 @@ class Plan:
 
     @classmethod
     def add_on_end_callback(
-            cls,
-            callback: Callable[[PlanNode], None],
-            action_type: Optional[Type[ActionDescription], Type[PlanNode]] = None,
+        cls,
+        callback: Callable[[PlanNode], None],
+        action_type: Optional[Type[ActionDescription], Type[PlanNode]] = None,
     ):
         """
         Adds a callback to be called when an action of the given type is ended.
@@ -362,9 +362,9 @@ class Plan:
 
     @classmethod
     def remove_on_start_callback(
-            cls,
-            callback: Callable[[PlanNode], None],
-            action_type: Optional[Type[ActionDescription], Type[PlanNode]] = None,
+        cls,
+        callback: Callable[[PlanNode], None],
+        action_type: Optional[Type[ActionDescription], Type[PlanNode]] = None,
     ):
         """
         Removes a callback to be called when an action of the given type is started.
@@ -377,9 +377,9 @@ class Plan:
 
     @classmethod
     def remove_on_end_callback(
-            cls,
-            callback: Callable[[PlanNode], None],
-            action_type: Optional[Type[ActionDescription], Type[PlanNode]] = None,
+        cls,
+        callback: Callable[[PlanNode], None],
+        action_type: Optional[Type[ActionDescription], Type[PlanNode]] = None,
     ):
         """
         Removes a callback to be called when an action of the given type is ended.
@@ -445,7 +445,7 @@ class Plan:
         )
         node_hover_tool = HoverTool(
             tooltips=[("node_type", "@node_type")]
-                     + [(attr, "@" + attr) for attr in attributes]
+            + [(attr, "@" + attr) for attr in attributes]
         )
         p.add_tools(node_hover_tool)
 
@@ -526,14 +526,14 @@ def managed_node(func: Callable) -> Callable:
         node.status = TaskStatus.RUNNING
         node.start_time = datetime.now()
         on_start_callbacks = (
-                Plan.on_start_callback.get(node.designator_type, [])
-                + Plan.on_start_callback.get(None, [])
-                + Plan.on_start_callback.get(node.__class__, [])
+            Plan.on_start_callback.get(node.designator_type, [])
+            + Plan.on_start_callback.get(None, [])
+            + Plan.on_start_callback.get(node.__class__, [])
         )
         on_end_callbacks = (
-                Plan.on_end_callback.get(node.designator_type, [])
-                + Plan.on_end_callback.get(None, [])
-                + Plan.on_end_callback.get(node.__class__, [])
+            Plan.on_end_callback.get(node.designator_type, [])
+            + Plan.on_end_callback.get(None, [])
+            + Plan.on_end_callback.get(node.__class__, [])
         )
         for call_back in on_start_callbacks:
             call_back(node)
@@ -656,8 +656,9 @@ class PlanNode:
         :return: A list of all nodes above this
         """
 
-        paths =  rx.all_shortest_paths(self.plan.plan_graph, self.index, self.plan.root.index,
-                                      as_undirected=True)
+        paths = rx.all_shortest_paths(
+            self.plan.plan_graph, self.index, self.plan.root.index, as_undirected=True
+        )
         return [self.plan.plan_graph[i] for i in paths[0][1:]] if len(paths) > 0 else []
 
     @property
@@ -819,7 +820,12 @@ class ResolvedActionNode(DesignatorNode):
         return id(self)
 
     def collect_motions(self) -> List[Task]:
-        motion_desigs = list(filter(lambda x: x.is_leaf and x.parent_action_node == self, self.recursive_children))
+        motion_desigs = list(
+            filter(
+                lambda x: x.is_leaf and x.parent_action_node == self,
+                self.recursive_children,
+            )
+        )
         return [m.designator_ref.motion_chart for m in motion_desigs]
 
     def construct_msc(self):
@@ -858,8 +864,8 @@ class ResolvedActionNode(DesignatorNode):
         new_modifications = []
         for i in range(len(self.plan.world._model_manager.model_modification_blocks)):
             if (
-                    self.plan.world._model_manager.model_modification_blocks[-i]
-                    is self._last_mod
+                self.plan.world._model_manager.model_modification_blocks[-i]
+                is self._last_mod
             ):
                 break
             new_modifications.append(
@@ -930,4 +936,6 @@ class MotionNode(DesignatorNode):
 
     @property
     def parent_action_node(self):
-        return list(filter(lambda x: isinstance(x, ResolvedActionNode), self.all_parents))[0]
+        return list(
+            filter(lambda x: isinstance(x, ResolvedActionNode), self.all_parents)
+        )[0]

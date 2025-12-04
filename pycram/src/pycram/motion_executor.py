@@ -5,7 +5,10 @@ from giskardpy.executor import Executor
 from giskardpy.motion_statechart.data_types import LifeCycleValues
 from giskardpy.motion_statechart.goals.templates import Sequence
 from giskardpy.motion_statechart.graph_node import EndMotion
-from giskardpy.motion_statechart.motion_statechart import MotionStatechart, LifeCycleState
+from giskardpy.motion_statechart.motion_statechart import (
+    MotionStatechart,
+    LifeCycleState,
+)
 from giskardpy.motion_statechart.graph_node import Task
 from giskardpy.qp.qp_controller_config import QPControllerConfig
 from semantic_digital_twin.world import World
@@ -73,7 +76,10 @@ class MotionExecutor:
         try:
             executor.tick_until_end(timeout=2000)
         except TimeoutError as e:
-            failed_nodes = [node if node.life_cycle_state == LifeCycleValues.FAILED else None for node in self.motion_state_chart.nodes]
+            failed_nodes = [
+                node if node.life_cycle_state == LifeCycleValues.FAILED else None
+                for node in self.motion_state_chart.nodes
+            ]
             logger.error(f"Failed Nodes: {failed_nodes}")
             raise e
 

@@ -66,7 +66,7 @@ class ReachMotion(BaseMotion):
         target_pre_pose = translate_pose_along_local_axis(
             target_pose,
             end_effector.front_facing_axis.to_np()[:3],
-            -0.05, # TODO: Maybe put these values in the semantic annotates
+            -0.05,  # TODO: Maybe put these values in the semantic annotates
         )
 
         pose = PoseStamped.from_spatial_type(
@@ -79,16 +79,18 @@ class ReachMotion(BaseMotion):
     def perform(self):
         pass
 
-
     @property
     def _motion_chart(self):
         tip = ViewManager().get_end_effector_view(self.arm, self.robot_view).tool_frame
-        nodes = [CartesianPose(
-            root_link=self.robot_view.root,
-            tip_link=tip,
-            goal_pose=pose.to_spatial_type(),
-            threshold=0.005
-        ) for pose in self._calculate_pose_sequence()]
+        nodes = [
+            CartesianPose(
+                root_link=self.robot_view.root,
+                tip_link=tip,
+                goal_pose=pose.to_spatial_type(),
+                threshold=0.005,
+            )
+            for pose in self._calculate_pose_sequence()
+        ]
         return Sequence(nodes=nodes)
 
 
@@ -168,7 +170,7 @@ class MoveTCPMotion(BaseMotion):
             root_link=self.robot_view.root,
             tip_link=tip,
             goal_pose=self.target.to_spatial_type(),
-            threshold=0.005
+            threshold=0.005,
         )
 
 
