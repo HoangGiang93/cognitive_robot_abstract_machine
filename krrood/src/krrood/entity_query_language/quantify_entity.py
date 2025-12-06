@@ -2,17 +2,17 @@ from __future__ import annotations
 
 from typing import Optional, Union, Type, Iterable
 
-from .utils import T
-from .match import EntityType, Match
+from .match import Match
 from .result_quantification_constraint import (
     ResultQuantificationConstraint,
 )
 from .symbolic import An, The, ResultQuantifier, SetOf, Entity
+from .utils import T
 
 
 def an(
-    entity_: EntityType,
-    quantification: Optional[ResultQuantificationConstraint] = None,
+        entity_: Union[SetOf[T], Entity[T], T, Iterable[T], Type[T], Match[T]],
+        quantification: Optional[ResultQuantificationConstraint] = None,
 ) -> Union[An[T], T]:
     """
     Select a single element satisfying the given entity description.
@@ -32,7 +32,7 @@ This is an alias to accommodate for words not starting with vowels.
 
 
 def the(
-    entity_: Union[SetOf[T], Entity[T], T, Iterable[T], Type[T], Match[T]],
+        entity_: Union[SetOf[T], Entity[T], T, Iterable[T], Type[T], Match[T]],
 ) -> Union[The[T], T]:
     """
     Select the unique element satisfying the given entity description.
@@ -45,7 +45,8 @@ def the(
 
 
 def _quantify_entity(
-    quantifier: Type[ResultQuantifier], entity_: EntityType, **quantifier_kwargs
+        quantifier: Type[ResultQuantifier], entity_: Union[SetOf[T], Entity[T], T, Iterable[T], Type[T], Match[T]],
+        **quantifier_kwargs
 ) -> Union[ResultQuantifier[T], T]:
     """
     Apply the given quantifier to the given entity.
