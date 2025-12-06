@@ -7,7 +7,6 @@ from functools import lru_cache
 from typing_extensions import Any, Optional, List, Dict, Iterable
 
 from .enums import RDREdge
-from .hashed_data import HashedValue
 from .rxnode import ColorLegend
 from .symbolic import (
     SymbolicExpression,
@@ -73,7 +72,7 @@ class Set(Conclusion[T]):
 
     def _evaluate__(
         self,
-        sources: Optional[Dict[int, HashedValue]] = None,
+        sources: Optional[Dict[int, Any]] = None,
         parent: Optional[SymbolicExpression] = None,
     ) -> Iterable[OperationResult]:
         self._eval_parent_ = parent
@@ -95,7 +94,7 @@ class Add(Conclusion[T]):
 
     def _evaluate__(
         self,
-        sources: Optional[Dict[int, HashedValue]] = None,
+        sources: Optional[Dict[int, Any]] = None,
         parent: Optional[SymbolicExpression] = None,
     ) -> Iterable[OperationResult]:
         self._eval_parent_ = parent

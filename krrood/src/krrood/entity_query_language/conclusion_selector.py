@@ -4,11 +4,11 @@ import typing
 from abc import ABC
 from dataclasses import dataclass, field
 from functools import lru_cache
-from typing_extensions import Dict, Optional, Iterable
+from typing_extensions import Dict, Optional, Iterable, Any
 
 from .cache_data import SeenSet
 from .conclusion import Conclusion
-from .hashed_data import HashedIterable, HashedValue
+from .hashed_data import HashedIterable
 from .rxnode import ColorLegend
 from .symbolic import (
     SymbolicExpression,
@@ -73,7 +73,7 @@ class ExceptIf(ConclusionSelector):
 
     def _evaluate__(
         self,
-        sources: Optional[Dict[int, HashedValue]] = None,
+        sources: Optional[Dict[int, Any]] = None,
         parent: Optional[SymbolicExpression] = None,
     ) -> Iterable[OperationResult]:
         """
@@ -126,7 +126,7 @@ class Alternative(ElseIf, ConclusionSelector):
 
     def _evaluate__(
         self,
-        sources: Optional[Dict[int, HashedValue]] = None,
+        sources: Optional[Dict[int, Any]] = None,
         parent: Optional[SymbolicExpression] = None,
     ) -> Iterable[OperationResult]:
         outputs = super()._evaluate__(sources, parent=parent)
@@ -148,7 +148,7 @@ class Next(EQLUnion, ConclusionSelector):
 
     def _evaluate__(
         self,
-        sources: Optional[Dict[int, HashedValue]] = None,
+        sources: Optional[Dict[int, Any]] = None,
         parent: Optional[SymbolicExpression] = None,
     ) -> Iterable[OperationResult]:
         outputs = super()._evaluate__(sources, parent=parent)

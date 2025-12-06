@@ -46,7 +46,7 @@ from .failures import (
     InvalidEntityType,
     UnSupportedOperand, NonPositiveLimitValue, InvalidChildType, CannotProcessResultOfGivenChildType,
 )
-from .hashed_data import HashedValue, HashedIterable, T
+from .hashed_data import HashedIterable, T
 from .result_quantification_constraint import (
     ResultQuantificationConstraint,
     Exactly,
@@ -73,7 +73,7 @@ class OperationResult:
     A data structure that carries information about the result of an operation in EQL.
     """
 
-    bindings: Dict[int, HashedValue]
+    bindings: Dict[int, Any]
     """
     The bindings resulting from the operation, mapping variable IDs to their values.
     """
@@ -91,7 +91,7 @@ class OperationResult:
         return not self.is_false
 
     @property
-    def value(self) -> Optional[HashedValue]:
+    def value(self) -> Optional[Any]:
         return self.bindings.get(self.operand._id_, None)
 
     def __contains__(self, item):
@@ -183,7 +183,7 @@ class SymbolicExpression(Generic[T], ABC):
     @abstractmethod
     def _evaluate__(
         self,
-        sources: Optional[Dict[int, HashedValue]] = None,
+        sources: Optional[Dict[int, Any]] = None,
         parent: Optional[SymbolicExpression] = None,
     ) -> Iterable[OperationResult]:
         """
@@ -321,7 +321,7 @@ class SymbolicExpression(Generic[T], ABC):
         return self._name_
 
 ResultMapping = Callable[
-    [Iterable[Dict[int, HashedValue]]], Iterable[Dict[int, HashedValue]]
+    [Iterable[Dict[int, Any]]], Iterable[Dict[int, Any]]
 ]
 """
 A function that maps the results of a query object descriptor to a new set of results.
@@ -352,7 +352,7 @@ class Selectable(SymbolicExpression[T], ABC):
         :param result: The result to be mapped.
         :return: The mapped result.
         """
-        return result[result.operand._id_].value
+        return result[result.operand._id_]
 
     @property
     def _is_iterable_(self):
@@ -509,7 +509,7 @@ class Aggregator(ResultProcessor[T], ABC):
 
     def _evaluate__(
         self,
-        sources: Optional[Dict[int, HashedValue]] = None,
+        sources: Optional[Dict[int, Any]] = None,
         parent: Optional[SymbolicExpression] = None,
     ) -> Iterable[OperationResult]:
         sources = sources or {}
@@ -521,10 +521,10 @@ class Aggregator(ResultProcessor[T], ABC):
         if values:
             yield OperationResult(values, False, self)
         else:
-            yield OperationResult({self._id_: HashedValue(self._default_value_)}, False, self)
+            yield OperationResult({self._id_: self._default_value_}, False, self)
 
     @abstractmethod
-    def _apply_aggregation_function_(self, child_results: Iterable[OperationResult]) -> Dict[int, HashedValue]:
+    def _apply_aggregation_function_(self, child_results: Iterable[OperationResult]) -> Dict[int, Any]:
         """
         Apply the aggregation function to the results of the child.
 
@@ -548,8 +548,8 @@ class Count(Aggregator[T]):
     Count the number of child results.
     """
 
-    def _apply_aggregation_function_(self, child_results: Iterable[OperationResult]) -> Dict[int, HashedValue]:
-        return {self._id_: HashedValue(len(list(child_results)))}
+    def _apply_aggregation_function_(self, child_results: Iterable[OperationResult]) -> Dict[int, Any]:
+        return {self._id_: len(list(child_results))}
 
 
 @dataclass
@@ -571,10 +571,10 @@ class EntityAggregator(Aggregator[T], ABC):
 
     def _get_child_value_from_result_(self, result: OperationResult) -> Any:
         """
-        Extract the value of the child from the result dictionary and unwraps it from the HashedValue wrapper.
+        Extract the value of the child from the result dictionary.
          In addition, it applies the key function if given.
         """
-        value = result[self._child_._var_._id_].value
+        value = result[self._child_._var_._id_]
         if self._key_func_:
             return self._key_func_(value)
         return value
@@ -586,14 +586,14 @@ class Sum(EntityAggregator[T]):
     Calculate the sum of the child results. If given, make use of the key function to extract the value to be summed.
     """
 
-    def _apply_aggregation_function_(self, child_results: Iterable[OperationResult]) -> Dict[int, HashedValue]:
+    def _apply_aggregation_function_(self, child_results: Iterable[OperationResult]) -> Dict[int, Any]:
         entered = False
         sum_val = 0
         for val in map(self._get_child_value_from_result_, child_results):
             entered = True
             sum_val += val
         if entered:
-            return {self._id_: HashedValue(sum_val)}
+            return {self._id_: sum_val}
         return {}
 
 
@@ -604,14 +604,14 @@ class Average(EntityAggregator[T]):
      averaged.
     """
 
-    def _apply_aggregation_function_(self, child_results: Iterable[OperationResult]) -> Dict[int, HashedValue]:
+    def _apply_aggregation_function_(self, child_results: Iterable[OperationResult]) -> Dict[int, Any]:
         sum_val = 0
         count = 0
         for val in map(self._get_child_value_from_result_, child_results):
             sum_val += val
             count += 1
         if count:
-            return {self._id_: HashedValue(sum_val/count)}
+            return {self._id_: sum_val/count}
         return {}
 
 
@@ -623,7 +623,7 @@ class Extreme(EntityAggregator[T], ABC):
     """
 
 
-    def _apply_aggregation_function_(self, child_results: Iterable[OperationResult]) -> Dict[int, HashedValue]:
+    def _apply_aggregation_function_(self, child_results: Iterable[OperationResult]) -> Dict[int, Any]:
         try:
             bindings_with_extreme_val = self._extreme_function_(child_results, key=self._get_child_value_from_result_).bindings
             bindings_with_extreme_val[self._id_] = bindings_with_extreme_val[self._child_._var_._id_]
@@ -685,7 +685,7 @@ class ResultQuantifier(ResultProcessor[T], ABC):
 
     def _evaluate__(
         self,
-        sources: Optional[Dict[int, HashedValue]] = None,
+        sources: Optional[Dict[int, Any]] = None,
         parent: Optional[SymbolicExpression] = None,
     ) -> Iterable[T]:
         sources = sources or {}
@@ -745,7 +745,7 @@ class UnificationDict(UserDict):
 
     def __getitem__(self, key: CanBehaveLikeAVariable[T]) -> T:
         key = key._id_expression_map_[key._var_._id_]
-        return super().__getitem__(key).value
+        return super().__getitem__(key)
 
 
 @dataclass(eq=False, repr=False)
@@ -789,7 +789,7 @@ class The(ResultQuantifier[T]):
 
     def _evaluate__(
         self,
-        sources: Optional[Dict[int, HashedValue]] = None,
+        sources: Optional[Dict[int, Any]] = None,
         parent: Optional[SymbolicExpression] = None,
     ) -> Iterable[TypingUnion[T, Dict[TypingUnion[T, SymbolicExpression[T]], T]]]:
         try:
@@ -861,8 +861,8 @@ class QueryObjectDescriptor(SymbolicExpression[T], ABC):
         return self
 
     def _order(
-        self, results: Iterable[Dict[int, HashedValue]] = None
-    ) -> Iterable[Dict[int, HashedValue]]:
+        self, results: Iterable[Dict[int, Any]] = None
+    ) -> Iterable[Dict[int, Any]]:
         """
         Order the results by the given order variable.
 
@@ -870,8 +870,8 @@ class QueryObjectDescriptor(SymbolicExpression[T], ABC):
         :return: The ordered results.
         """
 
-        def key(result: Dict[int, HashedValue]) -> Any:
-            variable_value = result[self._order_by.variable._var_._id_].value
+        def key(result: Dict[int, Any]) -> Any:
+            variable_value = result[self._order_by.variable._var_._id_]
             if self._order_by.key:
                 return self._order_by.key(variable_value)
             else:
@@ -898,13 +898,12 @@ class QueryObjectDescriptor(SymbolicExpression[T], ABC):
         seen_results = SeenSet(keys=on_ids)
 
         def get_distinct_results(
-            results_gen: Iterable[Dict[int, HashedValue]],
-        ) -> Iterable[Dict[int, HashedValue]]:
+            results_gen: Iterable[Dict[int, Any]],
+        ) -> Iterable[Dict[int, Any]]:
             for res in results_gen:
                 bindings = (
                     res if not on else {k: v for k, v in res.items() if k in on_ids}
                 )
-                bindings = {k: v.value for k, v in bindings.items()}
                 if seen_results.check(bindings):
                     continue
                 yield res
@@ -915,7 +914,7 @@ class QueryObjectDescriptor(SymbolicExpression[T], ABC):
 
     def _evaluate__(
         self,
-        sources: Optional[Dict[int, HashedValue]] = None,
+        sources: Optional[Dict[int, Any]] = None,
         parent: Optional[SymbolicExpression] = None,
     ) -> Iterable[OperationResult]:
         sources = sources or {}
@@ -989,7 +988,7 @@ class QueryObjectDescriptor(SymbolicExpression[T], ABC):
             ).bindings
 
     def get_constrained_values(
-        self, sources: Optional[Dict[int, HashedValue]]
+        self, sources: Optional[Dict[int, Any]]
     ) -> Iterable[OperationResult]:
         """
         Evaluate the child (i.e., the conditions that constrain the domain of the selected variables).
@@ -1006,8 +1005,8 @@ class QueryObjectDescriptor(SymbolicExpression[T], ABC):
             yield from [OperationResult(sources, False, self)]
 
     def _evaluate_selected_variables(
-            self, sources: Dict[int, HashedValue]
-    ) -> Iterable[Dict[int, HashedValue]]:
+            self, sources: Dict[int, Any]
+    ) -> Iterable[Dict[int, Any]]:
         """
         Evaluate the selected variables by generating combinations of values from their evaluation generators.
 
@@ -1022,8 +1021,8 @@ class QueryObjectDescriptor(SymbolicExpression[T], ABC):
             yield {var._id_: sol[var][var._id_] for var in self._selected_variables}
 
     def _apply_results_mapping(
-        self, results: Iterable[Dict[int, HashedValue]]
-    ) -> Iterable[Dict[int, HashedValue]]:
+        self, results: Iterable[Dict[int, Any]]
+    ) -> Iterable[Dict[int, Any]]:
         for result_mapping in self._results_mapping:
             results = result_mapping(results)
         if self._order_by:
@@ -1162,7 +1161,7 @@ class Variable(CanBehaveLikeAVariable[T]):
                 self._domain_ = domain
                 return
             elif not is_iterable(domain):
-                domain = [HashedValue(domain)]
+                domain = [domain]
             self._domain_.set_iterable(domain)
 
     def _update_child_vars_from_kwargs_(self):
@@ -1175,7 +1174,7 @@ class Variable(CanBehaveLikeAVariable[T]):
 
     def _evaluate__(
         self,
-        sources: Optional[Dict[int, HashedValue]] = None,
+        sources: Optional[Dict[int, Any]] = None,
         parent: Optional[SymbolicExpression] = None,
     ) -> Iterable[OperationResult]:
         """
@@ -1195,7 +1194,7 @@ class Variable(CanBehaveLikeAVariable[T]):
         elif self._domain_:
             for v in self._domain_:
                 yield OperationResult(
-                    {**sources, self._id_: HashedValue(v)}, False, self
+                    {**sources, self._id_: v.value}, False, self
                 )
         elif self._should_be_instantiated_:
             yield from self._instantiate_using_child_vars_and_yield_results_(sources)
@@ -1207,18 +1206,18 @@ class Variable(CanBehaveLikeAVariable[T]):
         return self._is_inferred_ or self._predicate_type_
 
     def _instantiate_using_child_vars_and_yield_results_(
-        self, sources: Dict[int, HashedValue]
+        self, sources: Dict[int, Any]
     ) -> Iterable[OperationResult]:
         for kwargs in self._generate_combinations_for_child_vars_values_(sources):
             # Build once: unwrapped hashed kwargs for already provided child vars
             bound_kwargs = {k: v[self._child_vars_[k]._id_] for k, v in kwargs.items()}
-            instance = self._type_(**{k: hv.value for k, hv in bound_kwargs.items()})
+            instance = self._type_(**bound_kwargs)
             if self._predicate_type_ == PredicateType.SubClassOfPredicate:
                 instance = instance()
             yield self._process_output_and_update_values_(instance, kwargs)
 
     def _generate_combinations_for_child_vars_values_(
-        self, sources: Optional[Dict[int, HashedValue]] = None
+        self, sources: Optional[Dict[int, Any]] = None
     ):
         yield from generate_combinations(
             {k: var._evaluate__(sources) for k, var in self._child_vars_.items()}
@@ -1234,10 +1233,9 @@ class Variable(CanBehaveLikeAVariable[T]):
         :param kwargs: The keyword arguments of the predicate/variable.
         :return: The results' dictionary.
         """
-        hv = HashedValue(instance)
-        # kwargs is a mapping from name -> {var_id: HashedValue};
-        # we need a single dict {var_id: HashedValue}
-        values = {self._id_: hv}
+        # kwargs is a mapping from name -> {var_id: value};
+        # we need a single dict {var_id: value}
+        values = {self._id_: instance}
         for d in kwargs.values():
             values.update(d.bindings)
         return OperationResult(values, not bool(instance), self)
@@ -1322,7 +1320,7 @@ class DomainMapping(CanBehaveLikeAVariable[T], ABC):
 
     def _evaluate__(
         self,
-        sources: Optional[Dict[int, HashedValue]] = None,
+        sources: Optional[Dict[int, Any]] = None,
         parent: Optional[SymbolicExpression] = None,
     ) -> Iterable[OperationResult]:
 
@@ -1361,7 +1359,7 @@ class DomainMapping(CanBehaveLikeAVariable[T], ABC):
         )
 
     @abstractmethod
-    def _apply_mapping_(self, value: HashedValue) -> Iterable[HashedValue]:
+    def _apply_mapping_(self, value: Any) -> Iterable[Any]:
         """
         Apply the domain mapping to a symbolic value.
         """
@@ -1478,8 +1476,8 @@ class Attribute(DomainMapping):
         except ClassIsUnMappedInClassDiagram:
             return None
 
-    def _apply_mapping_(self, value: HashedValue) -> Iterable[HashedValue]:
-        yield HashedValue(getattr(value.value, self._attr_name_))
+    def _apply_mapping_(self, value: Any) -> Iterable[Any]:
+        yield getattr(value, self._attr_name_)
 
     @property
     def _name_(self):
@@ -1494,8 +1492,8 @@ class Index(DomainMapping):
 
     _key_: Any
 
-    def _apply_mapping_(self, value: HashedValue) -> Iterable[HashedValue]:
-        yield HashedValue(id_=value.id_, value=value.value[self._key_])
+    def _apply_mapping_(self, value: Any) -> Iterable[Any]:
+        yield value[self._key_]
 
     @property
     def _name_(self):
@@ -1511,13 +1509,11 @@ class Call(DomainMapping):
     _args_: Tuple[Any, ...] = field(default_factory=tuple)
     _kwargs_: Dict[str, Any] = field(default_factory=dict)
 
-    def _apply_mapping_(self, value: HashedValue) -> Iterable[HashedValue]:
+    def _apply_mapping_(self, value: Any) -> Iterable[Any]:
         if len(self._args_) > 0 or len(self._kwargs_) > 0:
-            yield HashedValue(
-                id_=value.id_, value=value.value(*self._args_, **self._kwargs_)
-            )
+            yield value(*self._args_, **self._kwargs_)
         else:
-            yield HashedValue(id_=value.id_, value=value.value())
+            yield value()
 
     @property
     def _name_(self):
@@ -1540,9 +1536,8 @@ class Flatten(DomainMapping):
         super().__post_init__()
         self._path_ = self._child_._path_
 
-    def _apply_mapping_(self, value: HashedValue) -> Iterable[HashedValue]:
-        for inner_v in value.value:
-            yield HashedValue(inner_v)
+    def _apply_mapping_(self, value: Iterable[Any]) -> Iterable[Any]:
+        yield from value
 
     @cached_property
     def _name_(self):
@@ -1616,7 +1611,7 @@ class Comparator(BinaryOperator):
 
     def _evaluate__(
         self,
-        sources: Optional[Dict[int, HashedValue]] = None,
+        sources: Optional[Dict[int, Any]] = None,
         parent: Optional[SymbolicExpression] = None,
     ) -> Iterable[OperationResult]:
         """
@@ -1651,18 +1646,18 @@ class Comparator(BinaryOperator):
         )
         if (
             self.operation in [operator.eq, operator.ne]
-            and is_iterable(left_value.value)
-            and is_iterable(right_value.value)
+            and is_iterable(left_value)
+            and is_iterable(right_value)
         ):
-            left_value = HashedValue(make_set(left_value.value))
-            right_value = HashedValue(make_set(right_value.value))
-        res = self.operation(left_value.value, right_value.value)
+            left_value = make_set(left_value)
+            right_value = make_set(right_value)
+        res = self.operation(left_value, right_value)
         self._is_false_ = not res
-        operand_values[self._id_] = HashedValue(res)
+        operand_values[self._id_] = res
         return res
 
     def get_first_second_operands(
-        self, sources: Dict[int, HashedValue]
+        self, sources: Dict[int, Any]
     ) -> Tuple[SymbolicExpression, SymbolicExpression]:
         left_has_the = any(isinstance(desc, The) for desc in self.left._descendants_)
         right_has_the = any(isinstance(desc, The) for desc in self.right._descendants_)
@@ -1715,7 +1710,7 @@ class Not(LogicalOperator[T]):
 
     def _evaluate__(
         self,
-        sources: Optional[Dict[int, HashedValue]] = None,
+        sources: Optional[Dict[int, Any]] = None,
         parent: Optional[SymbolicExpression] = None,
     ) -> Iterable[OperationResult]:
         sources = sources or {}
@@ -1747,7 +1742,7 @@ class AND(LogicalBinaryOperator):
 
     def _evaluate__(
         self,
-        sources: Optional[Dict[int, HashedValue]] = None,
+        sources: Optional[Dict[int, Any]] = None,
         parent: Optional[SymbolicExpression] = None,
     ) -> Iterable[OperationResult]:
         sources = sources or {}
@@ -1778,7 +1773,7 @@ class OR(LogicalBinaryOperator, ABC):
 
     def evaluate_left(
         self,
-        sources: Dict[int, HashedValue],
+        sources: Dict[int, Any],
     ) -> Iterable[OperationResult]:
         """
         Evaluate the left operand, taking into consideration if it should yield when it is False.
@@ -1798,7 +1793,7 @@ class OR(LogicalBinaryOperator, ABC):
                 yield OperationResult(left_value.bindings, self._is_false_, self)
 
     def evaluate_right(
-        self, sources: Dict[int, HashedValue]
+        self, sources: Dict[int, Any]
     ) -> Iterable[OperationResult]:
         """
         Evaluate the right operand.
@@ -1827,7 +1822,7 @@ class Union(OR):
 
     def _evaluate__(
         self,
-        sources: Optional[Dict[int, HashedValue]] = None,
+        sources: Optional[Dict[int, Any]] = None,
         parent: Optional[SymbolicExpression] = None,
     ) -> Iterable[OperationResult]:
         sources = sources or {}
@@ -1845,7 +1840,7 @@ class ElseIf(OR):
 
     def _evaluate__(
         self,
-        sources: Optional[Dict[int, HashedValue]] = None,
+        sources: Optional[Dict[int, Any]] = None,
         parent: Optional[SymbolicExpression] = None,
     ) -> Iterable[OperationResult]:
         """
@@ -1899,7 +1894,7 @@ class ForAll(QuantifiedConditional):
 
     def _evaluate__(
         self,
-        sources: Optional[Dict[int, HashedValue]] = None,
+        sources: Optional[Dict[int, Any]] = None,
         parent: Optional[SymbolicExpression] = None,
     ) -> Iterable[OperationResult]:
         sources = sources or {}
@@ -1925,7 +1920,7 @@ class ForAll(QuantifiedConditional):
             OperationResult({**sources, **sol}, False, self) for sol in solution_set
         ]
 
-    def get_all_candidate_solutions(self, sources: Dict[int, HashedValue]):
+    def get_all_candidate_solutions(self, sources: Dict[int, Any]):
         values_that_satisfy_condition = []
         # Evaluate the condition under this particular universal value
         for condition_val in self.condition._evaluate__(sources, parent=self):
@@ -1939,7 +1934,7 @@ class ForAll(QuantifiedConditional):
             values_that_satisfy_condition.append(condition_val_bindings)
         return values_that_satisfy_condition
 
-    def evaluate_condition(self, sources: Dict[int, HashedValue]) -> bool:
+    def evaluate_condition(self, sources: Dict[int, Any]) -> bool:
         for condition_val in self.condition._evaluate__(sources, parent=self):
             return condition_val.is_true
         return False
@@ -1958,7 +1953,7 @@ class Exists(QuantifiedConditional):
 
     def _evaluate__(
         self,
-        sources: Optional[Dict[int, HashedValue]] = None,
+        sources: Optional[Dict[int, Any]] = None,
         parent: Optional[SymbolicExpression] = None,
     ) -> Iterable[OperationResult]:
         sources = sources or {}
@@ -1966,8 +1961,8 @@ class Exists(QuantifiedConditional):
         seen_var_values = []
         for val in self.condition._evaluate__(sources, parent=self):
             var_val = val[self.variable._id_]
-            if val.is_true and var_val.value not in seen_var_values:
-                seen_var_values.append(var_val.value)
+            if val.is_true and var_val not in seen_var_values:
+                seen_var_values.append(var_val)
                 yield OperationResult(val.bindings, False, self)
 
     def _invert_(self):
@@ -2009,7 +2004,7 @@ def optimize_or(left: SymbolicExpression, right: SymbolicExpression) -> OR:
         return Union(left, right)
 
 
-def _any_of_the_kwargs_is_a_variable(bindings: Dict[str, HashedValue]) -> bool:
+def _any_of_the_kwargs_is_a_variable(bindings: Dict[str, Any]) -> bool:
     """
     :param bindings: A kwarg like dict mapping strings to objects
     :return: Rather any of the objects is a variable or not.
