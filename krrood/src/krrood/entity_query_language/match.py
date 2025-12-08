@@ -60,7 +60,7 @@ class Match(Selectable[T]):
         >>> @dataclass
         >>> class Drawer:
         >>>     body: Body
-        >>> drawer = matching(Drawer)(body=matching(Body)(name="drawer_1"))
+        >>> drawer = a(matching(Drawer)(body=matching(Body)(name="drawer_1")))
     """
 
     _type_: Optional[Type[T]] = None
