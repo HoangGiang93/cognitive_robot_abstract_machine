@@ -1,19 +1,16 @@
 import pytest
-from fontTools.varLib.interpolatableHelpers import matching_cost
 
 from krrood.entity_query_language.entity import (
     entity,
-    let, set_of,
-)
-from krrood.entity_query_language.quantify_entity import an, the, a
+    let, set_of, )
 from krrood.entity_query_language.match import (
     matching,
     match_any,
     select,
-    entity_matching,
     match_all,
 )
 from krrood.entity_query_language.predicate import HasType
+from krrood.entity_query_language.quantify_entity import the, a
 from krrood.entity_query_language.symbolic import UnificationDict, SetOf
 from ..dataset.semantic_world_like_classes import (
     FixedConnection,
@@ -56,15 +53,54 @@ def test_match(handles_and_containers_world):
 def test_select(handles_and_containers_world):
     world = handles_and_containers_world
 
-    container = matching(Container)(name="Container1")
-    handle = matching(Handle)(name="Handle1")
+    # Method 1
     fixed_connection = the(matching(FixedConnection)(
-            parent=container,
-            child=handle,
-        ).domain_from(world.connections))
-    container_and_handle = select(container:=fixed_connection.parent,
-                                  handle:=fixed_connection.child)
+        parent=matching(Container)(name="Container1"),
+        child=matching(Handle)(name="Handle1"),
+    ).domain_from(world.connections))
+    container_and_handle = select(container := fixed_connection.parent,
+                                  handle := fixed_connection.child)
 
+    # Method 2
+    fixed_connection_2 = let(FixedConnection, domain=world.connections)
+    container_and_handle_2 = the(
+        set_of((container_2 := fixed_connection_2.parent, handle_2 := fixed_connection_2.child),
+               HasType(container_2, Container),
+               HasType(handle_2, Handle),
+               container_2.name == "Container1",
+               handle_2.name == "Handle1",
+               ))
+
+    assert set(container_and_handle_2.evaluate().values()) == set(container_and_handle.evaluate().values())
+    assert isinstance(container_and_handle._expression_._child_, SetOf)
+
+    answers = container_and_handle.evaluate()
+    assert isinstance(answers, UnificationDict)
+    assert answers[container].name == "Container1"
+    assert answers[handle].name == "Handle1"
+
+
+def test_select_where(handles_and_containers_world):
+    world = handles_and_containers_world
+
+    # Method 1
+    fixed_connection = the(matching(FixedConnection)(
+        parent=matching(Container),
+        child=matching(Handle),
+    ).domain_from(world.connections))
+    container_and_handle = select(container := fixed_connection.parent,
+                                  handle := fixed_connection.child).where(container.size > 1)
+
+    # Method 2
+    fixed_connection_2 = let(FixedConnection, domain=world.connections)
+    container_and_handle_2 = the(
+        set_of((container_2 := fixed_connection_2.parent, handle_2 := fixed_connection_2.child),
+               HasType(container_2, Container),
+               HasType(handle_2, Handle),
+               container_2.size > 1
+               ))
+
+    assert set(container_and_handle_2.evaluate().values()) == set(container_and_handle.evaluate().values())
     assert isinstance(container_and_handle._expression_._child_, SetOf)
 
     answers = container_and_handle.evaluate()
@@ -120,4 +156,3 @@ def test_match_any_on_collection_returns_unique_parent_entities():
     # Expect exactly the two cabinets, no duplicates
     assert len(results) == 2
     assert {id(x) for x in results} == {id(cabinet1), id(cabinet2)}
-

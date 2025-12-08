@@ -5,7 +5,7 @@ from functools import cached_property
 
 from typing_extensions import Optional, Type, Dict, Any, List, Union, Self, Iterable, Set
 
-from krrood.entity_query_language.symbolic import Exists, ResultQuantifier, An, DomainType, Variable
+from krrood.entity_query_language.symbolic import Exists, ResultQuantifier, An, DomainType, Variable, Flatten
 from .entity import (
     ConditionType,
     contains,
@@ -266,7 +266,6 @@ class Match(Selectable[T]):
         return self._expression_.evaluate()
 
     def __getattr__(self, item):
-        attr = None
         if item not in self._attributes_:
             attr = Attribute(_child_=self._expression_, _attr_name_=item, _owner_class_=self._type_)
             return AttributeAssignedMatch(self, _attr_=attr)
