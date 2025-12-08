@@ -652,6 +652,7 @@ class World:
             connection for connection in self.connections if connection.is_controlled
         ]
 
+    # %% Adding WorldEntities to the World
     def add_connection(self, connection: Connection) -> None:
         """
         Add a connection and the entities it connects to the world.
@@ -659,16 +660,13 @@ class World:
         :param connection: The connection to add.
         """
         logger.debug(
-            f"Trying to add connection with name {connection.name} between parent {connection.parent.name} and child {connection.child.name}"
+            f"Adding connection with name {connection.name} between parent {connection.parent.name} and child {connection.child.name}"
         )
         self._raise_error_if_belongs_to_other_world(connection)
         if not self.is_connection_in_world(connection):
             self.add_kinematic_structure_entity(connection.parent)
             self.add_kinematic_structure_entity(connection.child)
             self._add_connection(connection)
-        logger.debug(
-            f"Added semantic annotation with name {connection.name} between parent {connection.parent.name} and child {connection.child.name}"
-        )
 
     @atomic_world_modification(modification=AddConnectionModification)
     def _add_connection(self, connection: Connection):
@@ -701,15 +699,12 @@ class World:
 
         :param kinematic_structure_entity: The kinematic_structure_entity to add.
         """
-        logger.debug(
+        logger.info(
             f"Trying to add kinematic_structure_entity with name {kinematic_structure_entity.name}"
         )
         self._raise_error_if_belongs_to_other_world(kinematic_structure_entity)
         if not self.is_kinematic_structure_entity_in_world(kinematic_structure_entity):
             self._add_kinematic_structure_entity(kinematic_structure_entity)
-        logger.debug(
-            f"Added kinematic_structure_entity with name {kinematic_structure_entity.name}"
-        )
 
     @atomic_world_modification(modification=AddKinematicStructureEntityModification)
     def _add_kinematic_structure_entity(
@@ -763,13 +758,10 @@ class World:
 
         :raises AddingAnExistingSemanticAnnotationError: If the semantic annotation already exists
         """
-        logger.debug(
-            f"Trying to add semantic annotation with name {semantic_annotation.name}"
-        )
+        logger.debug(f"Adding semantic annotation with name {semantic_annotation.name}")
         self._raise_error_if_belongs_to_other_world(semantic_annotation)
         if not self.is_semantic_annotation_in_world(semantic_annotation):
             self._add_semantic_annotation(semantic_annotation)
-        logger.debug(f"Added semantic annotation with name {semantic_annotation.name}")
 
     def add_semantic_annotations(
         self,
@@ -1165,9 +1157,7 @@ class World:
     def get_actuator_by_id(self, id: UUID) -> Actuator:
         return self._get_world_entity_by_hash(hash(id))
 
-    def _get_world_entity_by_hash(
-        self, entity_hash: int
-    ) -> GenericWorldEntity:
+    def _get_world_entity_by_hash(self, entity_hash: int) -> GenericWorldEntity:
         """
         Retrieve a WorldEntity by its hash.
 
@@ -1183,7 +1173,10 @@ class World:
     def is_semantic_annotation_in_world(
         self, semantic_annotation: SemanticAnnotation
     ) -> bool:
-        return semantic_annotation._world == self and semantic_annotation in self.semantic_annotations
+        return (
+            semantic_annotation._world == self
+            and semantic_annotation in self.semantic_annotations
+        )
 
     def is_body_in_world(self, body: Body) -> bool:
         return self._is_world_entity_with_hash_in_world_from_iterable(hash(body))
