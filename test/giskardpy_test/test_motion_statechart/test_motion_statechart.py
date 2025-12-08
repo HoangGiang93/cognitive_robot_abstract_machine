@@ -14,6 +14,7 @@ from giskardpy.motion_statechart.binding_policy import GoalBindingPolicy
 from giskardpy.motion_statechart.data_types import (
     LifeCycleValues,
     ObservationStateValues,
+    DefaultWeights,
 )
 from giskardpy.motion_statechart.exceptions import (
     NotInMotionStatechartError,
@@ -85,6 +86,7 @@ from semantic_digital_twin.world_description.connections import (
     RevoluteConnection,
     ActiveConnection1DOF,
     FixedConnection,
+    OmniDrive,
 )
 from semantic_digital_twin.world_description.degree_of_freedom import DegreeOfFreedom
 from semantic_digital_twin.world_description.geometry import Cylinder
@@ -1380,92 +1382,125 @@ def test_align_planes(pr2_world: World):
     ), f"AlignPlanes failed: final angle {angle:.6f} rad > threshold {align_planes.threshold:.6f} rad"
 
 
-def _run_and_get_cycles(world: World, goal_node, limit_node):
-    """
-    Build a small MSC: goal_node -> limit_node -> EndMotion, compile into an Executor,
-    run until end and return (control_cycles, executor)
-    """
-    msc = MotionStatechart()
-    msc.add_node(goal_node)
-    msc.add_node(limit_node)
+class TestVelocityTasks:
+    def _compile_and_run_until_end(self, world: "World", goal_node, limit_node):
+        """
+        Build a small MSC: goal_node -> limit_node -> EndMotion(when_true=goal_node),
+        compile into an Executor, run until end and return (control_cycles, executor)
+        """
+        msc = MotionStatechart()
+        msc.add_node(goal_node)
+        msc.add_node(limit_node)
+        msc.add_node(EndMotion.when_true(goal_node))
 
-    end = EndMotion()
-    msc.add_node(end)
-    end.start_condition = goal_node.observation_variable
+        kin_sim = Executor(world=world)
+        kin_sim.compile(motion_statechart=msc)
+        kin_sim.tick_until_end()
 
-    kin_sim = Executor(
-        world=world,
-    )
-    kin_sim.compile(motion_statechart=msc)
-    kin_sim.tick_until_end()
+        cycles = kin_sim.control_cycles
 
-    cycles = kin_sim.control_cycles
+        return cycles, kin_sim
 
-    return cycles, kin_sim
+    def test_cartesian_position_velocity_limit(self, pr2_world: World):
+        """
+        Test for the linear velocity limits.
+        """
+        tip = pr2_world.get_kinematic_structure_entity_by_name("base_footprint")
+        root = pr2_world.get_kinematic_structure_entity_by_name("odom_combined")
 
+        point = cas.Point3(1, 0, 0, reference_frame=tip)
+        position_goal = CartesianPosition(
+            root_link=root,
+            tip_link=tip,
+            goal_point=point,
+        )
 
-def test_cartesian_position_velocity_limit(pr2_world):
-    """
-    Test for the linear velocity limits.
-    """
-    tip = pr2_world.get_kinematic_structure_entity_by_name("base_footprint")
-    root = pr2_world.get_kinematic_structure_entity_by_name("odom_combined")
+        # Halving the velocity should at least double the execution time
+        usual_limit = CartesianVelocityLimit(root_link=root, tip_link=tip)
+        half_velocity_limit = CartesianVelocityLimit(
+            root_link=root,
+            tip_link=tip,
+            max_linear_velocity=(usual_limit.max_linear_velocity / 2.1),
+        )
 
-    point = cas.Point3(1, 0, 0, reference_frame=tip)
-    position_goal = CartesianPosition(root_link=root, tip_link=tip, goal_point=point)
+        loose_cycles, _ = self._compile_and_run_until_end(
+            goal_node=position_goal, limit_node=usual_limit, world=pr2_world
+        )
+        tight_cycles, _ = self._compile_and_run_until_end(
+            goal_node=position_goal, limit_node=half_velocity_limit, world=pr2_world
+        )
 
-    # Halving the velocity should at least double the execution time
-    usual_limit = CartesianVelocityLimit(root_link=root, tip_link=tip)
-    half_velocity_limit = CartesianVelocityLimit(
-        root_link=root,
-        tip_link=tip,
-        max_linear_velocity=(usual_limit.max_linear_velocity / 2.1),
-    )
+        assert (
+            tight_cycles >= 2 * loose_cycles
+        ), f"tight ({tight_cycles}) should take >= loose ({2 * loose_cycles}) control cycles"
 
-    loose_cycles, _ = _run_and_get_cycles(
-        goal_node=position_goal, limit_node=usual_limit, world=pr2_world
-    )
-    tight_cycles, _ = _run_and_get_cycles(
-        goal_node=position_goal, limit_node=half_velocity_limit, world=pr2_world
-    )
+        low_weight_limit = CartesianVelocityLimit(
+            root_link=root, tip_link=tip, weight=DefaultWeights.WEIGHT_BELOW_CA
+        )
 
-    assert (
-        tight_cycles >= 2 * loose_cycles
-    ), f"tight ({tight_cycles}) should take >= loose ({2 * loose_cycles}) control cycles"
+        self._test_observation_variable(
+            goal_node=position_goal, limit_node=low_weight_limit, world=pr2_world
+        )
 
+    def test_cartesian_rotation_velocity_limit(self, pr2_world: World):
+        """
+        Test for the angular velocity limits.
+        """
+        tip = pr2_world.get_kinematic_structure_entity_by_name("base_footprint")
+        root = pr2_world.get_kinematic_structure_entity_by_name("odom_combined")
 
-def test_cartesian_rotation_velocity_limit(pr2_world):
-    """
-    Test for the angular velocity limits.
-    """
-    tip = pr2_world.get_kinematic_structure_entity_by_name("base_footprint")
-    root = pr2_world.get_kinematic_structure_entity_by_name("odom_combined")
+        rotation = cas.RotationMatrix.from_rpy(yaw=np.pi / 2, reference_frame=tip)
+        orientation = CartesianOrientation(
+            root_link=root, tip_link=tip, goal_orientation=rotation
+        )
 
-    rotation = cas.RotationMatrix.from_rpy(yaw=np.pi / 6, reference_frame=tip)
-    orientation = CartesianOrientation(
-        root_link=root, tip_link=tip, goal_orientation=rotation
-    )
+        # Halving the velocity should at least double the execution time
+        usual_limit = CartesianVelocityLimit(
+            root_link=root, tip_link=tip, max_angular_velocity=0.3
+        )
+        half_velocity_limit = CartesianVelocityLimit(
+            root_link=root,
+            tip_link=tip,
+            max_angular_velocity=(usual_limit.max_angular_velocity / 2.1),
+        )
 
-    # Halving the velocity should at least double the execution time
-    usual_limit = CartesianVelocityLimit(
-        root_link=root, tip_link=tip, max_angular_velocity=0.3
-    )
-    half_velocity_limit = CartesianVelocityLimit(
-        root_link=root,
-        tip_link=tip,
-        max_angular_velocity=(usual_limit.max_angular_velocity / 2.1),
-    )
+        loose_cycles, _ = self._compile_and_run_until_end(
+            goal_node=orientation, limit_node=usual_limit, world=pr2_world
+        )
+        tight_cycles, _ = self._compile_and_run_until_end(
+            goal_node=orientation, limit_node=half_velocity_limit, world=pr2_world
+        )
 
-    loose_cycles, _ = _run_and_get_cycles(
-        goal_node=orientation, limit_node=usual_limit, world=pr2_world
-    )
-    tight_cycles, _ = _run_and_get_cycles(
-        goal_node=orientation, limit_node=half_velocity_limit, world=pr2_world
-    )
+        assert (
+            tight_cycles >= 2 * loose_cycles
+        ), f"tight ({tight_cycles}) should take >= loose ({2 * loose_cycles}) control cycles"
 
-    assert (
-        tight_cycles >= 2 * loose_cycles
-    ), f"tight ({tight_cycles}) should take >= loose ({2 * loose_cycles}) control cycles"
+        low_weight_limit = CartesianVelocityLimit(
+            root_link=root, tip_link=tip, weight=DefaultWeights.WEIGHT_BELOW_CA
+        )
+
+        self._test_observation_variable(
+            goal_node=orientation, limit_node=low_weight_limit, world=pr2_world
+        )
+
+    def _test_observation_variable(self, world: "World", goal_node, limit_node):
+        """
+        Tests that velocity limits observation variable is set to False when violating the velocity limit
+        """
+        msc = MotionStatechart()
+        msc.add_node(goal_node)
+        msc.add_node(limit_node)
+        cancel_motion = CancelMotion(exception=Exception("test"))
+        cancel_motion.start_condition = cas.trinary_logic_not(
+            limit_node.observation_variable
+        )
+        msc.add_node(cancel_motion)
+        msc.add_node(EndMotion.when_true(goal_node))
+
+        kin_sim = Executor(world=world)
+        kin_sim.compile(motion_statechart=msc)
+        with pytest.raises(Exception):
+            kin_sim.tick_until_end()
 
 
 def test_transition_triggers():
