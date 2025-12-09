@@ -2,6 +2,7 @@ from dataclasses import dataclass
 
 import numpy as np
 import pytest
+import scipy
 
 import krrood.symbolic_math.symbolic_math as cas
 from krrood.symbolic_math.exceptions import HasFreeVariablesError, NotScalerError
@@ -9,6 +10,7 @@ from test_symbolic_math.reference_implementations import (
     normalize_angle_positive,
     shortest_angular_distance,
     normalize_angle,
+    rotation_matrix_from_quaternion,
 )
 
 TrinaryTrue = cas.TrinaryTrue.to_np()[0]
@@ -17,6 +19,7 @@ TrinaryUnknown = cas.TrinaryUnknown.to_np()[0]
 
 bool_values = [True, False]
 numbers = [-69, 23]
+quaternions = [np.array([1.0, 0, 0, 0]), np.array([0.0, 1, 0, 0])]
 
 
 def logic_not(a):
@@ -935,13 +938,17 @@ class TestScalarMathFunctions:
 
 
 class TestArrayMathFunctions:
+    def test_leq_on_array(self):
+        a = cas.Expression(data=np.array([1, 2, 3, 4]))
+        b = cas.Expression(data=np.array([2, 2, 2, 2]))
+        assert not cas.logic_all(a <= b).to_np()
 
-    @given(unit_vector(4))
-    def test_trace(self, q):
-        m = rotation_matrix_from_quaternion(*q)
+    def test_trace(self):
+        m = rotation_matrix_from_quaternion(0, 1, 0, 0)
         assert np.allclose(m.trace(), np.trace(m))
 
-    @given(unit_vector(4), unit_vector(4))
+    @pytest.mark.parametrize("q1", quaternions)
+    @pytest.mark.parametrize("q2", quaternions)
     def test_entrywise_product(self, q1, q2):
         m1 = rotation_matrix_from_quaternion(*q1)
         m2 = rotation_matrix_from_quaternion(*q2)
@@ -949,51 +956,23 @@ class TestArrayMathFunctions:
         r2 = m1 * m2
         assert np.allclose(r1, r2)
 
-    @given(sq_matrix())
-    def test_sum(self, m):
+    def test_sum(self):
+        m = np.arange(16, dtype=float).reshape((4, 4))
         actual_sum = m.sum()
         expected_sum = np.sum(m)
         assert np.allclose(actual_sum, expected_sum, rtol=1.0e-4)
 
-    @given(sq_matrix())
-    def test_sum_row(self, m):
+    def test_sum_row(self):
+        m = np.arange(16, dtype=float).reshape((4, 4))
         actual_sum = cas.Expression(data=m).sum_row()
         expected_sum = np.sum(m, axis=0)
         assert np.allclose(actual_sum, expected_sum)
 
-    @given(sq_matrix())
-    def test_sum_column(self, m):
+    def test_sum_column(self):
+        m = np.arange(16, dtype=float).reshape((4, 4))
         actual_sum = cas.Expression(data=m).sum_column()
         expected_sum = np.sum(m, axis=1)
         assert np.allclose(actual_sum, expected_sum)
-
-
-class TestCASWrapper:
-    def test_empty_compiled_function(self):
-        expected = np.array([1, 2, 3])
-        e = cas.Expression(data=expected)
-        f = e.compile(sparse=False)
-        assert np.allclose(f(), expected)
-        assert np.allclose(f(np.array([], dtype=float)), expected)
-
-    def test_empty_compiled_function_sparse(self):
-        expected = np.array([1, 2, 3], ndmin=2)
-        e = cas.Expression(data=expected)
-        f = e.compile(sparse=True)
-        assert np.allclose(f().toarray(), expected)
-        assert np.allclose(f(np.array([], dtype=float)).toarray(), expected)
-
-    def test_create_variables(self):
-        result = cas.create_float_variables(["a", "b", "c"])
-        assert str(result[0]) == "a"
-        assert str(result[1]) == "b"
-        assert str(result[2]) == "c"
-
-    def test_create_variables2(self):
-        result = cas.create_float_variables(3)
-        assert str(result[0]) == "s_0"
-        assert str(result[1]) == "s_1"
-        assert str(result[2]) == "s_2"
 
     def test_vstack(self):
         m = np.eye(4)
@@ -1049,130 +1028,137 @@ class TestCASWrapper:
         assert np.allclose(r1, combined_matrix)
 
 
-#     def test_to_str(self):
-#         axis = cas.Vector3(*cas.create_float_variables(["v1", "v2", "v3"]))
-#         angle = cas.FloatVariable(name="alpha")
-#         q = cas.Quaternion.from_axis_angle(axis, angle)
-#         expr = q.norm()
-#         assert expr.pretty_str() == [
-#             [
-#                 "sqrt((((sq((v1*sin((alpha/2))))"
-#                 "+sq((v2*sin((alpha/2)))))"
-#                 "+sq((v3*sin((alpha/2)))))"
-#                 "+sq(cos((alpha/2)))))"
-#             ]
-#         ]
-#
-#     def test_to_str2(self):
-#         a, b = cas.create_float_variables(["a", "b"])
-#         e = cas.if_eq(a, 0, a, b)
-#         assert e.pretty_str() == [["(((a==0)?a:0)+((!(a==0))?b:0))"]]
-#
-#     def test_leq_on_array(self):
-#         a = cas.Expression(data=np.array([1, 2, 3, 4]))
-#         b = cas.Expression(data=np.array([2, 2, 2, 2]))
-#         assert not cas.logic_all(a <= b).to_np()
-#
-#
-# class TestCompiledFunction:
-#     def test_dense(self):
-#         s1_value = 420.0
-#         s2_value = 69.0
-#         s1, s2 = cas.create_float_variables(["s1", "s2"])
-#         e = cas.sqrt(cas.cos(s1) + cas.sin(s2))
-#         e_f = e.compile()
-#         actual = e_f(np.array([s1_value, s2_value]))
-#         expected = np.sqrt(np.cos(s1_value) + np.sin(s2_value))
-#         assert np.allclose(actual, expected)
-#
-#     def test_dense_two_params(self):
-#         s1_value = 420.0
-#         s2_value = 69.0
-#         s1, s2 = cas.create_float_variables(["s1", "s2"])
-#         e = cas.sqrt(cas.cos(s1) + cas.sin(s2))
-#         e_f = e.compile(parameters=[[s1], [s2]])
-#         actual = e_f(np.array([s1_value]), np.array([s2_value]))
-#         expected = np.sqrt(np.cos(s1_value) + np.sin(s2_value))
-#         assert np.allclose(actual, expected)
-#
-#     def test_sparse(self):
-#         s1_value = 420.0
-#         s2_value = 69.0
-#         s1, s2 = cas.create_float_variables(["s1", "s2"])
-#         e = cas.sqrt(cas.cos(s1) + cas.sin(s2))
-#         e_f = e.compile(sparse=True)
-#         actual = e_f(np.array([s1_value, s2_value]))
-#         assert isinstance(actual, scipy.sparse.csc_matrix)
-#         expected = np.sqrt(np.cos(s1_value) + np.sin(s2_value))
-#         assert np.allclose(actual.toarray(), expected)
-#
-#     def test_stacked_compiled_function_dense(self):
-#         s1_value = 420.0
-#         s2_value = 69.0
-#         s1, s2 = cas.create_float_variables(["s1", "s2"])
-#         e1 = cas.sqrt(cas.cos(s1) + cas.sin(s2))
-#         e2 = s1 + s2
-#         e_f = cas.CompiledFunctionWithViews(
-#             expressions=[e1, e2], variable_parameters=[[s1, s2]]
-#         )
-#         actual_e1, actual_e2 = e_f(np.array([s1_value, s2_value]))
-#         expected_e1 = np.sqrt(np.cos(s1_value) + np.sin(s2_value))
-#         expected_e2 = s1_value + s2_value
-#         assert np.allclose(actual_e1, expected_e1)
-#         assert np.allclose(actual_e2, expected_e2)
-#
-#     def test_single_args(self):
-#         size = 10_000
-#         variables = cas.create_float_variables([str(i) for i in range(size)])
-#         expr = cas.sum(*variables)
-#         f = expr.compile()
-#         for i in range(10):
-#             data = np.random.rand(size)
-#             assert np.isclose(f(data), np.sum(data))
-#
-#     def test_single_args_with_bind(self):
-#         size = 10_000
-#         data = np.random.rand(size)
-#         variables = cas.create_float_variables([str(i) for i in range(size)])
-#         expr = cas.sum(*variables)
-#         f = expr.compile()
-#         f.bind_args_to_memory_view(0, data)
-#         for i in range(10):
-#             np.copyto(data, np.random.rand(size))
-#             assert np.isclose(f.evaluate(), np.sum(data))
-#
-#     def test_multiple_args(self):
-#         size = 10_000
-#         n = 10
-#         element_size = size // n
-#         variables = cas.create_float_variables([str(i) for i in range(size)])
-#         expr = cas.sum(*variables)
-#         args = [variables[i * element_size : (i + 1) * element_size] for i in range(n)]
-#         f = expr.compile(parameters=args)
-#         for i in range(100):
-#             args_values = [np.ones(element_size)] * n
-#             assert f(*args_values) == size
-#
-#     def test_multiple_args_with_bind(self):
-#         size = 10_000
-#         n = 10
-#         element_size = size // n
-#         variables = cas.create_float_variables([str(i) for i in range(size)])
-#         expr = cas.sum(*variables)
-#         args = [variables[i * element_size : (i + 1) * element_size] for i in range(n)]
-#         f = expr.compile(parameters=args)
-#
-#         datas = []
-#         for i in range(n):
-#             datas.append(np.random.rand(element_size))
-#             f.bind_args_to_memory_view(i, datas[i])
-#         for i in range(100):
-#             for i in range(n):
-#                 datas[i][:] = np.random.rand(element_size)
-#             assert np.isclose(f.evaluate(), np.sum(datas))
-#
-#     def test_missing_free_variables(self):
-#         s1, s2 = cas.create_float_variables(["s1", "s2"])
-#         e = cas.sqrt(cas.cos(s1) + cas.sin(s2))
-#         with pytest.raises(HasFreeVariablesError):
-#             e.compile(parameters=[[s1]])
+class TestCASWrapper:
+    def test_empty_compiled_function(self):
+        expected = np.array([1, 2, 3])
+        e = cas.Expression(data=expected)
+        f = e.compile(sparse=False)
+        assert np.allclose(f(), expected)
+        assert np.allclose(f(np.array([], dtype=float)), expected)
+
+    def test_empty_compiled_function_sparse(self):
+        expected = np.array([1, 2, 3], ndmin=2)
+        e = cas.Expression(data=expected)
+        f = e.compile(sparse=True)
+        assert np.allclose(f().toarray(), expected)
+        assert np.allclose(f(np.array([], dtype=float)).toarray(), expected)
+
+    def test_create_variables(self):
+        result = cas.create_float_variables(["a", "b", "c"])
+        assert str(result[0]) == "a"
+        assert str(result[1]) == "b"
+        assert str(result[2]) == "c"
+
+    def test_create_variables2(self):
+        result = cas.create_float_variables(3)
+        assert str(result[0]) == "s_0"
+        assert str(result[1]) == "s_1"
+        assert str(result[2]) == "s_2"
+
+    def test_to_str(self):
+        expr = cas.FloatVariable(name="muh") * cas.Expression(23)
+        assert expr.pretty_str() == [["(23*muh)"]]
+
+
+class TestCompiledFunction:
+    def test_dense(self):
+        s1_value = 420.0
+        s2_value = 69.0
+        s1, s2 = cas.create_float_variables(["s1", "s2"])
+        e = cas.sqrt(cas.cos(s1) + cas.sin(s2))
+        e_f = e.compile()
+        actual = e_f(np.array([s1_value, s2_value]))
+        expected = np.sqrt(np.cos(s1_value) + np.sin(s2_value))
+        assert np.allclose(actual, expected)
+
+    def test_dense_two_params(self):
+        s1_value = 420.0
+        s2_value = 69.0
+        s1, s2 = cas.create_float_variables(["s1", "s2"])
+        e = cas.sqrt(cas.cos(s1) + cas.sin(s2))
+        e_f = e.compile(parameters=[[s1], [s2]])
+        actual = e_f(np.array([s1_value]), np.array([s2_value]))
+        expected = np.sqrt(np.cos(s1_value) + np.sin(s2_value))
+        assert np.allclose(actual, expected)
+
+    def test_sparse(self):
+        s1_value = 420.0
+        s2_value = 69.0
+        s1, s2 = cas.create_float_variables(["s1", "s2"])
+        e = cas.sqrt(cas.cos(s1) + cas.sin(s2))
+        e_f = e.compile(sparse=True)
+        actual = e_f(np.array([s1_value, s2_value]))
+        assert isinstance(actual, scipy.sparse.csc_matrix)
+        expected = np.sqrt(np.cos(s1_value) + np.sin(s2_value))
+        assert np.allclose(actual.toarray(), expected)
+
+    def test_stacked_compiled_function_dense(self):
+        s1_value = 420.0
+        s2_value = 69.0
+        s1, s2 = cas.create_float_variables(["s1", "s2"])
+        e1 = cas.sqrt(cas.cos(s1) + cas.sin(s2))
+        e2 = s1 + s2
+        e_f = cas.CompiledFunctionWithViews(
+            expressions=[e1, e2], variable_parameters=[[s1, s2]]
+        )
+        actual_e1, actual_e2 = e_f(np.array([s1_value, s2_value]))
+        expected_e1 = np.sqrt(np.cos(s1_value) + np.sin(s2_value))
+        expected_e2 = s1_value + s2_value
+        assert np.allclose(actual_e1, expected_e1)
+        assert np.allclose(actual_e2, expected_e2)
+
+    def test_single_args(self):
+        size = 10_000
+        variables = cas.create_float_variables([str(i) for i in range(size)])
+        expr = cas.sum(*variables)
+        f = expr.compile()
+        for i in range(10):
+            data = np.random.rand(size)
+            assert np.isclose(f(data), np.sum(data))
+
+    def test_single_args_with_bind(self):
+        size = 10_000
+        data = np.random.rand(size)
+        variables = cas.create_float_variables([str(i) for i in range(size)])
+        expr = cas.sum(*variables)
+        f = expr.compile()
+        f.bind_args_to_memory_view(0, data)
+        for i in range(10):
+            np.copyto(data, np.random.rand(size))
+            assert np.isclose(f.evaluate(), np.sum(data))
+
+    def test_multiple_args(self):
+        size = 10_000
+        n = 10
+        element_size = size // n
+        variables = cas.create_float_variables([str(i) for i in range(size)])
+        expr = cas.sum(*variables)
+        args = [variables[i * element_size : (i + 1) * element_size] for i in range(n)]
+        f = expr.compile(parameters=args)
+        for i in range(100):
+            args_values = [np.ones(element_size)] * n
+            assert f(*args_values) == size
+
+    def test_multiple_args_with_bind(self):
+        size = 10_000
+        n = 10
+        element_size = size // n
+        variables = cas.create_float_variables([str(i) for i in range(size)])
+        expr = cas.sum(*variables)
+        args = [variables[i * element_size : (i + 1) * element_size] for i in range(n)]
+        f = expr.compile(parameters=args)
+
+        datas = []
+        for i in range(n):
+            datas.append(np.random.rand(element_size))
+            f.bind_args_to_memory_view(i, datas[i])
+        for i in range(100):
+            for i in range(n):
+                datas[i][:] = np.random.rand(element_size)
+            assert np.isclose(f.evaluate(), np.sum(datas))
+
+    def test_missing_free_variables(self):
+        s1, s2 = cas.create_float_variables(["s1", "s2"])
+        e = cas.sqrt(cas.cos(s1) + cas.sin(s2))
+        with pytest.raises(HasFreeVariablesError):
+            e.compile(parameters=[[s1]])

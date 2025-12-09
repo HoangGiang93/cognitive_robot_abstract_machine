@@ -1785,13 +1785,13 @@ def if_eq_cases(
     else:
         return else_result
     """
-    a = to_sx(a)
-    result = to_sx(else_result)
+    a_sx = to_sx(a)
+    result_sx = to_sx(else_result)
     for b, b_result in b_result_cases:
-        b = to_sx(b)
-        b_result = to_sx(b_result)
-        result = ca.if_else(ca.eq(a, b), b_result, result)
-    return _create_return_type_for_if(a)(result)
+        b_sx = to_sx(b)
+        b_result_sx = to_sx(b_result)
+        result = ca.if_else(ca.eq(a_sx, b_sx), b_result_sx, result_sx)
+    return _create_return_type_for_if(a)(result_sx)
 
 
 def if_cases(
@@ -1807,13 +1807,12 @@ def if_cases(
     else:
         return else_result
     """
-    else_result = to_sx(else_result)
-    result = to_sx(else_result)
+    result_sx = to_sx(else_result)
     for i in reversed(range(len(cases))):
         case = to_sx(cases[i][0])
         case_result = to_sx(cases[i][1])
-        result = ca.if_else(case, case_result, result)
-    return _create_return_type_for_if(else_result)(result)
+        result_sx = ca.if_else(case, case_result, result_sx)
+    return _create_return_type_for_if(else_result)(result_sx)
 
 
 def if_less_eq_cases(
@@ -1831,13 +1830,13 @@ def if_less_eq_cases(
     else:
         return else_result
     """
-    a = to_sx(a)
-    result = to_sx(else_result)
+    a_sx = to_sx(a)
+    result_sx = to_sx(else_result)
     for i in reversed(range(len(b_result_cases))):
-        b = to_sx(b_result_cases[i][0])
-        b_result = to_sx(b_result_cases[i][1])
-        result = ca.if_else(ca.le(a, b), b_result, result)
-    return _create_return_type_for_if(a)(result)
+        b_sx = to_sx(b_result_cases[i][0])
+        b_result_sx = to_sx(b_result_cases[i][1])
+        result_sx = ca.if_else(ca.le(a_sx, b_sx), b_result_sx, result_sx)
+    return _create_return_type_for_if(a)(result_sx)
 
 
 # %% type hints
