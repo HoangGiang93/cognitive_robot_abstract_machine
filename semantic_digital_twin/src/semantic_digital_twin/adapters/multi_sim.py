@@ -1313,9 +1313,10 @@ class MujocoBuilder(MultiSimBuilder):
             mesh_rotation_matrix = mesh_transform[:3, :3]
             if numpy.linalg.det(mesh_rotation_matrix) < 0:
                 mesh_rotation_matrix = -mesh_rotation_matrix
-            mesh_rotation = Rotation.from_matrix(mesh_rotation_matrix)
-            mesh_scale = numpy.linalg.norm(mesh_rotation_matrix, axis=0)
-            mesh.scale = mesh_rotation.apply(mesh_scale)
+            mesh.scale = numpy.linalg.norm(mesh_rotation_matrix, axis=0)
+            if not numpy.allclose(mesh.scale, 1.0):
+                mesh_rotation = Rotation.from_matrix(mesh_rotation_matrix)
+                mesh.scale = mesh_rotation.apply(mesh.scale)
             mesh.scale[0] *= mesh_entity.scale.x
             mesh.scale[1] *= mesh_entity.scale.y
             mesh.scale[2] *= mesh_entity.scale.z
@@ -1472,7 +1473,7 @@ class MujocoBuilder(MultiSimBuilder):
             equality.objtype = equality_semantic_annotation.objtype
             equality.name1 = equality_semantic_annotation.name1
             equality.name2 = equality_semantic_annotation.name2
-            equality.data = equality_semantic_annotation.data
+            equality.data = [0.0] * 6 + [1.0] + [0.0] * 3 + [1.0]  # TODO: MuJoCo Bug!!!
 
     def _find_entity(
         self,

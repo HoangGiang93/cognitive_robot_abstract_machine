@@ -550,16 +550,13 @@ class MJCFParser:
                 case mujoco.mjtEq.mjEQ_JOINT:
                     self.mimic_joints[equality.name2] = equality.name1
                 case mujoco.mjtEq.mjEQ_WELD:
-                    equality_data = equality.data
-                    # if numpy.isclose(equality_data[-3:], 0.0).all():
-                    #     equality_data[-3:] = numpy.array([0.0, 0.0, 0.0, 0.0])
                     self.world.add_semantic_annotation(
                         MujocoEquality(
                             type=mujoco.mjtEq.mjEQ_WELD,
                             objtype=mujoco.mjtObj.mjOBJ_BODY,
                             name1=equality.name1,
                             name2=equality.name2,
-                            data=equality_data,
+                            data=equality.data,
                         )
                     )
                 case _:
