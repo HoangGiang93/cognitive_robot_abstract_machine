@@ -3,6 +3,8 @@ from __future__ import division
 from dataclasses import field, dataclass
 from typing import Union
 
+import numpy as np
+
 import semantic_digital_twin.spatial_types.spatial_types as cas
 from giskardpy.motion_statechart.context import BuildContext
 from giskardpy.motion_statechart.data_types import DefaultWeights
@@ -108,7 +110,7 @@ class AlignPerpendicular(FeatureFunctionGoal):
 
         artifacts.constraints.add_equality_constraint(
             reference_velocity=self.max_vel,
-            equality_bound=0 - expr,
+            equality_bound=np.pi / 2 - expr,
             weight=self.weight,
             task_expression=expr,
             name=f"{self.name}_constraint",
