@@ -18,12 +18,24 @@ logger = logging.getLogger(__name__)
 class ActionServerTask(MotionStatechartNode):
 
     action_topic: str
+    """
+    Topic name for the action server.
+    """
 
     goal_msg: Any
+    """
+    Fully specified goal message that can be send out. 
+    """
 
     node_handle: rclpy.node.Node
+    """
+    A ROS node to create the action client.
+    """
 
     _action_client: ActionClient = field(init=False)
+    """
+    ROS action client, is created in `on_start`.
+    """
 
     def on_start(self, context: ExecutionContext):
         self._action_client = ActionClient(
@@ -32,15 +44,13 @@ class ActionServerTask(MotionStatechartNode):
         logger.info(f"Waiting for action server {self.action_topic}")
         self._action_client.wait_for_server()
         logger.debug("Sending goal to action server")
-        self._action_client.send_goal(self.goal_msg)
-
-    def on_end(self, context: ExecutionContext):
-        pass
-
-    def result_callback(self, result: Any):
+        result = self._action_client.send_goal(self.goal_msg)
+        logger.info(f"Action server {self.action_topic} returned result: {result}")
         self._lifecycle_state = (
             LifeCycleValues.DONE if result.success else LifeCycleValues.FAILED
         )
 
-    def feedback_callback(self, feedback: Any):
-        self._observation_variable = feedback.feedback
+    def on_end(self, context: ExecutionContext):
+        pass
+
+
