@@ -534,7 +534,7 @@ def select(
         *variables: Any,
 ) -> Match:
     """
-    Equivalent to matching(type_) and selecting the variable to be included in the result.
+    Select the variables to be included in the result.
     """
     if not variables:
         raise ValueError("select() requires at least one variable to be provided.")
