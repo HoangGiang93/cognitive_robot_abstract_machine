@@ -22,12 +22,12 @@ from typing_extensions import (
 )
 
 from krrood.adapters.json_serializer import SubclassJSONSerializer, from_json, to_json
+from krrood.symbolic_math.exceptions import WrongDimensionsError
 from krrood.symbolic_math.symbolic_math import *
 from ..adapters.world_entity_kwargs_tracker import (
     KinematicStructureEntityKwargsTracker,
 )
 from ..exceptions import (
-    WrongDimensionsError,
     SpatialTypesError,
     SpatialTypeNotJsonSerializable,
 )
