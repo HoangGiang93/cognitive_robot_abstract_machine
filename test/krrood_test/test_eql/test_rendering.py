@@ -41,7 +41,8 @@ def test_render_rx_graph_as_igraph_simple(handles_and_containers_world):
     handle = fixed_connection.child
     rule = an(
         entity(
-            inference(Drawer)(handle=handle, container=container, world=world),
+            inference(Drawer)(handle=handle, container=container, world=world)
+        ).where(
             HasType(handle, Handle),
         )
     )
@@ -67,9 +68,9 @@ def test_render_rx_graph_as_igraph_complex(doors_and_drawers_world):
     )
     prismatic_connection = var(PrismaticConnection, domain=world.connections)
     revolute_connection = var(RevoluteConnection, domain=world.connections)
+    views = var(View, domain=None, inferred=True)
     rule = an(
-        entity(
-            views := var(View, domain=None),
+        entity(views).where(
             fixed_connection_condition,
             prismatic_connection.child == body,
         )
