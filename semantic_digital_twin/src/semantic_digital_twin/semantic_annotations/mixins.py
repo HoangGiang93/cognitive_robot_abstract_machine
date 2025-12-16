@@ -217,27 +217,10 @@ class HasBody(SemanticAnnotation, ABC):
         """
         Create a new semantic annotation with a new body in the given world.
         If you need more parameters for your subclass, please override this method similar.
-        If you override this method, to ensure its LSP compliant, copy the arguments ofthis method, namely
-        name, world, parent, parent_T_self, then add a *, to force all your additional arguments to be keyword arguments,
-        and give those default values.
+        If you override this method, to ensure its LSP compliant, use keyword arguments as
+        described in PEP3102 https://peps.python.org/pep-3102/.
 
-        An example of this can be seen in the HasCase subclass that takes a scale and wall_thickness as well, which
-        has a signature similar to this:
-
-        ----
-        @classmethod
-        def create_with_new_body_in_world(
-            cls,
-            name: PrefixedName,
-            world: World,
-            parent: KinematicStructureEntity,
-            parent_T_self: Optional[TransformationMatrix] = None,
-            *,
-            scale: Scale = Scale(),
-            wall_thickness: float = 0.01,
-        ) -> Self:
-        ----
-
+        An example of this can be seen in HasCase.create_with_new_body_in_world.
         """
         slider_body = Body(name=name)
 
