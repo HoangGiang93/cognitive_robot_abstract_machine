@@ -1,8 +1,8 @@
 import logging
 from dataclasses import field
 
-from krrood.entity_query_language.quantify_entity import an
-from krrood.entity_query_language.entity import entity, let, in_, inference
+from krrood.entity_query_language.entity_result_processors import an
+from krrood.entity_query_language.entity import entity, variable, in_, inference
 from numpy.ma.testutils import (
     assert_equal,
 )  # You could replace this with numpy's regular assert for better compatibility
@@ -136,9 +136,11 @@ def test_aggregate_bodies(kitchen_world):
 
 
 def test_handle_semantic_annotation_eql(apartment_world):
-    body = let(type_=Body, domain=apartment_world.bodies)
+    body = variable(type_=Body, domain=apartment_world.bodies)
     query = an(
-        entity(inference(Handle)(body=body), in_("handle", body.name.name.lower()))
+        entity(inference(Handle)(body=body)).where(
+            in_("handle", body.name.name.lower())
+        )
     )
 
     handles = list(query.evaluate())
