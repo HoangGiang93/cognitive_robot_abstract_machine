@@ -63,7 +63,11 @@ from giskardpy.motion_statechart.tasks.cartesian_tasks import (
     CartesianPositionVelocityLimit,
     CartesianRotationVelocityLimit,
 )
-from giskardpy.motion_statechart.tasks.feature_functions import AngleGoal
+from giskardpy.motion_statechart.tasks.feature_functions import (
+    AngleGoal,
+    HeightGoal,
+    DistanceGoal,
+)
 from giskardpy.motion_statechart.tasks.joint_tasks import JointPositionList, JointState
 from giskardpy.motion_statechart.tasks.pointing import Pointing, PointingCone
 from giskardpy.motion_statechart.test_nodes.test_nodes import (
@@ -1304,8 +1308,6 @@ class TestCartesianTasks:
         fk = pr2_world.compute_forward_kinematics_np(root, tip)
         assert np.allclose(fk, tip_goal.to_np(), atol=cart_goal.threshold)
 
-    # ===== NEW TESTS =====
-
     def test_cartesian_position_sequence_at_build(self, pr2_world: World):
         """Test CartesianPosition with Bind_at_build policy."""
         tip = pr2_world.get_kinematic_structure_entity_by_name("base_footprint")
@@ -1490,12 +1492,8 @@ class TestCartesianTasks:
 
     def test_cartesian_position_straight(self, pr2_world: World):
         """Test CartesianPositionStraight basic functionality."""
-        tip = pr2_world.get_kinematic_structure_entity_by_name(
-            "base_footprint"
-        )  # CHANGED
-        root = pr2_world.get_kinematic_structure_entity_by_name(
-            "odom_combined"
-        )  # CHANGED
+        tip = pr2_world.get_kinematic_structure_entity_by_name("base_footprint")
+        root = pr2_world.get_kinematic_structure_entity_by_name("odom_combined")
 
         goal_point = cas.Point3(0.1, 0, 0, reference_frame=tip)
 
