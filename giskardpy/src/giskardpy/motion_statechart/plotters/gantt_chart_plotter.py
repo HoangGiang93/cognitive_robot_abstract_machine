@@ -171,7 +171,7 @@ class HistoryGanttChartPlotter:
         start_idx = 0
         for idx, next_state in zip(control_cycle_indices[1:], history[1:]):
             if current_state != next_state:
-                life_cycle_width = (idx + 1 - start_idx) * self._seconds_per_cycle
+                life_cycle_width = (idx - start_idx) * self._seconds_per_cycle
                 self._draw_block(
                     node_idx=node_idx,
                     block_start=start_idx * self._seconds_per_cycle,
@@ -179,7 +179,7 @@ class HistoryGanttChartPlotter:
                     color=color_map[current_state],
                     top=top,
                 )
-                start_idx = idx + 1
+                start_idx = idx
                 current_state = next_state
         last_idx = control_cycle_indices[-1]
         life_cycle_width = (last_idx - start_idx) * self._seconds_per_cycle
@@ -231,7 +231,7 @@ class HistoryGanttChartPlotter:
                 np.arange(
                     0,
                     total_cycles + 1,
-                    max(1, (total_cycles - 0 + 1) // 10),
+                    max(1, (total_cycles + 1) // 10),
                 )
             )
         plt.ylabel("Nodes")
@@ -244,7 +244,13 @@ class HistoryGanttChartPlotter:
                 return node.unique_name
             diff = depth - prev_depth
             if diff > 0:
-                return "│  " * (depth - diff) + "└─ " * diff + node.unique_name
+                return (
+                    "│  " * (depth - diff)
+                    + "└─"
+                    * (diff - 1)  # no space because the formatting is weird otherwise
+                    + "└─ "
+                    + node.unique_name
+                )
             else:
                 return "│  " * (depth - 1) + "├─ " + node.unique_name
 
