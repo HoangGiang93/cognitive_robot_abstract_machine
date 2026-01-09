@@ -1,10 +1,9 @@
-from dataclasses import fields, is_dataclass
+from typing import List
 from datetime import datetime
-from enum import Enum
-from typing import Type, List, Union, Sequence, get_origin, get_args, get_type_hints
-
-from random_events.set import Set
 from random_events.variable import Continuous, Integer, Symbolic, Variable
+from random_events.set import Set
+from ..class_diagrams.class_diagram import WrappedClass
+from ..class_diagrams.wrapped_field import WrappedField
 from probabilistic_model.probabilistic_circuit.rx.helper import fully_factorized
 from probabilistic_model.probabilistic_circuit.rx.probabilistic_circuit import (
     ProbabilisticCircuit,
@@ -13,88 +12,64 @@ from probabilistic_model.probabilistic_circuit.rx.probabilistic_circuit import (
 
 class Parameterizer:
     """
-    Parameterizer for extracting probabilistic variables from wrapped dataclass schemas.
-
-    The Parameterizer operates on *dataclass types*, not instances.
-    This ensures plan-agnostic, declarative variable extraction suitable for
-    probabilistic reasoning and learning.
+    Parameterizer for creating random event variables from WrappedClass instances.
     """
 
-    def __call__(self, wrapped_class: Type) -> List[Variable]:
-        """
-        Extract variables from a wrapped dataclass schema.
+    def __init__(self):
+        self._variables: List[Variable] = []
 
-        :param wrapped_class: Dataclass type defining parameter schema
-        :return: List of random_events Variables
+    def __call__(self, wrapped_class: WrappedClass) -> List[Variable]:
         """
-        if not is_dataclass(wrapped_class):
-            raise TypeError(
-                f"Parameterizer expects a dataclass type, got {wrapped_class}"
-            )
-
-        return self._parameterize_class(
-            wrapped_class,
-            wrapped_class.__name__,
+        Parameterize a WrappedClass instance and return its variables.
+        """
+        self._variables = []
+        self._parameterize_wrapped_class(
+            wrapped_class, prefix=wrapped_class.clazz.__name__
         )
+        return self._variables
 
-    def _parameterize_class(self, cls: Type, prefix: str) -> List[Variable]:
+    def _parameterize_wrapped_class(self, wrapped_class: WrappedClass, prefix: str):
         """
-        Recursively extract variables from a dataclass.
+        Parameterize all fields of a WrappedClass recursively.
         """
-        variables: List[Variable] = []
-        type_hints = get_type_hints(cls)
+        for wrapped_field in wrapped_class.fields:
+            self._parameterize_wrapped_field(wrapped_field, prefix)
 
-        for field in fields(cls):
-            field_type = type_hints[field.name]
-            qualified_name = f"{prefix}.{field.name}"
-            variables.extend(self._parameterize_type(field_type, qualified_name))
-
-        return variables
-
-    def _parameterize_type(self, typ: Type, prefix: str) -> List[Variable]:
+    def _parameterize_wrapped_field(self, wrapped_field: WrappedField, prefix: str):
         """
-        Convert a type annotation into random event variables.
+        Parameterize a single WrappedField.
         """
-        variables: List[Variable] = []
-        unsupported_types = (datetime,)
-        if typ in unsupported_types:
-            return []
+        field_name = f"{prefix}.{wrapped_field.name}"
+        endpoint_type = wrapped_field.type_endpoint
 
-        origin = get_origin(typ)
-        args = get_args(typ)
+        if endpoint_type is datetime:
+            return
 
-        if origin is Union:
-            typ = next(a for a in args if a is not type(None))
-        origin = get_origin(typ)
-        args = get_args(typ)
-        if origin in (list, List, Sequence):
-            typ = args[0]
+        if wrapped_field.is_optional:
+            endpoint_type = wrapped_field.contained_type
 
-        if is_dataclass(typ):
-            for f in fields(typ):
-                variables.extend(
-                    self._parameterize_type(
-                        get_type_hints(typ)[f.name],
-                        f"{prefix}.{f.name}",
-                    )
+        if (
+            wrapped_field.is_one_to_one_relationship
+            and wrapped_field.clazz._class_diagram
+        ):
+            if not wrapped_field.is_enum:
+                target_wrapped_class: WrappedClass = (
+                    wrapped_field.clazz._class_diagram.get_wrapped_class(endpoint_type)
                 )
+                self._parameterize_wrapped_class(
+                    target_wrapped_class, prefix=field_name
+                )
+                return
 
-        elif issubclass(typ, bool):
-            variables.append(Symbolic(prefix, Set.from_iterable([True, False])))
+        if wrapped_field.is_enum:
+            enum_values = list(endpoint_type)
+            self._variables.append(Symbolic(field_name, Set.from_iterable(enum_values)))
 
-        elif issubclass(typ, Enum):
-            variables.append(Symbolic(prefix, Set.from_iterable(list(typ))))
+        elif endpoint_type == int:
+            self._variables.append(Integer(field_name))
 
-        elif issubclass(typ, int):
-            variables.append(Integer(prefix))
-
-        elif issubclass(typ, float):
-            variables.append(Continuous(prefix))
-
-        else:
-            raise NotImplementedError(f"No variable mapping for type {typ}")
-
-        return variables
+        elif endpoint_type == float:
+            self._variables.append(Continuous(field_name))
 
     def create_fully_factorized_distribution(
         self,
