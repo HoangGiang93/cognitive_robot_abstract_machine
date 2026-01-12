@@ -68,8 +68,14 @@ class IsPerceivable:
 
 @dataclass(eq=False)
 class HasRootKinematicStructureEntity(SemanticAnnotation, ABC):
+    """
+    Base class for shared method for HasRootBody and HasRootRegion.
+    """
 
     root: KinematicStructureEntity = field(kw_only=True)
+    """
+    The root kinematic structure entity of the semantic annotation.
+    """
 
     @classproperty
     def _parent_connection_type(self) -> Type[Connection]:
@@ -92,6 +98,20 @@ class HasRootKinematicStructureEntity(SemanticAnnotation, ABC):
         connection_multiplier: float = 1.0,
         connection_offset: float = 0.0,
     ):
+        """
+        Create a new instance and connect its root entity to the world's root.
+
+        :param connection_type: The type of connection to use.
+        :param name: The name of the semantic annotation.
+        :param world: The world to add the annotation and entity to.
+        :param kinematic_structure_entity: The root entity of the semantic annotation.
+        :param world_root_T_self: The initial pose of the entity in the world root frame.
+        :param connection_limits: The limits for the connection's degrees of freedom.
+        :param active_axis: The active axis for the connection.
+        :param connection_multiplier: The multiplier for the connection.
+        :param connection_offset: The offset for the connection.
+        :return: The created semantic annotation instance.
+        """
         if connection_type is None:
             raise ValueError(
                 f"connection_type must not be None. You probably forgot to set the class variable "
@@ -147,7 +167,12 @@ class HasRootKinematicStructureEntity(SemanticAnnotation, ABC):
     def _generate_default_dof_limits(
         cls, active_connection_type: Type[ActiveConnection1DOF]
     ) -> DegreeOfFreedomLimits:
-        """ """
+        """
+        Generate default degree of freedom limits for a given connection type.
+
+        :param active_connection_type: The type of connection to generate limits for.
+        :return: The generated degree of freedom limits.
+        """
         lower_limits = DerivativeMap[float]()
         upper_limits = DerivativeMap[float]()
         if active_connection_type == PrismaticConnection:
@@ -165,6 +190,12 @@ class HasRootKinematicStructureEntity(SemanticAnnotation, ABC):
         self,
         parent_kinematic_structure_entity: KinematicStructureEntity,
     ) -> HomogeneousTransformationMatrix:
+        """
+        Calculate the transformation matrix from a new parent entity to this entity.
+
+        :param parent_kinematic_structure_entity: The new parent entity.
+        :return: The transformation matrix from the new parent to this entity.
+        """
         return (
             parent_kinematic_structure_entity.global_pose.inverse()
             @ self.root.global_pose
@@ -174,6 +205,12 @@ class HasRootKinematicStructureEntity(SemanticAnnotation, ABC):
         self,
         child_kinematic_structure_entity: KinematicStructureEntity,
     ) -> HomogeneousTransformationMatrix:
+        """
+        Calculate the transformation matrix from this entity to a new child entity.
+
+        :param child_kinematic_structure_entity: The new child entity.
+        :return: The transformation matrix from this entity to the new child.
+        """
         return (
             self.root.global_pose.inverse()
             @ child_kinematic_structure_entity.global_pose
@@ -183,6 +220,12 @@ class HasRootKinematicStructureEntity(SemanticAnnotation, ABC):
         self,
         parent_kinematic_structure_entity: KinematicStructureEntity,
     ):
+        """
+        Determine the new grandparent entity when changing the kinematic structure.
+
+        :param parent_kinematic_structure_entity: The entity that will be the new parent.
+        :return: The entity that will be the new grandparent.
+        """
         grandparent_kinematic_structure_entity = (
             parent_kinematic_structure_entity.parent_connection.parent
         )
@@ -197,6 +240,11 @@ class HasRootKinematicStructureEntity(SemanticAnnotation, ABC):
         self,
         new_parent_entity: KinematicStructureEntity,
     ):
+        """
+        Attach a new parent entity to this entity in the kinematic structure.
+
+        :param new_parent_entity: The new parent entity to attach.
+        """
         if new_parent_entity._world != self._world:
             raise ValueError(
                 "Semantic annotation must be part of the same world as the parent."
@@ -222,6 +270,11 @@ class HasRootKinematicStructureEntity(SemanticAnnotation, ABC):
         self,
         child_kinematic_structure_entity: KinematicStructureEntity,
     ):
+        """
+        Attach a new child entity to this entity in the kinematic structure.
+
+        :param child_kinematic_structure_entity: The new child entity to attach.
+        """
         if child_kinematic_structure_entity._world != self._world:
             raise ValueError("Hinge must be part of the same world as the door.")
 
@@ -253,9 +306,15 @@ class HasRootBody(HasRootKinematicStructureEntity, ABC):
     """
 
     root: Body = field(kw_only=True)
+    """
+    The root body of the semantic annotation.
+    """
 
     @property
     def bodies(self) -> Iterable[Body]:
+        """
+        The bodies that are part of the semantic annotation.
+        """
         return [self.root]
 
     @classmethod
@@ -272,11 +331,15 @@ class HasRootBody(HasRootKinematicStructureEntity, ABC):
     ) -> Self:
         """
         Create a new semantic annotation with a new body in the given world.
-        If you need more parameters for your subclass, please override this method similar.
-        If you override this method, to ensure its LSP compliant, use keyword arguments as
-        described in PEP3102 https://peps.python.org/pep-3102/.
 
-        An example of this can be seen in HasCase.create_with_new_body_in_world.
+        :param name: The name of the semantic annotation.
+        :param world: The world to add the annotation and body to.
+        :param world_root_T_self: The initial pose of the body in the world root frame.
+        :param connection_limits: The limits for the connection's degrees of freedom.
+        :param active_axis: The active axis for the connection.
+        :param connection_multiplier: The multiplier for the connection.
+        :param connection_offset: The offset for the connection.
+        :return: The created semantic annotation instance.
         """
         body = Body(name=name)
 
@@ -300,9 +363,15 @@ class HasRootRegion(HasRootKinematicStructureEntity, ABC):
     """
 
     root: Region = field(kw_only=True)
+    """
+    The root region of the semantic annotation.
+    """
 
     @property
     def regions(self) -> Iterable[Region]:
+        """
+        The regions that are part of the semantic annotation.
+        """
         return [self.root]
 
     @classmethod
@@ -319,6 +388,15 @@ class HasRootRegion(HasRootKinematicStructureEntity, ABC):
     ) -> Self:
         """
         Create a new semantic annotation with a new region in the given world.
+
+        :param name: The name of the semantic annotation.
+        :param world: The world to add the annotation and region to.
+        :param world_root_T_self: The initial pose of the region in the world root frame.
+        :param connection_limits: The limits for the connection's degrees of freedom.
+        :param active_axis: The active axis for the connection.
+        :param connection_multiplier: The multiplier for the connection.
+        :param connection_offset: The offset for the connection.
+        :return: The created semantic annotation instance.
         """
         region = Region(name=name)
 
@@ -337,20 +415,31 @@ class HasRootRegion(HasRootKinematicStructureEntity, ABC):
 
 @dataclass(eq=False)
 class HasApertures(HasRootBody, ABC):
+    """
+    A mixin class for semantic annotations that have apertures.
+    """
 
     apertures: List[Aperture] = field(default_factory=list, hash=False, kw_only=True)
+    """
+    The apertures of the semantic annotation.
+    """
 
     def add_aperture(self, aperture: Aperture):
         """
         Cuts a hole in the semantic annotation's body for the given body annotation.
 
-        :param body_annotation: The body annotation to cut a hole for.
+        :param aperture: The aperture to cut a hole for.
         """
         self._remove_aperture_geometry_from_parent(aperture)
         self._attach_child_entity_in_kinematic_structure(aperture.root)
         self.apertures.append(aperture)
 
     def _remove_aperture_geometry_from_parent(self, aperture: Aperture):
+        """
+        Remove the geometry of the aperture from the parent body's collision and visual geometry.
+
+        :param aperture: The aperture whose geometry should be removed.
+        """
         hole_event = aperture.root.area.as_bounding_box_collection_in_frame(
             self.root
         ).event
@@ -372,13 +461,18 @@ class HasHinge(HasRootBody, ABC):
     """
 
     hinge: Optional[Hinge] = field(init=False, default=None)
+    """
+    The hinge of the semantic annotation.
+    """
 
     def add_hinge(
         self,
         hinge: Hinge,
     ):
         """
-        Adds a door to the parent world using a new door hinge body with a revolute connection.
+        Add a hinge to the semantic annotation.
+
+        :param hinge: The hinge to add.
         """
         self._attach_parent_entity_in_kinematic_structure(
             hinge.root,
@@ -389,22 +483,22 @@ class HasHinge(HasRootBody, ABC):
 @dataclass(eq=False)
 class HasSlider(HasRootKinematicStructureEntity, ABC):
     """
-    A mixin class for semantic annotations that have hinge joints.
+    A mixin class for semantic annotations that have slider joints.
     """
 
     slider: Optional[Slider] = field(init=False, default=None)
+    """
+    The slider of the semantic annotation.
+    """
 
     def add_slider(
         self,
         slider: Slider,
     ):
         """
-        Adds a door to the parent world using a new door hinge body with a revolute connection.
+        Add a slider to the semantic annotation.
 
-        :param door_factory: The factory used to create the door.
-        :param parent_T_hinge: The transformation matrix defining the door's position and orientation relative
-        to the parent world.
-        :param parent_world: The world to which the door will be added.
+        :param slider: The slider to add.
         """
         self._attach_parent_entity_in_kinematic_structure(
             slider.root,
@@ -419,18 +513,18 @@ class HasDrawers(HasRootKinematicStructureEntity, ABC):
     """
 
     drawers: List[Drawer] = field(default_factory=list, hash=False, kw_only=True)
+    """
+    The drawers of the semantic annotation.
+    """
 
     def add_drawer(
         self,
         drawer: Drawer,
     ):
         """
-        Adds a door to the parent world using a new door hinge body with a revolute connection.
+        Add a drawer to the semantic annotation.
 
-        :param door_factory: The factory used to create the door.
-        :param parent_T_door: The transformation matrix defining the door's position and orientation relative
-        to the parent world.
-        :param parent_world: The world to which the door will be added.
+        :param drawer: The drawer to add.
         """
 
         self._attach_child_entity_in_kinematic_structure(drawer.root)
@@ -444,18 +538,18 @@ class HasDoors(HasRootKinematicStructureEntity, ABC):
     """
 
     doors: List[Door] = field(default_factory=list, hash=False, kw_only=True)
+    """
+    The doors of the semantic annotation.
+    """
 
     def add_door(
         self,
         door: Door,
     ):
         """
-        Adds a door to the parent world using a new door hinge body with a revolute connection.
+        Add a door to the semantic annotation.
 
-        :param door_factory: The factory used to create the door.
-        :param parent_T_door: The transformation matrix defining the door's position and orientation relative
-        to the parent world.
-        :param parent_world: The world to which the door will be added.
+        :param door: The door to add.
         """
 
         self._attach_child_entity_in_kinematic_structure(door.root)
@@ -464,14 +558,28 @@ class HasDoors(HasRootKinematicStructureEntity, ABC):
 
 @dataclass(eq=False)
 class HasLeftRightDoor(HasDoors):
+    """
+    A mixin class for semantic annotations that have a left and a right door.
+    """
 
     left_door: Optional[Door] = None
+    """
+    The left door of the semantic annotation.
+    """
     right_door: Optional[Door] = None
+    """
+    The right door of the semantic annotation.
+    """
 
     def add_right_door(
         self,
         door: Door,
     ):
+        """
+        Add a right door to the semantic annotation.
+
+        :param door: The door to add.
+        """
         self.add_door(door)
         self.right_door = door
 
@@ -479,12 +587,20 @@ class HasLeftRightDoor(HasDoors):
         self,
         door: Door,
     ):
+        """
+        Add a left door to the semantic annotation.
+
+        :param door: The door to add.
+        """
         self.add_door(door)
         self.left_door = door
 
 
 @dataclass(eq=False)
 class HasHandle(HasRootBody, ABC):
+    """
+    A mixin class for semantic annotations that have a handle.
+    """
 
     handle: Optional[Handle] = None
     """
@@ -498,9 +614,7 @@ class HasHandle(HasRootBody, ABC):
         """
         Adds a handle to the parent world with a fixed connection.
 
-        :param parent_T_handle: The transformation matrix defining the handle's position and orientation relative
-        to the parent world.
-        :param parent_world: The world to which the handle will be added.
+        :param handle: The handle to add.
         """
         self._attach_child_entity_in_kinematic_structure(
             handle.root,
@@ -515,6 +629,9 @@ class HasSupportingSurface(HasRootBody, ABC):
     """
 
     supporting_surface: Region = field(init=False, default=None)
+    """
+    The supporting surface region of the semantic annotation.
+    """
 
     def calculate_supporting_surface(
         self,
@@ -522,6 +639,13 @@ class HasSupportingSurface(HasRootBody, ABC):
         clearance_threshold: float = 0.5,
         min_surface_area: float = 0.0225,  # 15cm x 15cm
     ):
+        """
+        Calculate and set the supporting surface region for the semantic annotation.
+
+        :param upward_threshold: The threshold for the face normal to be considered upward-facing.
+        :param clearance_threshold: The threshold for the vertical clearance above the surface.
+        :param min_surface_area: The minimum area for a surface to be considered a supporting surface.
+        """
         mesh = self.root.combined_mesh
         if mesh is None:
             return
@@ -592,10 +716,10 @@ class HasSupportingSurface(HasRootBody, ABC):
 
     def points_on_surface(self, amount: int = 100) -> List[Point3]:
         """
-        Get points that are on the table.
+        Get points that are on the surface.
 
-        :amount: The number of points to return.
-        :returns: A list of points that are on the table.
+        :param amount: The number of points to return.
+        :return: A list of points that are on the surface.
         """
         area_of_table = BoundingBoxCollection.from_shapes(self.root.collision)
         event = area_of_table.event
@@ -611,10 +735,17 @@ class HasSupportingSurface(HasRootBody, ABC):
 
 @dataclass(eq=False)
 class HasCaseAsRootBody(HasSupportingSurface, ABC):
+    """
+    A mixin class for semantic annotations that have a case as root body.
+    """
 
     @classproperty
     @abstractmethod
-    def opening_direction(self) -> Direction: ...
+    def opening_direction(self) -> Direction:
+        """
+        The direction in which the case is open.
+        """
+        ...
 
     @classmethod
     def create_with_new_body_in_world(
@@ -630,6 +761,20 @@ class HasCaseAsRootBody(HasSupportingSurface, ABC):
         scale: Scale = Scale(),
         wall_thickness: float = 0.01,
     ) -> Self:
+        """
+        Create a new semantic annotation with a new body in the given world.
+
+        :param name: The name of the semantic annotation.
+        :param world: The world to add the annotation and body to.
+        :param world_root_T_self: The initial pose of the body in the world root frame.
+        :param connection_limits: The limits for the connection's degrees of freedom.
+        :param active_axis: The active axis for the connection.
+        :param connection_multiplier: The multiplier for the connection.
+        :param connection_offset: The offset for the connection.
+        :param scale: The scale of the case.
+        :param wall_thickness: The thickness of the case walls.
+        :return: The created semantic annotation instance.
+        """
         container_event = cls._create_container_event(scale, wall_thickness)
 
         body = Body(name=name)
@@ -654,6 +799,10 @@ class HasCaseAsRootBody(HasSupportingSurface, ABC):
     def _create_container_event(cls, scale: Scale, wall_thickness: float) -> Event:
         """
         Return an event representing a container with walls of a specified thickness.
+
+        :param scale: The scale of the container.
+        :param wall_thickness: The thickness of the walls.
+        :return: The event representing the container.
         """
         outer_box = scale.to_simple_event()
         inner_box = Scale(

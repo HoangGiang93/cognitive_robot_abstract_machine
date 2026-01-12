@@ -10,7 +10,7 @@ from typing_extensions import List, TYPE_CHECKING, Union, Optional, Dict, Any, S
 
 from krrood.adapters.json_serializer import from_json, to_json
 from .connection_properties import JointDynamics
-from .degree_of_freedom import DegreeOfFreedom, DegreeOfFreedomLimits
+from .degree_of_freedom import DegreeOfFreedom
 from .world_entity import CollisionCheckingConfig, Connection, KinematicStructureEntity
 from ..adapters.world_entity_kwargs_tracker import (
     KinematicStructureEntityKwargsTracker,
@@ -182,7 +182,6 @@ class ActiveConnection1DOF(ActiveConnection, ABC):
         name: Optional[PrefixedName] = None,
         multiplier: float = 1.0,
         offset: float = 0.0,
-        limits: Optional[DegreeOfFreedomLimits] = None,
         *args,
         **kwargs,
     ) -> Self:
