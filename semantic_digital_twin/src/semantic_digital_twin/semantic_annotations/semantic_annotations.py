@@ -28,7 +28,7 @@ from .mixins import (
 )
 from ..datastructures.prefixed_name import PrefixedName
 from ..datastructures.variables import SpatialVariables
-from ..exceptions import InvalidPlaneDimensions
+from ..exceptions import InvalidPlaneDimensions, InvalidAxisError
 from ..reasoning.predicates import InsideOf
 from ..spatial_types import Point3, HomogeneousTransformationMatrix, Vector3
 from ..utils import Direction
@@ -266,7 +266,7 @@ class Door(HasHandle, HasHinge):
         return door
 
     def calculate_world_T_hinge_based_on_handle(
-        self,
+        self, opening_axis: Vector3
     ) -> HomogeneousTransformationMatrix:
         """
         Calculate the door pivot point based on the handle position and the door scale. The pivot point is on the opposite
@@ -275,23 +275,33 @@ class Door(HasHandle, HasHinge):
         """
         if self.handle is None:
             raise ValueError("Door has no handle.")
-        connection = self.handle.root.parent_connection
-        door_P_handle: NDArray[float] = (
-            connection.origin_expression.to_position().to_np()
-        )
 
-        sign = np.sign(door_P_handle[1]) if door_P_handle[1] != 0 else 1
         door_collision = self.root.collision
         if len(door_collision) != 1:
             raise ValueError("Door has more than one collision shape.")
 
-        scale = door_collision[0].local_frame_bounding_box.scale
-        offset = sign * (scale.y / 2)
-        world_P_hinge = self.root.global_pose.to_np()[:3, 3] + np.array([0, offset, 0])
-
-        world_T_hinge = HomogeneousTransformationMatrix.from_point_rotation_matrix(
-            Point3(*world_P_hinge)
+        connection = self.handle.root.parent_connection
+        door_P_handle: NDArray[float] = (
+            connection.origin_expression.to_position().to_np()
         )
+        scale = self.root.collision.scale
+        world_T_door = self.root.global_pose
+
+        match opening_axis.to_np().tolist():
+            case [0, 1, 0, 0]:
+                sign = np.sign(-1 * door_P_handle[2]) if door_P_handle[2] != 0 else 1
+                offset = sign * (scale.z / 2)
+                door_T_hinge = HomogeneousTransformationMatrix.from_xyz_rpy(z=offset)
+
+            case [0, 0, 1, 0]:
+                sign = np.sign(-1 * door_P_handle[1]) if door_P_handle[1] != 0 else 1
+                offset = sign * (scale.y / 2)
+                door_T_hinge = HomogeneousTransformationMatrix.from_xyz_rpy(y=offset)
+
+            case _:
+                raise InvalidAxisError(axis=opening_axis)
+
+        world_T_hinge = world_T_door @ door_T_hinge
 
         return world_T_hinge
 

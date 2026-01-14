@@ -7,7 +7,6 @@ from pathlib import Path
 from typing import Dict, Tuple, Union, Set, Optional, List, Any, Self
 
 import numpy as np
-from numpy._typing import NDArray
 from sqlalchemy import select
 from sqlalchemy.exc import NoResultFound, MultipleResultsFound
 from sqlalchemy.orm import Session

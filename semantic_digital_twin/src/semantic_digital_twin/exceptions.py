@@ -140,8 +140,7 @@ class InvalidPlaneDimensions(UsageError):
 class MissingSemanticPositionError(UsageError):
 
     def __post_init__(self):
-        msg = f"Semantic position is missing."
-        super().__init__(msg)
+        self.message = f"Semantic position is missing."
 
 
 @dataclass
@@ -149,8 +148,7 @@ class InvalidAxisError(UsageError):
     axis: Vector3
 
     def __post_init__(self):
-        msg = f"Invalid axis {self.axis}."
-        super().__init__(msg)
+        self.message = f"Invalid axis {self.axis}."
 
 
 @dataclass

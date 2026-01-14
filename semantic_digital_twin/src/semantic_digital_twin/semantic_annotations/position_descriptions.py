@@ -5,7 +5,7 @@ from dataclasses import dataclass
 
 from enum import Enum
 from functools import reduce
-from typing import List, Tuple, Union
+from typing import List, Tuple
 
 from probabilistic_model.probabilistic_circuit.rx.helper import (
     uniform_measure_of_simple_event,
@@ -15,7 +15,6 @@ from random_events.product_algebra import SimpleEvent, Event
 from random_events.variable import Continuous
 
 from semantic_digital_twin.datastructures.variables import SpatialVariables
-from semantic_digital_twin.spatial_types import HomogeneousTransformationMatrix
 
 
 class IntervalConstants:

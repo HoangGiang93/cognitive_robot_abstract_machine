@@ -34,7 +34,7 @@ from ..world_description.connections import (
 )
 from ..world_description.degree_of_freedom import DegreeOfFreedomLimits, DegreeOfFreedom
 from ..world_description.geometry import Scale
-from ..world_description.shape_collection import BoundingBoxCollection, ShapeCollection
+from ..world_description.shape_collection import BoundingBoxCollection
 from ..world_description.world_entity import (
     SemanticAnnotation,
     Body,

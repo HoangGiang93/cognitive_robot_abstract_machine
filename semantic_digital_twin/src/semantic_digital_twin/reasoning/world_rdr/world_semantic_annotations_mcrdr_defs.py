@@ -1,6 +1,5 @@
 from typing_extensions import List, Union
 
-from ...semantic_annotations.mixins import HasCaseAsRootBody
 from ...semantic_annotations.semantic_annotations import (
     Wardrobe,
     Door,

@@ -1,33 +1,32 @@
 import unittest
 
+import numpy as np
 import pytest
-import rclpy
 
-from semantic_digital_twin.adapters.viz_marker import VizMarkerPublisher
 from semantic_digital_twin.datastructures.prefixed_name import PrefixedName
-from semantic_digital_twin.exceptions import InvalidPlaneDimensions
+from semantic_digital_twin.exceptions import InvalidPlaneDimensions, InvalidAxisError
 from semantic_digital_twin.semantic_annotations.mixins import HasCaseAsRootBody
 
 from semantic_digital_twin.semantic_annotations.semantic_annotations import (
     Handle,
     Door,
     Drawer,
-    Dresser,
     Wall,
     Hinge,
-    DoubleDoor,
     Fridge,
     Slider,
     Floor,
     Aperture,
 )
+from semantic_digital_twin.spatial_types import Vector3, HomogeneousTransformationMatrix
 from semantic_digital_twin.world import World
 from semantic_digital_twin.world_description.connections import (
     RevoluteConnection,
     PrismaticConnection,
     FixedConnection,
 )
-from semantic_digital_twin.world_description.geometry import Scale
+from semantic_digital_twin.world_description.geometry import Scale, Box
+from semantic_digital_twin.world_description.shape_collection import ShapeCollection
 from semantic_digital_twin.world_description.world_entity import Body
 
 
@@ -277,6 +276,8 @@ class TestFactories(unittest.TestCase):
         )
         semantic_floor_annotations = world.get_semantic_annotations_by_type(Floor)
         self.assertEqual(len(semantic_floor_annotations), 1)
+        self.assertTrue(isinstance(floor.root.parent_connection, FixedConnection))
+        self.assertEqual(floor, semantic_floor_annotations[0])
 
     def test_wall_factory(self):
         world = World()
@@ -290,6 +291,8 @@ class TestFactories(unittest.TestCase):
         )
         semantic_wall_annotations = world.get_semantic_annotations_by_type(Wall)
         self.assertEqual(len(semantic_wall_annotations), 1)
+        self.assertTrue(isinstance(wall.root.parent_connection, FixedConnection))
+        self.assertEqual(wall, semantic_wall_annotations[0])
 
     def test_aperture_factory(self):
         world = World()
@@ -303,6 +306,8 @@ class TestFactories(unittest.TestCase):
         )
         semantic_aperture_annotations = world.get_semantic_annotations_by_type(Aperture)
         self.assertEqual(len(semantic_aperture_annotations), 1)
+        self.assertTrue(isinstance(aperture.root.parent_connection, FixedConnection))
+        self.assertEqual(aperture, semantic_aperture_annotations[0])
 
     def test_aperture_from_body_factory(self):
         world = World()
@@ -348,6 +353,104 @@ class TestFactories(unittest.TestCase):
 
         assert wall.apertures[0] == aperture
         assert aperture.root.parent_kinematic_structure_entity == wall.root
+
+    def _setup_door(self):
+        world = World()
+        root = Body(name=PrefixedName("root"))
+        with world.modify_world():
+            world.add_body(root)
+
+        door_scale = Scale(0.03, 1.0, 2.0)
+        door = Door.create_with_new_body_in_world(
+            name=PrefixedName("door"), scale=door_scale, world=world
+        )
+        return world, door
+
+    def test_calculate_world_T_hinge_no_handle(self):
+        world, door = self._setup_door()
+        with self.assertRaises(ValueError) as cm:
+            door.calculate_world_T_hinge_based_on_handle(Vector3.Z())
+        self.assertEqual(str(cm.exception), "Door has no handle.")
+
+    def test_calculate_world_T_hinge_vertical(self):
+        world, door = self._setup_door()
+        # Add handle at y=0.4 (right side of door center)
+        handle = Handle.create_with_new_body_in_world(
+            name=PrefixedName("handle"),
+            world=world,
+            world_root_T_self=HomogeneousTransformationMatrix.from_xyz_rpy(y=0.4),
+        )
+        door.add_handle(handle)
+
+        # Test Z-axis rotation (vertical hinge)
+        # handle is at y=0.4, door width is 1.0. Hinge should be at opposite side: y=-0.5
+        world_T_hinge = door.calculate_world_T_hinge_based_on_handle(Vector3.Z())
+        expected_T_hinge = (
+            door.root.global_pose @ HomogeneousTransformationMatrix.from_xyz_rpy(y=-0.5)
+        )
+        self.assertTrue(np.allclose(world_T_hinge.to_np(), expected_T_hinge.to_np()))
+
+        # Move handle to y=-0.4 (left side)
+        handle.root.parent_connection.parent_T_connection_expression = (
+            HomogeneousTransformationMatrix.from_xyz_rpy(y=-0.4)
+        )
+        world_T_hinge = door.calculate_world_T_hinge_based_on_handle(Vector3.Z())
+        expected_T_hinge = (
+            door.root.global_pose @ HomogeneousTransformationMatrix.from_xyz_rpy(y=0.5)
+        )
+        self.assertTrue(np.allclose(world_T_hinge.to_np(), expected_T_hinge.to_np()))
+
+    def test_calculate_world_T_hinge_horizontal(self):
+        world, door = self._setup_door()
+        # Add handle
+        handle = Handle.create_with_new_body_in_world(
+            name=PrefixedName("handle"),
+            world=world,
+            world_root_T_self=HomogeneousTransformationMatrix.from_xyz_rpy(
+                y=0.4, z=0.0
+            ),
+        )
+        door.add_handle(handle)
+
+        # Test Y-axis rotation (horizontal hinge)
+        # handle z=0. Hinge should be at z=1.0 (opposite of default sign 1 if z=0)
+        world_T_hinge = door.calculate_world_T_hinge_based_on_handle(Vector3.Y())
+        expected_T_hinge = (
+            door.root.global_pose @ HomogeneousTransformationMatrix.from_xyz_rpy(z=1.0)
+        )
+        self.assertTrue(np.allclose(world_T_hinge.to_np(), expected_T_hinge.to_np()))
+
+        # handle at z=0.5. Hinge should be at z=-1.0
+        handle.root.parent_connection.parent_T_connection_expression = (
+            HomogeneousTransformationMatrix.from_xyz_rpy(z=0.5)
+        )
+        world_T_hinge = door.calculate_world_T_hinge_based_on_handle(Vector3.Y())
+        expected_T_hinge = (
+            door.root.global_pose @ HomogeneousTransformationMatrix.from_xyz_rpy(z=-1.0)
+        )
+        self.assertTrue(np.allclose(world_T_hinge.to_np(), expected_T_hinge.to_np()))
+
+    def test_calculate_world_T_hinge_invalid_axis(self):
+        world, door = self._setup_door()
+        handle = Handle.create_with_new_body_in_world(
+            name=PrefixedName("handle"),
+            world=world,
+        )
+        door.add_handle(handle)
+        with self.assertRaises(InvalidAxisError):
+            door.calculate_world_T_hinge_based_on_handle(Vector3.X())
+
+    def test_calculate_world_T_hinge_multiple_collisions(self):
+        world, door = self._setup_door()
+        handle = Handle.create_with_new_body_in_world(
+            name=PrefixedName("handle"),
+            world=world,
+        )
+        door.add_handle(handle)
+        door.root.collision = ShapeCollection([Box(), Box()], reference_frame=door.root)
+        with self.assertRaises(ValueError) as cm:
+            door.calculate_world_T_hinge_based_on_handle(Vector3.Z())
+        self.assertEqual(str(cm.exception), "Door has more than one collision shape.")
 
 
 if __name__ == "__main__":
