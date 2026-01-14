@@ -615,10 +615,10 @@ class TestFactories(unittest.TestCase):
         with world.modify_world():
             world.add_semantic_annotation(slider)
 
-        parent_T_self = slider.get_new_parent_T_self(root)
+        parent_T_self = root.global_pose.inverse() @ slider.root.global_pose
         self.assertAlmostEqual(parent_T_self[0, 3], 2.0)
 
-        self_T_child = slider.get_self_T_new_child(root)
+        self_T_child = slider.root.global_pose.inverse() @ root.global_pose
         self.assertAlmostEqual(self_T_child[0, 3], -2.0)
 
         self.assertEqual(slider.get_new_grandparent(mid), root)

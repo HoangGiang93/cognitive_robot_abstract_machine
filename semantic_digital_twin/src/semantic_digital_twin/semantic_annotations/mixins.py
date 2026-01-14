@@ -29,7 +29,7 @@ from ..exceptions import (
 )
 from ..spatial_types import Point3, HomogeneousTransformationMatrix, Vector3
 from ..spatial_types.derivatives import DerivativeMap
-from ..utils import Direction
+from .position_descriptions import Direction
 from ..world import World
 from ..world_description.connections import (
     RevoluteConnection,
@@ -121,11 +121,7 @@ class HasRootKinematicStructureEntity(SemanticAnnotation, ABC):
             raise MissingConnectionType(cls)
 
         self_instance = cls(name=name, root=kinematic_structure_entity)
-        world_root_T_self = (
-            world_root_T_self
-            if world_root_T_self is not None
-            else HomogeneousTransformationMatrix()
-        )
+        world_root_T_self = world_root_T_self or HomogeneousTransformationMatrix()
 
         with world.modify_world():
             world.add_semantic_annotation(self_instance)
@@ -186,36 +182,6 @@ class HasRootKinematicStructureEntity(SemanticAnnotation, ABC):
 
         return DegreeOfFreedomLimits(lower_limit=lower_limits, upper_limit=upper_limits)
 
-    def get_new_parent_T_self(
-        self,
-        parent_kinematic_structure_entity: KinematicStructureEntity,
-    ) -> HomogeneousTransformationMatrix:
-        """
-        Calculate the transformation matrix from a new parent entity to this entity.
-
-        :param parent_kinematic_structure_entity: The new parent entity.
-        :return: The transformation matrix from the new parent to this entity.
-        """
-        return (
-            parent_kinematic_structure_entity.global_pose.inverse()
-            @ self.root.global_pose
-        )
-
-    def get_self_T_new_child(
-        self,
-        child_kinematic_structure_entity: KinematicStructureEntity,
-    ) -> HomogeneousTransformationMatrix:
-        """
-        Calculate the transformation matrix from this entity to a new child entity.
-
-        :param child_kinematic_structure_entity: The new child entity.
-        :return: The transformation matrix from this entity to the new child.
-        """
-        return (
-            self.root.global_pose.inverse()
-            @ child_kinematic_structure_entity.global_pose
-        )
-
     def get_new_grandparent(
         self,
         parent_kinematic_structure_entity: KinematicStructureEntity,
@@ -251,7 +217,9 @@ class HasRootKinematicStructureEntity(SemanticAnnotation, ABC):
             return
 
         world = self._world
-        new_parent_T_self = self.get_new_parent_T_self(new_parent_entity)
+        new_parent_T_self = (
+            new_parent_entity.global_pose.inverse() @ self.root.global_pose
+        )
 
         with world.modify_world():
             parent_C_self = self.root.parent_connection
@@ -280,7 +248,10 @@ class HasRootKinematicStructureEntity(SemanticAnnotation, ABC):
             return
 
         world = self._world
-        self_T_new_child = self.get_self_T_new_child(child_kinematic_structure_entity)
+        self_T_new_child = (
+            self.root.global_pose.inverse()
+            @ child_kinematic_structure_entity.global_pose
+        )
 
         with world.modify_world():
             parent_C_new_child = child_kinematic_structure_entity.parent_connection
@@ -822,7 +793,7 @@ class HasCaseAsRootBody(HasSupportingSurface, ABC):
 
 
 @dataclass(eq=False)
-class HasObjects(HasRootBody, ABC):
+class CanStoreObjects(HasRootBody, ABC):
     """
     A mixin class for semantic annotations that represent storage spaces.
     """

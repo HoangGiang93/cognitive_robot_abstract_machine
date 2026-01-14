@@ -3001,7 +3001,7 @@ class DoorDAO(
 
 class HasObjectsDAO(
     HasRootBodyDAO,
-    DataAccessObject[semantic_digital_twin.semantic_annotations.mixins.HasObjects],
+    DataAccessObject[semantic_digital_twin.semantic_annotations.mixins.CanStoreObjects],
 ):
 
     __tablename__ = "HasObjectsDAO"

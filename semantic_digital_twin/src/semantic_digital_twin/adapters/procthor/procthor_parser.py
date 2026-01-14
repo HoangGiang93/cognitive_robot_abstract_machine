@@ -19,6 +19,7 @@ from ...semantic_annotations.position_descriptions import (
     SemanticPositionDescription,
     HorizontalSemanticDirection,
     VerticalSemanticDirection,
+    Direction,
 )
 from ...semantic_annotations.semantic_annotations import (
     Room,
@@ -34,7 +35,6 @@ from ...spatial_types.spatial_types import (
     Point3,
     Vector3,
 )
-from ...utils import Direction
 from ...world import World
 from ...world_description.connections import FixedConnection
 from ...world_description.geometry import Scale

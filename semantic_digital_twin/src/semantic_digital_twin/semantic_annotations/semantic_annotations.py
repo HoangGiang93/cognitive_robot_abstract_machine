@@ -23,7 +23,7 @@ from .mixins import (
     HasApertures,
     IsPerceivable,
     HasRootBody,
-    HasObjects,
+    CanStoreObjects,
 )
 from ..datastructures.prefixed_name import PrefixedName
 from ..datastructures.variables import SpatialVariables
@@ -34,7 +34,7 @@ from ..exceptions import (
 )
 from ..reasoning.predicates import InsideOf
 from ..spatial_types import Point3, HomogeneousTransformationMatrix, Vector3
-from ..utils import Direction
+from .position_descriptions import Direction
 from ..world import World
 from ..world_description.connections import (
     RevoluteConnection,
@@ -301,7 +301,7 @@ class DoubleDoor(SemanticAnnotation):
 
 
 @dataclass(eq=False)
-class Drawer(Furniture, HasCaseAsRootBody, HasHandle, HasSlider, HasObjects):
+class Drawer(Furniture, HasCaseAsRootBody, HasHandle, HasSlider, CanStoreObjects):
 
     @property
     def opening_direction(self) -> Direction:
@@ -319,7 +319,7 @@ class Table(Furniture, HasSupportingSurface):
 
 
 @dataclass(eq=False)
-class Cabinet(Furniture, HasObjects, HasCaseAsRootBody):
+class Cabinet(Furniture, CanStoreObjects, HasCaseAsRootBody):
     @property
     def opening_direction(self) -> Direction:
         return Direction.NEGATIVE_X

@@ -22,7 +22,8 @@ from krrood.adapters.exceptions import JSON_TYPE_NAME
 from krrood.adapters.json_serializer import SubclassJSONSerializer
 from ..datastructures.variables import SpatialVariables
 from ..spatial_types import HomogeneousTransformationMatrix, Point3
-from ..utils import IDGenerator, Direction
+from ..utils import IDGenerator
+from ..semantic_annotations.position_descriptions import Direction
 
 if TYPE_CHECKING:
     from .world_entity import KinematicStructureEntity

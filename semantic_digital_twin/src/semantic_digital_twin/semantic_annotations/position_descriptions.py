@@ -3,7 +3,7 @@ from __future__ import annotations
 from _operator import or_
 from dataclasses import dataclass
 
-from enum import Enum
+from enum import Enum, IntEnum
 from functools import reduce
 from typing import List, Tuple
 
@@ -148,3 +148,12 @@ class SemanticPositionDescription:
         simple_event = self._apply_zoom(event.bounding_box())
         event_circuit = uniform_measure_of_simple_event(simple_event)
         return event_circuit.sample(amount=1)[0]
+
+
+class Direction(IntEnum):
+    X = 0
+    Y = 1
+    Z = 2
+    NEGATIVE_X = 3
+    NEGATIVE_Y = 4
+    NEGATIVE_Z = 5
