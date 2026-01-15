@@ -14,6 +14,7 @@ class CheckControlCycleCount(MotionStatechartNode):
     """
 
     threshold: int = field(kw_only=True)
+    """After this many control cycles, the node will turn True."""
 
     def build(self, context: BuildContext) -> NodeArtifacts:
         artifacts = NodeArtifacts()
@@ -23,6 +24,9 @@ class CheckControlCycleCount(MotionStatechartNode):
 
 @dataclass(eq=False, repr=False)
 class Print(MotionStatechartNode):
+    """
+    Prints a message to the console every tick.
+    """
     message: str = ""
 
     def on_tick(self, context: ExecutionContext) -> ObservationStateValues:
@@ -52,23 +56,25 @@ class CountSeconds(MotionStatechartNode):
 
 
 @dataclass(repr=False, eq=False)
-class CountTicks(MotionStatechartNode):
+class CountControlCycles(MotionStatechartNode):
     """
-    This node counts 'threshold'-many ticks and then turns True.
+    This node counts 'threshold'-many control cycles and then turns True.
     Only counts while in state RUNNING.
     """
 
-    ticks: int = field(kw_only=True)
-    counter: int = field(init=False)
+    _counter: int = field(init=False)
+    """Keeps track of how many ticks have passed since first True"""
+    control_cycles: int = field(kw_only=True)
+    """Turns True after this many control cycles."""
 
     def on_tick(self, context: ExecutionContext) -> Optional[ObservationStateValues]:
-        self.counter += 1
-        if self.counter >= self.ticks:
+        self._counter += 1
+        if self._counter >= self.control_cycles:
             return ObservationStateValues.TRUE
         return ObservationStateValues.FALSE
 
     def on_start(self, context: ExecutionContext):
-        self.counter = 0
+        self._counter = 0
 
 
 @dataclass
@@ -78,8 +84,9 @@ class Pulse(MotionStatechartNode):
     """
 
     _counter: int = field(default=0, init=False)
+    """Keeps track of how many ticks have passed since first True"""
     length: int = field(default=1, kw_only=True)
-    """Number of ticks to stay True. Default: 1."""
+    """Number of ticks to stay True"""
 
     def on_start(self, context: ExecutionContext):
         self._counter = 0

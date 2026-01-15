@@ -822,6 +822,11 @@ class Scalar(SymbolicMathType):
             left = self.casadi_sx.dep(0)
             right = self.casadi_sx.dep(1)
             return ca.is_equal(ca.simplify(left), ca.simplify(right), 5)
+        elif self.casadi_sx.op() == ca.OP_NE:
+            # same with !=
+            left = self.casadi_sx.dep(0)
+            right = self.casadi_sx.dep(1)
+            return not ca.is_equal(ca.simplify(left), ca.simplify(right), 5)
         raise HasFreeVariablesError(self.free_variables())
 
     def __neg__(self) -> Scalar:
@@ -863,10 +868,7 @@ class Scalar(SymbolicMathType):
     def __ne__(
         self, other: Scalar | FloatVariable | NumericalScalar | bool
     ) -> Scalar | bool:
-        eq_result = self == other
-        if isinstance(eq_result, bool):
-            return not eq_result
-        return logic_not(eq_result)
+        return self._compare(other, operator.ne)
 
     def __le__(self, other: Scalar | FloatVariable) -> Scalar | bool:
         return self._compare(other, operator.le)
