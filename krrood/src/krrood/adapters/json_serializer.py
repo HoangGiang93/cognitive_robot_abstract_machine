@@ -435,6 +435,7 @@ class NumpyNDarrayJSONSerializer(ExternalClassJSONSerializer[np.ndarray]):
     """
     External JSON serializer for numpy ndarrays.
     """
+
     @classmethod
     def to_json(cls, obj: np.ndarray) -> Dict[str, Any]:
         return {
@@ -462,7 +463,7 @@ class DataclassJSONSerializer(ExternalClassJSONSerializer[None]):
     def to_json(cls, obj) -> Dict[str, Any]:
         result = {JSON_TYPE_NAME: get_full_class_name(type(obj))}
         introspector = DataclassOnlyIntrospector()
-        for field_ in introspector.discover(cls):
+        for field_ in introspector.discover(obj.__class__):
             value = getattr(obj, field_.public_name)
 
             if isinstance(value, (list, set)):
