@@ -46,4 +46,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: random-events-doc
-          path: "random_events/docs/_build/html"
+          path: "random_events/doc/_build/html"

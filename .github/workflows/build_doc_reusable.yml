@@ -40,11 +40,10 @@ jobs:
         if: ${{ inputs.use_container }}
         run: |
           rm -rf /opt/ros/semantic_digital_twin/*
-          cp -r /__w/${{ github.event.repository.name }}/${{ github.event.repository.name }}/ros/src/semantic_digital_twin/. /opt/ros/semantic_digital_twin/
           cd /opt/ros/semantic_digital_twin
           rm -rf .git .github .gitignore .gitmodules .readthedocs.yaml
-          # Adjust working directory for container steps if needed, but 'defaults' handles it generally.
-          # However, semantic_digital_twin workflow expects to run in /opt/ros/semantic_digital_twin
+#          cp -r /__w/${{ github.event.repository.name }}/${{ github.event.repository.name }}/ros/src/semantic_digital_twin/. /opt/ros/semantic_digital_twin/
+          cp -r $GITHUB_WORKSPACE/ros/src/semantic_digital_twin/semantic_digital_twin/* /opt/ros/semantic_digital_twin/
 
       - name: Set up Python (Non-container)
         if: ${{ !inputs.use_container }}
@@ -60,7 +59,7 @@ jobs:
           node-version: '18'
 
       - name: Install Graphviz
-        if: ${{ inputs.lib == 'pycram' }}
+        if: ${{ inputs.lib == 'pycram' || inputs.lib == 'probabilistic_model' || inputs.lib == 'random_events' }}
         run: |
           sudo apt-get update
           sudo apt-get install graphviz libgraphviz-dev -y
@@ -69,7 +68,7 @@ jobs:
         if: ${{ !inputs.use_container }}
         working-directory: ${{ inputs.lib }}
         run: |
-          pip install -U pip setuptools
+          pip install -U pip setuptools wheel pybind11
           [ -f requirements-dev.txt ] && pip install -r requirements-dev.txt || echo "No requirements-dev.txt"
           [ -f requirements.txt ] && pip install -r requirements.txt || echo "No requirements.txt"
           pip install .
@@ -80,6 +79,7 @@ jobs:
       - name: Install dependencies (Container)
         if: ${{ inputs.use_container }}
         run: |
+          sudo apt-get update
           cd /opt/ros/semantic_digital_twin
           source /opt/ros/semantic_digital_twin-venv/bin/activate
           pip install -U pip && pip install -r requirements.txt && pip install . && pip install -r doc/requirements.txt
@@ -102,7 +102,9 @@ jobs:
       - name: Build the book (Non-container)
         if: ${{ !inputs.use_container }}
         working-directory: ${{ inputs.lib }}
-        run: jupyter-book build ${{ inputs.doc_path }}
+        run: |
+          jupyter-book build ${{ inputs.doc_path }}
+          ls -R ${{ inputs.doc_path }}/_build/html
 
       - name: Build the book (Container)
         if: ${{ inputs.use_container }}

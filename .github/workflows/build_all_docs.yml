@@ -31,7 +31,7 @@ jobs:
             artifact_name: probabilistic-model-doc
             use_container: false
           - lib: random_events
-            doc_path: docs
+            doc_path: doc
             artifact_name: random-events-doc
             use_container: false
     uses: ./.github/workflows/build_doc_reusable.yml
