@@ -123,7 +123,8 @@ def test_to_json_joint_position_list(mini_world):
     json_data = node.to_json()
     json_str = json.dumps(json_data)
     new_json_data = json.loads(json_str)
-    node_copy = JointPositionList.from_json(new_json_data, world=mini_world)
+    tracker = WorldEntityWithIDKwargsTracker.from_world(mini_world)
+    node_copy = JointPositionList.from_json(new_json_data, **tracker.create_kwargs())
     assert node_copy.name == node.name
     assert node_copy.threshold == node.threshold
     assert node_copy.goal_state == node.goal_state
@@ -208,7 +209,10 @@ def test_executing_json_parsed_statechart():
     json_data = msc.to_json()
     json_str = json.dumps(json_data)
     new_json_data = json.loads(json_str)
-    msc_copy = MotionStatechart.from_json(new_json_data, world=world)
+    tracker = WorldEntityWithIDKwargsTracker.from_world(world)
+    msc_copy = MotionStatechart.from_json(
+        new_json_data, world=world, **tracker.create_kwargs()
+    )
 
     kin_sim = Executor(
         world=world,
