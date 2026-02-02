@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import os
+import types
+from ast import Module
 from dataclasses import dataclass, field
 from functools import lru_cache
 from inspect import isclass
@@ -89,3 +92,23 @@ def _inheritance_path_length(
 
 def module_and_class_name(t: Union[Type, _SpecialForm]) -> str:
     return f"{t.__module__}.{t.__name__}"
+
+
+def get_package_root(module: types.ModuleType):
+    """
+    Get the root of a python package by searching upwards until the pyproject.toml file is found.
+
+    .. warn:: This only works when the source code of the module is available, e. g. by doing pip install -e.
+
+    :param module: The module to search upwards from.
+    :return: The root of the package.
+    """
+    path = os.path.dirname(module.__file__)
+
+    while not os.path.ismount(path):
+        if os.path.exists(os.path.join(path, "pyproject.toml")):
+            return path
+        path = os.path.join(path, "..")
+    raise FileNotFoundError(
+        f"No pyproject.toml found when searching upwards from {module}"
+    )

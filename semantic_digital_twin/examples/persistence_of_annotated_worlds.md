@@ -39,6 +39,7 @@ from semantic_digital_twin.adapters.urdf import URDFParser
 from semantic_digital_twin.orm.ormatic_interface import *
 from semantic_digital_twin.semantic_annotations.semantic_annotations import Table
 from semantic_digital_twin.utils import get_semantic_digital_twin_directory_root
+
 logging.disable(logging.CRITICAL)
 # set up an in memory database
 engine = create_engine('sqlite:///:memory:')
