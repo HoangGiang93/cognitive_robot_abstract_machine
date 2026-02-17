@@ -25,9 +25,11 @@ from __future__ import annotations
 
 import enum
 import importlib
+import importlib.resources
 import logging
 import sys
 import warnings
+from importlib.resources import as_file
 from pathlib import Path
 
 from typing_extensions import TYPE_CHECKING, List, Any
@@ -44,9 +46,6 @@ class RobokudoModuleType(enum.Enum):
 
     Defines the standard module types and their paths within a ROS package.
     """
-
-    ActionServer = ["action_servers"]
-    """Action server modules"""
 
     Annotator = ["annotators"]
     """Annotator modules"""
@@ -93,7 +92,7 @@ class ModuleLoader:
         """The logger for the module loader instance."""
 
     def _load_module(
-        self, ros_pkg_name: str, module_type: RobokudoModuleType, module_name: str
+            self, ros_pkg_name: str, module_type: RobokudoModuleType, module_name: str
     ) -> ModuleType:
         """
         Dynamically import a submodule of the 'robokudo' package (or another package).
@@ -175,7 +174,7 @@ class ModuleLoader:
         return loaded_module
 
     def load_object_knowledge_base(
-        self, ros_pkg_name: str, module_name: str
+            self, ros_pkg_name: str, module_name: str
     ) -> BaseObjectKnowledgeBase:
         """Load an ObjectKnowledgeBase given the module name and the ros package name.
 
@@ -196,7 +195,7 @@ class ModuleLoader:
         return loaded_object_knowledge_base
 
     def load_semantic_map(
-        self, ros_pkg_name: str, module_name: str, _skip_ros: bool = False
+            self, ros_pkg_name: str, module_name: str, _skip_ros: bool = False
     ) -> BaseSemanticMap:
         """Load a semantic map module. Expects class `SemanticMap`.
 
@@ -244,11 +243,11 @@ class ModuleLoader:
         return loaded_module
 
     def get_file_paths(
-        self,
-        ros_pkg_name: str,
-        module_type: RobokudoModuleType,
-        dir_name: str,
-        file_extension: str = None,
+            self,
+            ros_pkg_name: str,
+            module_type: RobokudoModuleType,
+            dir_name: str,
+            file_extension: str = None,
     ) -> List[str]:  # pragma: no cover
         """Get paths to files in module directory.
 
@@ -279,4 +278,6 @@ class ModuleLoader:
 
     @staticmethod
     def get_module_path(module_name: str) -> Path:
-        return importlib.resources.files(module_name)
+        files = importlib.resources.files(module_name)
+        with as_file(files) as path:
+            return Path(path)

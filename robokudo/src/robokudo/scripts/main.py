@@ -147,7 +147,7 @@ def main():
     logger = logging.getLogger(robokudo.defs.LOGGING_IDENTIFIER_MAIN_EXECUTABLE)
 
     log_cfg_file = (
-        Path(ModuleLoader.get_module_path(robokudo.defs.PACKAGE_NAME))
+        ModuleLoader.get_module_path(robokudo.defs.PACKAGE_NAME)
         / "logging_levels.yaml"
     )
     configure_logging(logging_config_file_name=str(log_cfg_file))
