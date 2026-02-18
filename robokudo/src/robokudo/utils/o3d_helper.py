@@ -59,7 +59,7 @@ def transform_obb_relative_to_obb_center(
     target_obb: o3d.geometry.OrientedBoundingBox,
     transform_matrix: npt.NDArray,
 ) -> o3d.geometry.OrientedBoundingBox:
-    """Transform bounding box relative to another's center.
+    """Transform a bounding box relative to another's center.
 
     :param input_obb: Bounding box to transform
     :param target_obb: Reference bounding box
@@ -84,7 +84,7 @@ def transform_obb_relative_to_obb_center(
 def get_obb_from_size_and_transform(
     bb_size: npt.NDArray, transform_matrix: npt.NDArray
 ) -> o3d.geometry.OrientedBoundingBox:
-    """Create oriented bounding box from size and transform.
+    """Create an oriented bounding box from size and transform.
 
     :param bb_size: Numpy array with 3 elements for BoundingBox size in X,Y,Z
     :param transform_matrix: 4x4 numpy array
@@ -131,7 +131,7 @@ def get_2d_bounding_rect_from_3d_bb(
 ) -> cv2.typing.Rect:
     """
     Get a cv2.boundingRect which represents the space taken by a open3d boundingbox.
-    Perspective projection and color2depth ratio is taken into account.
+    Perspective projection and color2depth ratio are taken into account.
 
     :param cas:
     :param object_bb:
@@ -185,10 +185,10 @@ def get_mask_from_pointcloud(
     """
     Generate a binary mask image by projecting the input_cloud to the ref_image mask
 
-    :param input_cloud: 3d points which should be projected to the result maskimage
+    :param input_cloud: 3d points which should be projected to the result mask image
     :param ref_image: A reference image for the dimensionality of the mask
     :param cam_intrinsics: Camera intrinsics that have been used to generate input_cloud
-    :param mask_scale_factor: If your color and depth image size mismatch, l
+    :param mask_scale_factor: If your color and depth image size mismatches,
     you might have to scale your depth-based mask image to the dimensions of your color image.
     Please provide that factor here. Example: Kinect has 1280x images were as the depth images are only 640x .
     This would require a scale factor of 2.0
@@ -235,7 +235,7 @@ def scale_o3d_cam_intrinsics(
 
     Create and return a new cam intrinsic by scaling an input cam_intrinsic
     based on a scale factor scalex and scaley.
-    Scaling will be done by multipling the factor with the relevant properties.
+    Scaling will be done by multipling the factors with the relevant properties.
     Example: new_height = height * scaley
 
     :param cam_intrinsic: Original camera intrinsics
@@ -294,18 +294,18 @@ def get_cloud_from_rgb_depth_and_mask(
       - RGB, Depth image and Mask must be of the same resolution.
 
 
-    :param rgb_image: An image in RGB order. Please note, that cv2 normally uses BGR order. So you have to convert first.
+    :param rgb_image: An image in RGB order. Please note that cv2 normally uses BGR order. So you have to convert first.
     :param depth_image: A depth image
     :param mask: a numpy array of dtype np.uint8
     :param cam_intrinsics: Camera intrinsics for the rgb and depth image
     :param depth_truncate: During cloud creation, ignore points beyond this many meters
     :param mask_true_val: If the 'mask' contains a value equal to 'max_true_val', the corresponding value in 'depth'
-    will be included. Otherwise it will be set to 0.
+    will be included. Otherwise, it will be set to 0.
     :return: Point cloud from masked RGB-D data
 
     .. warning::
        The depth_image will be modified during processing.
-       Provide a copy if original needs to be preserved.
+       Provide a copy if the original needs to be preserved.
     """
     # Generate a new depth image by keeping all values of the depth image where the mask is *mask_true_val*.
     # The rest will be set to 0
@@ -347,7 +347,7 @@ def create_sphere_from_translation(
 
     :param origin: 3d translation vector
     :param color: 3 element list with entries 0-1 for RGB
-    :param radius: radius of sphere in meters
+    :param radius: radius of the sphere in meters
     :return: o3d sphere mesh
     """
     sphere = o3d.geometry.TriangleMesh.create_sphere(radius=radius)
