@@ -53,7 +53,7 @@ class CameraConfig:
     # tf
     tf_from = "/hand_camera_frame"
     tf_to = "/map"
-    lookup_viewpoint = False  # TODO: CHange this for TODO for viewpoint of cam in world
+    lookup_viewpoint = False  # Change this to True to lookup transform between cam and world
     only_stable_viewpoints = True
     max_viewpoint_distance = 0.01
     max_viewpoint_rotation = 1.0

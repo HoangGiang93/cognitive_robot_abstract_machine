@@ -33,7 +33,7 @@ class CameraConfig:
     # tf
     tf_from = "head_rgbd_sensor_rgb_frame"
     tf_to = "map"
-    lookup_viewpoint = True  # TODO: Set to true if you want to get the cam to world transform. Requires localization!
+    lookup_viewpoint = True  # Change this to True to lookup transform between cam and world
     only_stable_viewpoints = True
     max_viewpoint_distance = 0.01
     max_viewpoint_rotation = 1.0
