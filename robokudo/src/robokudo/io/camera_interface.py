@@ -23,6 +23,7 @@ import logging
 import struct
 import threading
 
+import builtin_interfaces.msg
 import cv2
 import numpy as np
 import open3d as o3d
@@ -102,6 +103,10 @@ class ROSCameraInterface(CameraInterface):
     :type tf_from: str
     :ivar tf_to: Transform target frame
     :type tf_to: str
+    :ivar cam_translation: Camera translation from TF
+    :type cam_translation: list
+    :ivar cam_quaternion: Camera rotation from TF
+    :type cam_quaternion: list
     :ivar transform_listener: ROS transform listener
     :type transform_listener: tf.TransformListener
     """
@@ -124,6 +129,9 @@ class ROSCameraInterface(CameraInterface):
         else:
             self.lookup_viewpoint = False
 
+        self.cam_translation = None
+        self.cam_quaternion = None
+
         if self.lookup_viewpoint:
             self.transform_listener = robokudo.io.tf_listener_proxy.instance(self.node)
 
@@ -140,8 +148,7 @@ class ROSCameraInterface(CameraInterface):
                 tf = self.transform_listener.lookup_transform(self.tf_to,
                                                               self.tf_from,
                                                               time,
-                                                              timeout=Duration(
-                                                                  seconds=0.1))
+                                                              timeout=Duration(seconds=0.1))
                 translation = tf.transform.translation
                 rotation = tf.transform.rotation
                 self.cam_translation = [translation.x, translation.y, translation.z]
@@ -151,6 +158,21 @@ class ROSCameraInterface(CameraInterface):
                     f"cannot transform from {self.tf_from} to {self.tf_to} at ts {time}: {err}")
                 return False
         return True
+
+    def store_cam_to_world_transform(self, cas: robokudo.cas.CAS, timestamp: builtin_interfaces.msg.Time) -> None:
+        """
+        If the camera is configured to look up transforms, store the camera transform in the CAS.
+
+        :return: None
+        """
+        if self.lookup_viewpoint:
+            st = robokudo.types.tf.StampedTransform()
+            st.rotation = self.cam_quaternion
+            st.translation = self.cam_translation
+            st.frame = self.tf_from
+            st.child_frame = self.tf_to
+            st.timestamp = timestamp
+            cas.set(CASViews.VIEWPOINT_CAM_TO_WORLD, st)
 
     def set_o3d_cam_intrinsics_from_ros_cam_info(self):
         """
@@ -246,10 +268,6 @@ class KinectCameraInterface(ROSCameraInterface):
     :type cam_intrinsic: o3d.camera.PinholeCameraIntrinsic
     :ivar color2depth_ratio: Ratio between color and depth image sizes
     :type color2depth_ratio: tuple
-    :ivar cam_translation: Camera translation from TF
-    :type cam_translation: list
-    :ivar cam_quaternion: Camera rotation from TF
-    :type cam_quaternion: list
     :ivar timestamp: Latest message timestamp
     :type timestamp: rospy.Time
     :ivar lock: Thread synchronization lock
@@ -301,8 +319,6 @@ class KinectCameraInterface(ROSCameraInterface):
         self.cam_info = None
         self.cam_intrinsic = None
         self.color2depth_ratio = None
-        self.cam_translation = None
-        self.cam_quaternion = None
         self.timestamp = None
         self.lock = threading.Lock()
         # rclpy.spin_once(self.node)
@@ -310,13 +326,6 @@ class KinectCameraInterface(ROSCameraInterface):
         threading.Thread(target=rclpy.spin, args=(self.node,), daemon=True, name="Cam Interface Thread").start()
 
         # threading.Thread(target=rclpy.spin_once(self.node), args=(self.node,), daemon=True).start()
-
-    # doubt
-
-    # self.kexecutor = MultiThreadedExecutor()
-    # self.kexecutor.add_node(self.node)
-    # threading.Thread(target=self.kexecutor.spin, daemon=True).start()
-    # threading.Thread(target=rclpy.spin_once, args=(self.node,), daemon=True).start()
 
     def compressed_depth_configured(self):
         """
@@ -347,18 +356,6 @@ class KinectCameraInterface(ROSCameraInterface):
         :return:
         """
         pass
-
-    def debug_callback(self, data):
-        pass
-        # self.rk_logger.info(f"DEBUG color ping: {data.header.stamp}")
-
-    def debug_depth_callback(self, data):
-        pass
-        # self.rk_logger.info(f"DEBUG depth ping: {data.header.stamp}")
-
-    def debug_cam_info_callback(self, data):
-        pass
-        # self.rk_logger.info(f"DEBUG info ping: {data.header.stamp}")
 
     def callback(self, color_data, depth_data=None, cam_info=None):
         """
@@ -448,46 +445,8 @@ class KinectCameraInterface(ROSCameraInterface):
         cas.set(CASViews.CAM_INTRINSIC, self.cam_intrinsic)
         cas.set(CASViews.COLOR2DEPTH_RATIO, self.color2depth_ratio)
 
-        if self.lookup_viewpoint:
-            st = robokudo.types.tf.StampedTransform()
-            st.rotation = self.cam_quaternion
-            st.translation = self.cam_translation
-            st.frame = self.tf_from
-            st.child_frame = self.tf_to
-            st.timestamp = self.timestamp
-            cas.set(CASViews.VIEWPOINT_CAM_TO_WORLD, st)
+        self.store_cam_to_world_transform(cas, self.timestamp)
 
         self._has_new_data = False
 
         self.lock.release()
-
-
-# Archived ROS lookup
-# '16UC1; compressedDepth'
-# bridge = CvBridge()
-# self.lock.acquire()
-# try:
-#     cv_rgb_image = bridge.imgmsg_to_cv2(image_data)
-#     cv_depth_image = bridge.imgmsg_to_cv2(depth_data)
-# except CvBridgeError as e:
-#     print(e)
-#     self.lock.release()
-#     return
-#
-# (rows, cols, channels) = cv_rgb_image.shape
-# print(f'RGB image parameters (rows,cols,channels,pixels,type): {rows}, {cols}, {channels}, {cv_rgb_image.size}, {cv_rgb_image.dtype}')
-# (rows, cols) = cv_depth_image.shape
-# print(f'Depth image parameters (rows,cols,pixels,type): {rows}, {cols}, {cv_depth_image.size}, {cv_depth_image.dtype}')
-#
-"""ROS1 TO ROS2 
-Adapts to changes in CvBridge and uses np.frombuffer instead of np.fromstring to avoid deprecation issues.
-
- ROS2 explicitly creates a node (self.node = Node('kinect_camera_node')), which is then used to initialize the subscribers. 
- 
- The import statements and the way Subscriber and ApproximateTimeSynchronizer are used differ slightly due to the differences between ROS1 and ROS2 libraries.
- 
- bridge.imgmsg_to_cv2(color_data, "bgr8") converts the ROS image message directly to an OpenCV image in BGR format, bypassing the need for a separate RGB to BGR conversion step.
- 
- In ROS2 need to explicitly specify the format (like "32FC1") to ensure the depth image is correctly interpreted and converted
-
-"""
