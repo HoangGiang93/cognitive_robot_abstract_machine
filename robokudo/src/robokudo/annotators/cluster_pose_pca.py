@@ -28,6 +28,7 @@ import py_trees
 import robokudo.annotators
 import robokudo.annotators.core
 import robokudo.annotators.outputs
+import robokudo.types.annotation
 import robokudo.types.scene
 import robokudo.utils.transform
 from robokudo.cas import CASViews
@@ -124,7 +125,6 @@ class ClusterPosePCAAnnotator(robokudo.annotators.core.BaseAnnotator):
             t = robokudo.utils.transform.get_transform_matrix(new_rotation, centroid)
             cluster_frame.transform(t)
 
-            # TODO Create Pose Annotation camera/world?
             pose_annotation = robokudo.types.annotation.PoseAnnotation()
             pose_annotation.translation = list(centroid)
             pose_annotation.rotation = list(
@@ -132,7 +132,6 @@ class ClusterPosePCAAnnotator(robokudo.annotators.core.BaseAnnotator):
             pose_annotation.source = type(self).__name__
             object_hypothesis.annotations.append(pose_annotation)
 
-            # TODO Remove the following two lines when the new ClusterBB Annotator is ready
             cluster_obb = cluster_cloud.get_oriented_bounding_box()
             geometries_to_visualize.append(cluster_obb)
 

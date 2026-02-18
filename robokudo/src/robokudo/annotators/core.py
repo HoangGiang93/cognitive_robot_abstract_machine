@@ -528,6 +528,5 @@ class ThreadedAnnotator(BaseAnnotator):
         :param new_status: New status of the behavior (SUCCESS, FAILURE or INVALID)
         :type new_status: py_trees.common.Status
         """
-        # TODO Handle running thread?
         self.rk_logger.debug(
             "%s.terminate()[%s->%s]" % (self.__class__.__name__, self.status, new_status))
