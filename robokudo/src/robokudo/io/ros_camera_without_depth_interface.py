@@ -37,6 +37,7 @@ from robokudo.cas import CASViews
 from robokudo.io.camera_interface import ROSCameraInterface
 
 
+# TODO Needs to be migrated to ROS2 for new RGB-only use cases
 class ROSCameraWithoutDepthInterface(ROSCameraInterface):
     """
     A ROS camera interface for RGB-only cameras.
@@ -276,15 +277,7 @@ class ROSCameraWithoutDepthInterface(ROSCameraInterface):
         cas.set(CASViews.CAM_INFO, self.cam_info)
         cas.set(CASViews.CAM_INTRINSIC, self.cam_intrinsic)
         cas.set(CASViews.COLOR2DEPTH_RATIO, (1, 1))
-
-        if self.lookup_viewpoint:
-            st = robokudo.types.tf.StampedTransform()
-            st.rotation = self.cam_quaternion
-            st.translation = self.cam_translation
-            st.frame = self.tf_from
-            st.child_frame = self.tf_to
-            st.timestamp = self.timestamp
-            cas.set(CASViews.VIEWPOINT_CAM_TO_WORLD, st)
+        self.store_cam_to_world_transform(cas, self.timestamp)
 
         self._has_new_data = False
         self.lock.release()
