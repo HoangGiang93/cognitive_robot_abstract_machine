@@ -17,19 +17,22 @@ The module uses:
 .. note::
    Can analyze either ObjectHypothesis or CloudAnnotation data.
 """
+
+from __future__ import annotations
+
 import copy
 from timeit import default_timer
-from typing import List
+from typing_extensions import List, TYPE_CHECKING, Type
 
 import open3d as o3d
 import py_trees
 
-import robokudo.annotators
-import robokudo.annotators.core
-import robokudo.annotators.outputs
-import robokudo.types.annotation
-import robokudo.types.scene
-from robokudo.cas import CASViews
+from . import core, outputs
+from ..types import annotation, scene
+from ..cas import CAS, CASViews
+
+if TYPE_CHECKING:
+    import numpy.typing as npt
 
 
 class ClusterPositionAnnotator(robokudo.annotators.core.BaseAnnotator):
@@ -101,17 +104,28 @@ class ClusterPositionAnnotator(robokudo.annotators.core.BaseAnnotator):
         cloud = self.get_cas().get(CASViews.CLOUD)
         centroids_to_visualize = []
 
-        object_hypotheses = self.get_cas().filter_annotations_by_type(robokudo.types.scene.ObjectHypothesis)
+        object_hypotheses = self.get_cas().filter_annotations_by_type(
+            robokudo.types.scene.ObjectHypothesis
+        )
 
         for object_hypothesis in object_hypotheses:
             if object_hypothesis.points is None:
                 continue
 
-            if self.descriptor.parameters.analysis_scope == robokudo.types.annotation.CloudAnnotation:
-                o_clouds: List[robokudo.types.annotation.CloudAnnotation] = robokudo.cas.CAS.filter_by_type(
-                    robokudo.types.annotation.CloudAnnotation, object_hypothesis.annotations)
+            if (
+                self.descriptor.parameters.analysis_scope
+                == robokudo.types.annotation.CloudAnnotation
+            ):
+                o_clouds: List[robokudo.types.annotation.CloudAnnotation] = (
+                    robokudo.cas.CAS.filter_by_type(
+                        robokudo.types.annotation.CloudAnnotation,
+                        object_hypothesis.annotations,
+                    )
+                )
                 if len(o_clouds) == 0:
-                    self.rk_logger.warning("CloudAnnotation mode, but no CloudAnnotation found on object")
+                    self.rk_logger.warning(
+                        "CloudAnnotation mode, but no CloudAnnotation found on object"
+                    )
                     continue
 
                 cluster_cloud = o_clouds[0].points
@@ -133,7 +147,7 @@ class ClusterPositionAnnotator(robokudo.annotators.core.BaseAnnotator):
         self.get_annotator_output_struct().set_geometries(vis_geometries)
 
         end_timer = default_timer()
-        self.feedback_message = f'Processing took {(end_timer - start_timer):.4f}s'
+        self.feedback_message = f"Processing took {(end_timer - start_timer):.4f}s"
         return py_trees.common.Status.SUCCESS
 
     def position_annotation_from_centroid(self, centroid):
@@ -160,7 +174,8 @@ class ClusterPositionAnnotator(robokudo.annotators.core.BaseAnnotator):
         :type centroids_to_visualize: list
         """
         centroid_sphere = o3d.geometry.TriangleMesh.create_sphere(
-            radius=self.descriptor.parameters.visualizer_point_radius)  # in meters
+            radius=self.descriptor.parameters.visualizer_point_radius
+        )  # in meters
         centroid_sphere.paint_uniform_color([255, 0, 0])
         centroid_sphere.translate(centroid)
         centroids_to_visualize.append(centroid_sphere)
