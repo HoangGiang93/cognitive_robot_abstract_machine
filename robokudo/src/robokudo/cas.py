@@ -205,6 +205,14 @@ class CAS:
         self.views[CASViews.CAM_TO_WORLD_TRANSFORM] = value
 
     @property
+    def data_timestamp(self) -> Optional[int]:
+        return self.views.get(CASViews.DATA_TIMESTAMP)
+
+    @data_timestamp.setter
+    def data_timestamp(self, value: int) -> None:
+        self.views[CASViews.DATA_TIMESTAMP] = value
+
+    @property
     def query(self) -> Optional[Any]:
         return self.views.get(CASViews.QUERY)
 

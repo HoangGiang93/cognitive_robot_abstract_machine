@@ -41,6 +41,9 @@ import robokudo.io.tf_listener_proxy
 import robokudo.types.tf
 from robokudo.cas import CASViews
 
+from robokudo.world import setup_world_for_camera_frame, world_instance
+from semantic_digital_twin.spatial_types import HomogeneousTransformationMatrix
+
 
 class CameraInterface(object):
     """
@@ -104,9 +107,9 @@ class ROSCameraInterface(CameraInterface):
     :ivar tf_to: Transform target frame
     :type tf_to: str
     :ivar cam_translation: Camera translation from TF
-    :type cam_translation: list
+    :type cam_translation: Optional[list[float]]
     :ivar cam_quaternion: Camera rotation from TF
-    :type cam_quaternion: list
+    :type cam_quaternion: Optional[list[float]]
     :ivar transform_listener: ROS transform listener
     :type transform_listener: tf.TransformListener
     """
@@ -151,10 +154,15 @@ class ROSCameraInterface(CameraInterface):
                                                               timeout=Duration(seconds=0.1))
                 translation = tf.transform.translation
                 rotation = tf.transform.rotation
-                self.cam_translation = [translation.x, translation.y, translation.z]
-                self.cam_quaternion = [rotation.x, rotation.y, rotation.z, rotation.w]
+                self.cam_translation = [float(translation.x),
+                                        float(translation.y),
+                                        float(translation.z)]
+                self.cam_quaternion = [float(rotation.x),
+                                       float(rotation.y),
+                                       float(rotation.z),
+                                       float(rotation.w)]
             except Exception as err:
-                self.rk_logger.warn(
+                self.rk_logger.warning(
                     f"cannot transform from {self.tf_from} to {self.tf_to} at ts {time}: {err}")
                 return False
         return True
@@ -166,6 +174,7 @@ class ROSCameraInterface(CameraInterface):
         :return: None
         """
         if self.lookup_viewpoint:
+            # Set legacy transform
             st = robokudo.types.tf.StampedTransform()
             st.rotation = self.cam_quaternion
             st.translation = self.cam_translation
@@ -173,6 +182,21 @@ class ROSCameraInterface(CameraInterface):
             st.child_frame = self.tf_to
             st.timestamp = timestamp
             cas.set(CASViews.VIEWPOINT_CAM_TO_WORLD, st)
+
+            setup_world_for_camera_frame(world_frame=self.tf_to, camera_frame=self.tf_from)
+            transformation_matrix = HomogeneousTransformationMatrix.from_xyz_quaternion(
+                pos_x=self.cam_translation[0],
+                pos_y=self.cam_translation[1],
+                pos_z=self.cam_translation[2],
+                quat_x=self.cam_quaternion[0],
+                quat_y=self.cam_quaternion[1],
+                quat_z=self.cam_quaternion[2],
+                quat_w=self.cam_quaternion[3],
+                child_frame=world_instance().get_body_by_name(self.tf_from),
+                reference_frame=world_instance().get_body_by_name(self.tf_to)
+            )
+            cas.cam_to_world_transform = transformation_matrix
+            cas.data_timestamp = timestamp.sec * 1_000_000_000 + timestamp.nanosec
 
     def set_o3d_cam_intrinsics_from_ros_cam_info(self):
         """
