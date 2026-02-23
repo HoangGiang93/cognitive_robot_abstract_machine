@@ -18,10 +18,15 @@ The module is used for:
 * Experiment logging
 """
 import copy
+import json
 from timeit import default_timer
+
 import py_trees
+
 import robokudo.annotators.outputs
 import robokudo.io.storage
+import robokudo.world
+from semantic_digital_twin.adapters.ros.messages import WorldModelSnapshot
 
 
 class StorageWriter(robokudo.annotators.core.BaseAnnotator):
@@ -52,10 +57,12 @@ class StorageWriter(robokudo.annotators.core.BaseAnnotator):
             :ivar drop_database_on_storage: Whether to clear database before recording
             :type drop_database_on_storage: bool
             """
+
             def __init__(self):
                 self.db_name = "rk_scenes"  # database name
                 self.drop_database_on_storage = True  # True or False to wipe the database completely before
                 # recording data
+
         parameters = Parameters()  # overwrite the parameters explicitly to enable auto-completion
 
     def __init__(self, name="StorageWriter", descriptor=Descriptor()):
@@ -92,6 +99,17 @@ class StorageWriter(robokudo.annotators.core.BaseAnnotator):
         flat_cas = self.storage.generate_dict_from_real_cas(persist_cas)
         flat_cas['view_ids'] = {}
 
+        world = robokudo.world.world_instance()
+        snapshot = WorldModelSnapshot(
+            modifications=list(world.get_world_model_manager().model_modification_blocks),
+            ids=list(world.state.keys()),
+            states=list(world.state.positions),
+        )
+
+        payload = snapshot.to_json()
+        json_str = json.dumps(payload)
+        flat_cas['world'] = json_str
+
         # step 1: persist each view
         self.storage.store_views_in_mongo(flat_cas)
 
@@ -99,7 +117,7 @@ class StorageWriter(robokudo.annotators.core.BaseAnnotator):
         del flat_cas['views']
         result = self.storage.store_cas_dict(flat_cas)
         if not result.acknowledged:
-            print(f'mongo db error when trying to store cas')
+            self.rk_logger.error(f'mongo db error when trying to store cas')
             return py_trees.common.Status.FAILURE
 
         end_timer = default_timer()

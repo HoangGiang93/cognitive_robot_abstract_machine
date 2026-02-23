@@ -17,13 +17,18 @@ The module is primarily used for:
 * Offline data analysis
 * Visualization of stored data
 """
-import robokudo.io.camera_interface
-import robokudo.io.storage
+import json
 
 import open3d as o3d
 
-from robokudo.cas import CASViews
+import robokudo.io.camera_interface
+import robokudo.io.storage
+import robokudo.world
 from robokudo.annotator_parameters import AnnotatorPredefinedParameters
+from robokudo.cas import CASViews
+from semantic_digital_twin.adapters.ros.messages import WorldModelSnapshot
+from semantic_digital_twin.adapters.world_entity_kwargs_tracker import WorldEntityWithIDKwargsTracker
+from semantic_digital_twin.world import World
 
 
 class StorageReaderInterface(robokudo.io.camera_interface.CameraInterface):
@@ -84,6 +89,12 @@ class StorageReaderInterface(robokudo.io.camera_interface.CameraInterface):
         :type cas: robokudo.cas.CAS
         """
         cas_frame = self.reader.get_next_frame()
+        # Restore the world first to get back references to KinematicStructureEntities
+        tracker = robokudo.world.init_world_with_entity_tracker()
+        kwargs = tracker.create_kwargs()
+        WorldModelSnapshot.apply_to_json_snapshot_to_world(robokudo.world.world_instance(),
+                                                           json.loads(cas_frame['world']), **kwargs)
+
         # Restore the views from the individual documents
         cas_frame['views'] = {}
         self.storage.load_views_from_mongo_in_cas(cas_frame)

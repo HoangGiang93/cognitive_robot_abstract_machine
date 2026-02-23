@@ -22,11 +22,11 @@ import array
 import io
 import os
 import sys
-import open3d as o3d
 from typing import Optional, Dict, Union
 
 import builtin_interfaces.msg
 import numpy as np
+import open3d as o3d
 from pymongo import MongoClient
 from sensor_msgs.msg import CameraInfo
 
@@ -35,8 +35,10 @@ import robokudo.analysis_engine
 import robokudo.cas
 import robokudo.types.tf
 import robokudo.utils.serialization as serializer
+import robokudo.world
 from robokudo.cas import CAS, CASViews
 from robokudo.types.tf import StampedTransform
+from semantic_digital_twin.spatial_types import HomogeneousTransformationMatrix
 
 
 def recursive_convert(value):
@@ -333,7 +335,7 @@ class Storage:
 
     @staticmethod
     def camera_intrinsic_to_mongo(camera_intrinsic: o3d.camera.PinholeCameraIntrinsic) -> Dict[str, Union[int, float]]:
-        intrinsic_matrix = camera_intrinsic.intrinsic_matrix       # 3 x 3
+        intrinsic_matrix = camera_intrinsic.intrinsic_matrix  # 3 x 3
         result = {
             "width": camera_intrinsic.width,
             "height": camera_intrinsic.height,
@@ -348,7 +350,6 @@ class Storage:
     def camera_intrinsic_from_mongo(camera_intrinsic_dict: Dict[str, Union[int, float]]) \
             -> o3d.camera.PinholeCameraIntrinsic:
         return o3d.camera.PinholeCameraIntrinsic(**camera_intrinsic_dict)
-
 
     @staticmethod
     def rk_stamped_transform_to_mongo(stamped_transform: StampedTransform) -> dict:
@@ -389,7 +390,36 @@ class Storage:
         )
         return st
 
-    # TODO Have a seperate module for conversion handling
+    @staticmethod
+    def homogeneous_transform_matrix_to_mongo(matrix: HomogeneousTransformationMatrix) -> dict:
+        """
+        Convert a stored HomogeneousTransformationMatrix to a dict.
+
+        :param matrix: The transform matrix
+        :type matrix: HomogeneousTransformationMatrix
+        :return: Dictionary representation of transform
+        :rtype: dict
+        """
+        return matrix.to_json()
+
+    @staticmethod
+    def homogeneous_transform_matrix_from_mongo(matrix_dict: dict) -> HomogeneousTransformationMatrix:
+        """
+        Convert a stored HomogeneousTransformationMatrix back.
+        To reconstruct the references to the KinematicStructureEntities,
+        we need access to a WorldEntityTracker that has tracked the restoration of the World that was
+        also stored in the Mongo DB.
+
+        :param matrix_dict: The transform matrix
+        :type matrix_dict: HomogeneousTransformationMatrix
+        :return: The restored HomogeneousTransformationMatrix from matrix_dict
+        :rtype: HomogeneousTransformationMatrix
+        """
+        tracker = robokudo.world.get_world_entity_tracker()
+        kwargs = tracker.create_kwargs()
+        return HomogeneousTransformationMatrix.from_json(matrix_dict, **kwargs)
+
+    # TODO Have a separate module for conversion handling OR ormatic handles everything anyway in the future
 
     # TODO This should be overwritable in the Descriptor/Config. Atleast the Views you want to save/restore.
     view_configuration = {
@@ -415,7 +445,16 @@ class Storage:
         CASViews.VIEWPOINT_CAM_TO_WORLD: {
             'to_mongo': lambda x: Storage.rk_stamped_transform_to_mongo(x),
             'from_mongo': lambda x: Storage.rk_stamped_transform_from_mongo(x)
+        },
+        CASViews.CAM_TO_WORLD_TRANSFORM: {
+            'to_mongo': lambda x: Storage.homogeneous_transform_matrix_to_mongo(x),
+            'from_mongo': lambda x: Storage.homogeneous_transform_matrix_from_mongo(x)
+        },
+        CASViews.DATA_TIMESTAMP: {
+            'to_mongo': lambda x: x,
+            'from_mongo': lambda x: int(x)
         }
+
     }
 
     def store_views_in_mongo(self, cas_dict: Dict) -> None:
@@ -503,7 +542,7 @@ class Storage:
             'timestamp': cas.timestamp,
             'timestamp_readable': cas.timestamp_readable,
             'annotations': serialized_annotations,
-            'views': cas.views
+            'views': cas.views,
         }
 
         return result
