@@ -487,8 +487,10 @@ class BaseSimulator:
                     if self.current_simulation_time == 0.0:
                         self.reset()
                     self.step()
-                elif self.state == SimulatorState.PAUSED:
-                    self.pause_callback()
+                else:
+                    if self.state == SimulatorState.PAUSED:
+                        self.pause_callback()
+                    time.sleep(self.step_size) # Sleep for a while to avoid busy waiting in PAUSED state
                 if (
                     self.render_thread is None
                     and self.current_real_time - self._current_render_time > 1.0 / 60.0

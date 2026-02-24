@@ -1505,15 +1505,21 @@ class MujocoSimulator(BaseSimulator):
                 type=SimulatorCallbackResult.ResultType.FAILURE_BEFORE_EXECUTION_ON_MODEL,
                 info=f"Failed to create {entity_type} {entity_name} with properties {entity_properties}: {e}",
             )
-        self.pause()
-        self._mj_model, self._mj_data = self._mj_spec.recompile(
-            self._mj_model, self._mj_data
-        )
-        if not self.headless:
-            self._renderer._sim().load(self._mj_model, self._mj_data, "")
-            if self.simulation_thread is None:
-                mujoco.mj_step1(self._mj_model, self._mj_data)
-        self.unpause()
+
+        def do_spawn():
+            self._mj_model, self._mj_data = self._mj_spec.recompile(
+                self._mj_model, self._mj_data
+            )
+            if not self.headless:
+                self._renderer._sim().load(self._mj_model, self._mj_data, "")
+                if self.simulation_thread is None:
+                    mujoco.mj_step1(self._mj_model, self._mj_data)
+        if self.state == SimulatorState.RUNNING:
+            self.pause()
+            do_spawn()
+            self.unpause()
+        else:
+            do_spawn()
         return SimulatorCallbackResult(
             type=SimulatorCallbackResult.ResultType.SUCCESS_AFTER_EXECUTION_ON_MODEL,
             info=f"Spawned {entity_type} {entity.name} under parent body {parent_name} with properties {entity_properties}",

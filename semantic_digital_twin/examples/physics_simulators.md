@@ -10,6 +10,7 @@ kernelspec:
   language: python
   name: python3
 ---
+
 (physics-simulators)=
 # Physics Simulators
 
@@ -17,6 +18,9 @@ This tutorial explains how to run physics simulations for a given world descript
 We use **MuJoCo** as an example backend, but the same workflow applies to other physics engines supported by MultiSim.
 
 # 1. Simulating a Predefined World
+
+A world can be loaded from a predefined scene description, tutored in the [Loading Worlds](loading-worlds.md) tutorial,
+in this tutorial, we show how to run a physics simulation for such a predefined world description.
 
 ## 1.1 Required Imports
 
@@ -30,15 +34,15 @@ We begin by importing the necessary components:
 from semantic_digital_twin.adapters.mjcf import MJCFParser
 from semantic_digital_twin.adapters.multi_sim import MujocoSim
 from base_simulator import SimulatorConstraints
-import os
-import time
+import os # For path handling
+import time # For measuring simulation time
 ```
 
 ## 1.2 Parsing a World Description
 
 The world can either:
 
-* Be loaded from a predefined MJCF file (recommended), or
+* Be loaded from a predefined MJCF (recommended), or
 * Be constructed manually (shown later in this tutorial).
 
 Using predefined scenes is preferred because they are typically validated against the physics engine.
@@ -118,7 +122,7 @@ This scene contains:
     time_start = time.time()
 
     while multi_sim.is_running():
-        time.sleep(0.1)
+        time.sleep(0.1) # Sleep to avoid busy waiting
         print(
             f"Current number of steps: "
             f"{multi_sim.simulator.current_number_of_steps}"
@@ -129,34 +133,47 @@ This scene contains:
     multi_sim.stop_simulation()
 ```
 
-### Performance Considerations
+## Important Notes
 
-This simple scene executes **10,000 steps in under 0.5 seconds**.
+**1. Always define termination conditions**
 
-Simulation speed depends primarily on:
+Never run a simulation without explicit termination conditions.
+Failing to do so can result in infinite loops and unresponsive processes.
+Always specify appropriate stopping criteria using `SimulatorConstraints`.
 
-* Number of contacts
-* Number of collision geometries
+**2. Avoid busy waiting**
+
+Do not implement busy waiting inside the simulation loop.
+Busy waiting can cause excessive CPU usage and degrade overall system responsiveness.
+If CPU usage becomes high, the simulation may run significantly slower than expected.
+
+## Performance Considerations
+
+In this example, the scene completes **10,000 simulation steps in under 1.0 second**.
+
+Simulation performance depends primarily on:
+
+* The number of contact points
+* The number of collision geometries
 * Mesh complexity (vertex count)
 
-For optimal performance:
+### For optimal performance:
 
-* Prefer primitive shapes (boxes, cylinders, spheres)
-* Avoid high-resolution meshes unless necessary
+* Prefer primitive geometries (boxes, cylinders, spheres)
+* Avoid high-resolution meshes unless strictly necessary
 
-# 2. Building a World at Runtime
+# 2. Persistent World State Manipulation
 
-Instead of loading a static scene, the world can also be modified dynamically during simulation.
+During execution, the world state can be modified dynamically.
+Bodies, connections, and degrees of freedom may be added or removed at runtime.
+These changes are immediately reflected in the physics simulation.
 
-This is useful when:
-
-* Constructing robots from semantic descriptions
-* Spawning objects based on runtime conditions
-* Generating environments procedurally
-
-## 2.1 Required Imports
+In the following example, we demonstrate how to spawn new bodies and connections while the simulation is running.
+We begin by importing the required components for programmatic world construction and defining two helper functions to spawn a robot body and shoulder bodies.
 
 ```{code-cell} ipython3
+:tags: [hide-input]
+
 from semantic_digital_twin.datastructures.prefixed_name import PrefixedName
 from semantic_digital_twin.spatial_types import HomogeneousTransformationMatrix, Vector3
 from semantic_digital_twin.world import World
@@ -165,13 +182,7 @@ from semantic_digital_twin.world_description.degree_of_freedom import DegreeOfFr
 from semantic_digital_twin.world_description.geometry import Box, Scale, Color, Cylinder
 from semantic_digital_twin.world_description.shape_collection import ShapeCollection
 from semantic_digital_twin.world_description.world_entity import Body
-```
 
-## 2.2 Spawning Bodies Programmatically
-
-### Spawn Robot Base
-
-```{code-cell} ipython3
 def spawn_robot_body(spawn_world: World) -> Body:
     spawn_body = Body(name=PrefixedName("robot"))
 
@@ -200,11 +211,7 @@ def spawn_robot_body(spawn_world: World) -> Body:
         )
 
     return spawn_body
-```
-
-### Spawn Shoulder Joints
-
-```{code-cell} ipython3
+   
 def spawn_shoulder_bodies(
     spawn_world: World,
     root_body: Body
@@ -285,12 +292,17 @@ def spawn_shoulder_bodies(
     return spawn_left_shoulder_body, spawn_right_shoulder_body
 ```
 
-## 2.3 Spawning During Simulation
+As before, we start by running the simulation using a predefined world description.
+However, after 100 simulation steps, we dynamically introduce additional bodies and connections. 
+The simulation proceeds without interruption, and the newly added elements are incorporated into the physics engine immediately, becoming fully active in the ongoing simulation.
 
 ```{code-cell} ipython3
 if __name__ == "__main__":
-    world = World()
-
+    scene_xml_str = """
+<mujoco>
+</mujoco>
+"""
+    world = MJCFParser.from_xml_string(scene_xml_str).parse()
     headless = (
         os.environ.get("CI", "false").lower() == "true"
     )
@@ -301,43 +313,47 @@ if __name__ == "__main__":
         step_size=0.001,
     )
 
-    constraints = SimulatorConstraints(
-        max_number_of_steps=10000
-    )
+    constraints = SimulatorConstraints(max_number_of_steps=10000)
 
     multi_sim.start_simulation(constraints=constraints)
 
     time_start = time.time()
 
+    spawned = False
     while multi_sim.is_running():
-        if multi_sim.simulator.current_number_of_steps == 100:
-
+        if multi_sim.simulator.current_number_of_steps >= 100 and not spawned:
+            spawned = True
             time_spawn_start = time.time()
-
             robot_body = spawn_robot_body(world)
-
             spawn_shoulder_bodies(
                 spawn_world=world,
                 root_body=robot_body
             )
-
             print(
                 f"Time to spawn bodies: "
                 f"{time.time() - time_spawn_start:.2f}s"
             )
+        time.sleep(0.1)
 
     print(f"Time elapsed: {time.time() - time_start:.2f}s")
 
     multi_sim.stop_simulation()
 ```
 
-### Key Property
+As reflected in the output, the new bodies and connections are created in under **0.5 seconds**, while the simulation continues uninterrupted. The physical state remains continuous, and the world is modified dynamically at runtime without resetting or restarting the engine.
 
-Objects are spawned **without resetting the simulation**.
-The physics state remains continuous, and the world is modified dynamically at runtime.
+## Important Notes
 
-This allows:
+**1. Do not rely on catching an exact step number inside the simulation loop**
+(e.g., `if multi_sim.simulator.current_number_of_steps == 100`)
 
-* Incremental scene construction
-* Online model updates
-* Dynamic world adaptation
+The simulation runs asynchronously in a very high-frequency loop. Reliably catching an exact step index would require polling that condition at the same high frequency.
+This introduces unnecessary overhead, degrades performance, and can significantly slow down the simulation.
+Instead, use event-driven logic, time-based conditions, or external synchronization mechanisms when precise triggering is required
+
+**2. Do not spawn objects in collision states**
+
+Spawning an object at a pose that immediately results in collisions can destabilize the physics engine. In severe cases, this may cause numerical instability or cause the simulation to “explode.”
+Always validate the target pose before spawning:
+* Check for collisions in advance, or
+* Pause the simulation before spawning and ensure the new object is placed in a collision-free state.
