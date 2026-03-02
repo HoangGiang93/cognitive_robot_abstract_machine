@@ -1,7 +1,7 @@
 from sqlalchemy.orm import sessionmaker
 
 from krrood.entity_query_language.backends import (
-    DatabaseBackend,
+    SQLAlchemyBackend,
     PythonBackend,
     ProbabilisticBackend,
 )
@@ -44,7 +44,7 @@ def test_same_query_multiple_domains(session, database):
     result = list(python_backend.evaluate(q))
     assert len(result) == 1
 
-    database_backend = DatabaseBackend(session_maker)
+    database_backend = SQLAlchemyBackend(session_maker)
     result = list(database_backend.evaluate(q))
     assert len(result) == 1
 

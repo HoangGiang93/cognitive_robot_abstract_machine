@@ -1,6 +1,6 @@
 from abc import abstractmethod, ABC
 from dataclasses import dataclass
-from typing import Any, Iterable, TypeVar
+from typing import Iterable, TypeVar
 
 from sqlalchemy.orm import sessionmaker
 
@@ -17,9 +17,26 @@ from krrood.probabilistic_knowledge.probable_variable import (
     MatchToInstanceTranslator,
     QueryToRandomEventTranslator,
 )
-from probabilistic_model.probabilistic_model import ProbabilisticModel
+from krrood.utils import DataclassException
 
 T = TypeVar("T")
+
+
+@dataclass
+class GenerativeBackendQueryIsNotMatch(DataclassException):
+    """
+    Exception raised when a query is not a match inside a generative backend.
+    """
+
+    expression: Query
+    """
+    The query that was passed to the generative backend.
+    """
+
+    def __post_init__(self):
+        self.message = (
+            f"Query {self.expression} is not a match inside a generative backend."
+        )
 
 
 @dataclass
@@ -62,12 +79,17 @@ class GenerativeBackend(QueryBackend, ABC):
         """
         return MatchToInstanceTranslator(expression).translate()
 
+    def evaluate(self, expression: Query) -> Iterable[T]:
+        if not isinstance(expression, Match):
+            raise GenerativeBackendQueryIsNotMatch(expression)
+        yield from self._evaluate(expression)
+
     @abstractmethod
-    def evaluate(self, expression: Match[T]) -> Iterable[T]: ...
+    def _evaluate(self, expression: Match[T]) -> Iterable[T]: ...
 
 
 @dataclass
-class DatabaseBackend(SelectiveBackend):
+class SQLAlchemyBackend(SelectiveBackend):
     """
     A backend that selects elements from a database that is available via SQLAlchemy.
     """
@@ -109,7 +131,7 @@ class ProbabilisticBackend(GenerativeBackend):
     The number of samples to generate.
     """
 
-    def evaluate(self, expression: Match[T]) -> Iterable[T]:
+    def _evaluate(self, expression: Match[T]) -> Iterable[T]:
 
         example_instance = self._generate_instance_from_match(expression)
 

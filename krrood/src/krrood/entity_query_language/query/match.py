@@ -27,7 +27,11 @@ from typing_extensions import (
 
 from krrood.entity_query_language.query.quantifiers import An
 from krrood.entity_query_language.core.base_expressions import Selectable
-from krrood.entity_query_language.core.mapped_variable import Attribute, FlatVariable, CanBehaveLikeAVariable
+from krrood.entity_query_language.core.mapped_variable import (
+    Attribute,
+    FlatVariable,
+    CanBehaveLikeAVariable,
+)
 from krrood.entity_query_language.core.variable import Literal, DomainType
 from krrood.entity_query_language.failures import (
     NoKwargsInMatchVar,
@@ -38,7 +42,7 @@ from krrood.rustworkx_utils import RWXNode
 
 if TYPE_CHECKING:
     from krrood.entity_query_language.factories import ConditionType
-    from krrood.entity_query_language.query.query import Entity
+    from krrood.entity_query_language.query.query import Entity, Query
 
 
 @dataclass
@@ -160,6 +164,10 @@ class Match(AbstractMatchExpression[T]):
     """
 
     _expression: Query = field(init=False, default=None)
+    """
+    Cache for the expression (the actual EQL query) as soon as it has been calculated.
+    This is needed to apply where conditions directly to the match instance. 
+    """
 
     def __call__(self, **kwargs) -> Union[Self, T, CanBehaveLikeAVariable[T]]:
         """
