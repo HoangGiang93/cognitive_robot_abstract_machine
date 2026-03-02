@@ -57,10 +57,6 @@ class Aggregator(UnaryExpression, CanBehaveLikeAVariable[T], ABC):
      values for each group when `grouped_by()` is used.
     """
 
-    _default_value_: Optional[T] = field(kw_only=True, default=None)
-    """
-    The default value to be returned if the child results are empty.
-    """
     _distinct_: bool = field(kw_only=True, default=False)
     """
     Whether to consider only distinct values from the child results when applying the aggregation function.
@@ -158,6 +154,10 @@ class EntityAggregator(Aggregator[T], ABC):
     _child_: Selectable[T]
     """
     The child entity to be aggregated.
+    """
+    _default_value_: Optional[T] = field(kw_only=True, default=None)
+    """
+    The default value to be returned if the child results are empty.
     """
     _key_function_: Optional[Callable[[Any], Any]] = field(kw_only=True, default=None)
     """
