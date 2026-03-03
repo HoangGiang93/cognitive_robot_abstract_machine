@@ -51,7 +51,7 @@ class Conditioning:
         """
         Retrieve the xdot of the original QP Problem
         """
-        return np.linalg.inv(self.C) @ xdot
+        return self.C @ xdot
 
 
 @dataclass
