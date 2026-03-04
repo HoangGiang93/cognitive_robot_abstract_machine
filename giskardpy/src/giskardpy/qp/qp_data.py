@@ -26,11 +26,15 @@ class Conditioning:
         Apply the conditioning to the QP problem data.
         """
         new_qp_data = deepcopy(qp_data)
+        new_qp_data = self._apply_column_scaling(new_qp_data)
+        new_qp_data = self._apply_row_scaling_eq(new_qp_data)
+        new_qp_data = self._apply_row_scaling_neq(new_qp_data)
+        return new_qp_data
+
+    def _apply_column_scaling(self, qp_data: QPData) -> QPData:
         if self.C is not None:
-            new_qp_data.quadratic_weights = (
-                self.C @ new_qp_data.quadratic_weights @ self.C
-            )
-            new_qp_data.linear_weights = self.C @ new_qp_data.linear_weights
+            qp_data.quadratic_weights = self.C @ qp_data.quadratic_weights @ self.C
+            qp_data.linear_weights = self.C @ qp_data.linear_weights
 
             # Since x = C @ x_hat, the box constraints L <= x <= U become L <= C @ x_hat <= U.
             # For a diagonal matrix C with positive entries, this is equivalent to
@@ -40,23 +44,24 @@ class Conditioning:
             mask = diagonal_C != 0
             diagonal_C_inv[mask] = 1.0 / diagonal_C[mask]
             C_inv = sp.diags(diagonal_C_inv)
-            new_qp_data.box_lower_constraints = (
-                C_inv @ new_qp_data.box_lower_constraints
-            )
-            new_qp_data.box_upper_constraints = (
-                C_inv @ new_qp_data.box_upper_constraints
-            )
-            new_qp_data.eq_matrix = new_qp_data.eq_matrix @ self.C
-            if new_qp_data.neq_matrix.shape[0] * new_qp_data.neq_matrix.shape[1] != 0:
-                new_qp_data.neq_matrix = new_qp_data.neq_matrix @ self.C
+            qp_data.box_lower_constraints = C_inv @ qp_data.box_lower_constraints
+            qp_data.box_upper_constraints = C_inv @ qp_data.box_upper_constraints
+            qp_data.eq_matrix = qp_data.eq_matrix @ self.C
+            if qp_data.neq_matrix.shape[0] * qp_data.neq_matrix.shape[1] != 0:
+                qp_data.neq_matrix = qp_data.neq_matrix @ self.C
+        return qp_data
+
+    def _apply_row_scaling_eq(self, qp_data: QPData) -> QPData:
         if self.R_eq is not None:
-            new_qp_data.eq_matrix = self.R_eq @ new_qp_data.eq_matrix
-            new_qp_data.eq_bounds = self.R_eq @ new_qp_data.eq_bounds
+            qp_data.eq_matrix = self.R_eq @ qp_data.eq_matrix
+            qp_data.eq_bounds = self.R_eq @ qp_data.eq_bounds
+        return qp_data
+
+    def _apply_row_scaling_neq(self, qp_data: QPData) -> QPData:
         if self.R_neq is not None:
-            new_qp_data.neq_matrix = self.R_neq @ new_qp_data.neq_matrix
-            new_qp_data.neq_lower_bounds = self.R_neq @ new_qp_data.neq_lower_bounds
-            new_qp_data.neq_upper_bounds = self.R_neq @ new_qp_data.neq_upper_bounds
-        return new_qp_data
+            qp_data.neq_matrix = self.R_neq @ qp_data.neq_matrix
+            qp_data.neq_bounds = self.R_neq @ qp_data.neq_bounds
+        return qp_data
 
     def unapply(self, xdot: np.ndarray) -> np.ndarray:
         """
@@ -68,38 +73,18 @@ class Conditioning:
 
 
 @dataclass
-class MyConditioning:
-    def __post_init__(self):
-        C = np.ones(self.quadratic_weights.shape)
-        C[-3:] = 1 / np.sqrt(self.quadratic_weights[-3:])
-        C = np.diag(C)
-        new_eq_matrix = self.eq_matrix @ C
-        maxx = np.abs(new_eq_matrix[-3:, :]).max(axis=1)
-        R_eq = np.ones(self.eq_matrix.shape[0])
-        R_eq[-3:] = 1 / maxx
-        R_eq = np.diag(R_eq)
-        return QPData(
-            quadratic_weights=C @ self.quadratic_weights @ C,
-            linear_weights=self.linear_weights,
-            box_lower_constraints=self.box_lower_constraints @ C,
-            box_upper_constraints=self.box_upper_constraints @ C,
-            eq_matrix=R_eq @ self.eq_matrix @ C,
-            eq_bounds=R_eq @ self.eq_bounds,
-            neq_matrix=self.neq_matrix,
-            neq_lower_bounds=self.neq_lower_bounds,
-            neq_upper_bounds=self.neq_upper_bounds,
-            R_eq=R_eq,
-            C=C,
-        )
-
-
-@dataclass
 class HessianOneConditioning(Conditioning):
-    @classmethod
-    def from_qp_data(cls, qp_data: QPData) -> Self:
+    def _apply_column_scaling(self, qp_data: QPData) -> QPData:
         diagonal = 1 / np.sqrt(qp_data.quadratic_weights)
         diagonal[qp_data.quadratic_weights == 0] = 1.0
-        return cls(C=sp.diags(diagonal))
+        self.C = sp.diags(diagonal, format="csc")
+        return super()._apply_column_scaling(qp_data)
+
+    def _apply_row_scaling_eq(self, qp_data: QPData) -> QPData:
+        asdf = np.abs(qp_data.eq_matrix.toarray()).max(axis=1)
+        asdf[asdf == 0] = 1.0
+        self.R_eq = sp.diags(1 / asdf, format="csc")
+        return super()._apply_row_scaling_eq(qp_data)
 
 
 @dataclass

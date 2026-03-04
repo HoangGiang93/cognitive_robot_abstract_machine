@@ -112,7 +112,13 @@ def execute(link_length: float, vel_limit: float, rclpy_node):
     )
     kin_sim.compile(motion_statechart=msc)
 
-    kin_sim.tick_until_end(10_000)
+    try:
+        kin_sim.tick_until_end(10_000)
+    finally:
+        print(f"failed at {kin_sim.control_cycles}")
+        print(f"failed at {kin_sim.control_cycles}")
+        print(f"failed at {kin_sim.control_cycles}")
+        print(f"failed at {kin_sim.control_cycles}")
 
 
 def test_cart_goal(rclpy_node):

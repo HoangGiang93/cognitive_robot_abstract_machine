@@ -584,7 +584,7 @@ class FreeVariableBounds(ProblemDataPart):
                             continue
                         index = t + self.config.prediction_horizon * (derivative - 1)
                         if derivative == Derivatives.jerk:
-                            multiplier = self.config.mpc_dt**2
+                            multiplier = 1  # self.config.mpc_dt**2
                         else:
                             multiplier = 1
                         lb[derivative][f"t{t:03}/{v.name}/{derivative}"] = (
@@ -1210,7 +1210,7 @@ class EqualityModel(ProblemDataPart):
         pre_previous = -sm.Matrix.eye(n_vel)
         same = pre_previous
         previous = -2 * pre_previous
-        j_same = sm.Matrix.eye(n_jerk)  # * self.config.mpc_dt**2
+        j_same = sm.Matrix.eye(n_jerk) * self.config.mpc_dt**2
         model[: -self.number_of_free_variables * 2, :n_vel] += pre_previous
         model[
             self.number_of_free_variables : -self.number_of_free_variables, :n_vel
