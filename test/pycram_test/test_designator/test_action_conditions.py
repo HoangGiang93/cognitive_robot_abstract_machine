@@ -12,10 +12,7 @@ from pycram.datastructures.grasp import GraspDescription
 from pycram.failures import ConditionNotSatisfied, PlanFailure
 from pycram.language import SequentialPlan
 from pycram.motion_executor import simulated_robot
-from pycram.parameter_rules.default_type_domains import (
-    EnumDomainSpecification,
-    GraspDomainSpecification,
-)
+
 from pycram.robot_plans import PickUpAction, PickUpActionDescription
 from semantic_digital_twin.adapters.ros.visualization.viz_marker import (
     VizMarkerPublisher,

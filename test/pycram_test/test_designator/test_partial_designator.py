@@ -12,7 +12,6 @@ from pycram.datastructures.pose import PoseStamped
 from pycram.designators.object_designator import BelieveObject
 from pycram.language import SequentialPlan
 from pycram.motion_executor import simulated_robot
-from pycram.parameter_rules.default_type_domains import load_default_domains
 from pycram.robot_plans import (
     PickUpAction,
     SetGripperAction,
@@ -57,7 +56,7 @@ def test_partial_desig_call():
         "arm": Arms.RIGHT,
         "grasp_description": grasp_description,
         "object_designator": None,
-    } == new_partial_desig.slots
+    } == new_partial_desig.kwargs
 
 
 def test_partial_desig_missing_params():
@@ -156,13 +155,13 @@ def test_partial_navigate_action_perform(immutable_model_world):
         move1 = SequentialPlan(
             context,
             NavigateActionDescription(
-                PoseStamped.from_list([1, 0, 0], frame=world.root)
+                PoseStamped.from_list([1, -1, 0], frame=world.root)
             ),
         )
         move1.perform()
         np.testing.assert_almost_equal(
             list(robot_view.root.global_pose.to_np()[:3, 3]),
-            [1, 0, 0],
+            [1, -1, 0],
             decimal=1,
         )
 
@@ -171,12 +170,12 @@ def test_partial_navigate_action_multiple(immutable_model_world):
     world, robot_view, context = immutable_model_world
     nav = NavigateActionDescription(
         [
-            PoseStamped.from_list([1, 0, 0], frame=world.root),
-            PoseStamped.from_list([2, 0, 0], frame=world.root),
-            PoseStamped.from_list([3, 0, 0], frame=world.root),
+            PoseStamped.from_list([1, -1, 0], frame=world.root),
+            PoseStamped.from_list([2, -1, 0], frame=world.root),
+            PoseStamped.from_list([3, -1, 0], frame=world.root),
         ]
     )
-    nav_goals = [[1, 0, 0], [2, 0, 0], [3, 0, 0]]
+    nav_goals = [[1, -1, 0], [2, -1, 0], [3, -1, 0]]
     for i, action in enumerate(nav):
         with simulated_robot:
             SequentialPlan(context, action).perform()
@@ -261,31 +260,3 @@ def test_correct_error():
     with pytest.raises(RuntimeError) as cm:
         list(lazy_product(bad_generator()))
     assert "bad_generator" in str(cm.value)
-
-
-def test_parameter_inference(immutable_model_world):
-    world, robot_view, context = immutable_model_world
-
-    pick_action = PickUpActionDescription(
-        world.get_body_by_name("milk.stl"),
-        ...,
-        GraspDescription(
-            ApproachDirection.FRONT,
-            VerticalAlignment.NoAlignment,
-            robot_view.right_arm.manipulator,
-        ),
-    )
-
-    plan = SequentialPlan(context, pick_action)
-
-    load_default_domains(plan)
-
-    robot_view.root.parent_connection.origin = (
-        HomogeneousTransformationMatrix.from_xyz_rpy(
-            1.8,
-            1.4,
-            0,
-        )
-    )
-
-    inferred_params = list(pick_action.find_missing_parameter())

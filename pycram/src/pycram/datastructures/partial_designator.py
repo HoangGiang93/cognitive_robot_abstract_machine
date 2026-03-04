@@ -7,7 +7,6 @@ from typing_extensions import List, Tuple, Any, Dict, TypeVar, Iterator, Iterabl
 
 from krrood.entity_query_language.entity import variable, set_of
 from krrood.entity_query_language.entity_result_processors import a
-from ..parameter_inference import ParameterIdentifier
 from ..plan import PlanNode
 from ..utils import is_iterable, lazy_product
 
@@ -134,15 +133,6 @@ class PartialDesignator(Iterable[T]):
         missing = {k: v for k, v in self.kwargs.items() if v is None or v == Ellipsis}
         return list(missing.keys())
 
-
-    def find_missing_parameter(self):
-        unbound_variables = {name: variable(self.kwarg_types[name], domain=self.plan.parameter_infeerer.infer_domain_for_parameter(ParameterIdentifier(self, name))) for name in self.kwargs.keys()}
-        condition = self.performable.pre_condition(unbound_variables, self.plan.context, self.kwargs)
-        query = a(set_of(*unbound_variables.values()).where(condition))
-        var_to_field = dict(zip(unbound_variables.values(), self.performable.fields))
-        for result in query.evaluate():
-            bindings = result.data
-            yield {var_to_field[k].name: v for k, v in bindings.items()}
 
     def create_unbound_variables(self):
         return self.plan.parameter_infeerer.plan_domain.designator_domains[self].create_variables()

@@ -177,7 +177,7 @@ def test_code_designator_type(database, mutable_model_world):
     action = SequentialPlan(
         context,
         NavigateActionDescription(
-            PoseStamped.from_list([0.6, 0.4, 0], [0, 0, 0, 1], world.root),
+            PoseStamped.from_list([0.6, -1.4, 0], [0, 0, 0, 1], world.root),
             True,
         ),
     )
@@ -431,7 +431,7 @@ def test_exec_creation(database, immutable_model_world):
     plan = SequentialPlan(
         context,
         NavigateActionDescription(
-            PoseStamped.from_list([0.6, 0.4, 0], [0, 0, 0, 1], world.root),
+            PoseStamped.from_list([0.6, -1.4, 0], [0, 0, 0, 1], world.root),
             True,
         ),
     )
@@ -451,7 +451,7 @@ def test_exec_data_pose(database, immutable_model_world):
     plan = SequentialPlan(
         context,
         NavigateActionDescription(
-            PoseStamped.from_list([0.6, 0.4, 0], [0, 0, 0, 1], world.root),
+            PoseStamped.from_list([0.6, -1.4, 0], [0, 0, 0, 1], world.root),
             True,
         ),
     )
@@ -473,7 +473,7 @@ def test_exec_data_pose(database, immutable_model_world):
         ],
     )
     np.testing.assert_almost_equal(
-        [0.6, 0.4, 0],
+        [0.6, -1.4, 0],
         [
             exec_data.execution_end_pose.pose.position.x,
             exec_data.execution_end_pose.pose.position.y,
@@ -555,7 +555,7 @@ def test_state(database, immutable_model_world):
     plan = SequentialPlan(
         context,
         NavigateActionDescription(
-            PoseStamped.from_list([0.6, 0.4, 0], [0, 0, 0, 1], world.root),
+            PoseStamped.from_list([0.6, -1.4, 0], [0, 0, 0, 1], world.root),
             True,
         ),
     )

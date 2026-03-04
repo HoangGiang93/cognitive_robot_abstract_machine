@@ -26,7 +26,6 @@ from krrood.entity_query_language.symbolic import Variable, SymbolicExpression
 from ...datastructures.dataclasses import Context
 from ...designator import DesignatorDescription
 from ...failures import PlanFailure, ConditionNotSatisfied
-from ...parameter_inference import ParameterIdentifier
 
 logger = logging.getLogger(__name__)
 
