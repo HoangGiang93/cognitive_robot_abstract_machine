@@ -21,8 +21,6 @@ EQL does not attempt to replace Python with a domain-specific language. It makes
 Where SQL requires explicit joins and table navigation, EQL treats relationships as natural object references.
 Traversal replaces joins. Structure replaces boilerplate.
 
-Some parts of EQL interface were inspirations from [euROBIN](https://www.eurobin-project.eu/).
-
 ## EQL is Pythonic First
 
 EQL is not a string-based query system. Queries are written directly in Python syntax, using real objects, real functions, and real control flow.
@@ -93,6 +91,10 @@ EQL stands for:
 It does not attempt to make Python behave like SQL.
 
 It assumes Python is already powerful enough — and builds a relational model that fits naturally inside it.
+
+```{note}
+Some parts of EQL interface were inspirations from [euROBIN](https://www.eurobin-project.eu/).
+```
 
 ## The "Hello World" of EQL
 
