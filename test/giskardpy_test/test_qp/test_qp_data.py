@@ -6,6 +6,7 @@ from giskardpy.qp.qp_data import (
     ConditioningStrategy,
     HessianOneConditioningStrategy,
     JerkOneConditioningStrategy,
+    QPDataExplicit,
 )
 from giskardpy.qp.solvers.qp_solver_gurobi import QPSolverGurobi
 from giskardpy.qp.solvers.qp_solver_qpSWIFT import QPSolverQPSwift
@@ -122,7 +123,7 @@ def linear_weights_qp() -> tuple[QPData, np.ndarray]:
     expected solution:
         [-1.0, 2.0]
     """
-    return QPData(
+    return QPDataExplicit(
         quadratic_weights=np.array([2.0, 2.0]),
         linear_weights=np.array([2.0, -4.0]),
         box_lower_constraints=np.array([-np.inf, -np.inf]),
@@ -132,6 +133,8 @@ def linear_weights_qp() -> tuple[QPData, np.ndarray]:
         neq_matrix=sp.csc_matrix(np.zeros((0, 2))),
         neq_lower_bounds=np.array([]),
         neq_upper_bounds=np.array([]),
+        num_eq_slack_variables=0,
+        num_neq_slack_variables=0,
     ), np.array([-1.0, 2.0])
 
 

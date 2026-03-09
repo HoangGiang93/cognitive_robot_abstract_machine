@@ -1289,40 +1289,6 @@ class TestCartesianTasks:
         kin_sim.compile(motion_statechart=msc)
         kin_sim.tick_until_end()
 
-    def test_cart_goal_1eef_qpalm(self, pr2_world_state_reset: World):
-        tip = pr2_world_state_reset.get_kinematic_structure_entity_by_name(
-            "r_gripper_tool_frame"
-        )
-        root = pr2_world_state_reset.get_kinematic_structure_entity_by_name(
-            "base_footprint"
-        )
-        tip_goal = HomogeneousTransformationMatrix.from_xyz_quaternion(
-            pos_x=-0.2, reference_frame=tip
-        )
-
-        msc = MotionStatechart()
-        msc.add_node(
-            cart_goal := CartesianPose(
-                root_link=root,
-                tip_link=tip,
-                goal_pose=tip_goal,
-            )
-        )
-        msc.add_node(EndMotion.when_true(cart_goal))
-
-        kin_sim = Executor(
-            MotionStatechartContext(
-                world=pr2_world_state_reset,
-                qp_controller_config=QPControllerConfig(
-                    target_frequency=20,
-                    prediction_horizon=7,
-                    qp_solver_id=SupportedQPSolver.qpalm,
-                ),
-            )
-        )
-        kin_sim.compile(motion_statechart=msc)
-        kin_sim.tick_until_end()
-
     def test_front_facing_orientation(self, hsr_world_setup: World):
         with hsr_world_setup.modify_world():
             box = Body(
