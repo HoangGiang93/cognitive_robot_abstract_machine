@@ -1,3 +1,5 @@
+import os
+
 import rclpy
 
 import robokudo.analysis_engine
@@ -23,16 +25,31 @@ from semantic_digital_twin.adapters.ros.visualization.viz_marker import (
 
 
 class AnalysisEngine(robokudo.analysis_engine.AnalysisEngineInterface):
-    def name(self):
+    def name(self) -> str:
         return "demo"
 
-    def implementation(self):
+    def implementation(self) -> robokudo.pipeline.Pipeline:
         """
         Create a pipeline that does tabletop segmentation and integrates primary navigation
         using a YOLO annotator.
         """
 
-        sw_connector = SemanticDigitalTwinConnector()
+        urdf_path = os.path.join(
+            os.path.dirname(__file__),
+            "..",
+            "..",
+            "..",
+            "..",
+            "..",
+            "pycram",
+            "resources",
+            "worlds",
+            "apartment.urdf",
+        )
+
+        descriptor = SemanticDigitalTwinConnector.Descriptor()
+        # descriptor.parameters.urdf_path = urdf_path
+        sw_connector = SemanticDigitalTwinConnector(descriptor=descriptor)
 
         node = rclpy.create_node("semantic_world")
         viz = VizMarkerPublisher(world=sw_connector.semdt_adapter.world, node=node)

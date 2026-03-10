@@ -108,9 +108,8 @@ class AnnotationPublisherWriter(core.BaseAnnotator):
                 self.topic_name: str = "/annotations"
                 """Name of the ROS topic to publish on, defaults to "/annotations"""
 
-        parameters = (
-            Parameters()
-        )  # overwrite the parameters explicitly to enable auto-completion
+        # overwrite the parameters explicitly to enable auto-completion
+        parameters = Parameters()
 
     def __init__(
         self,
