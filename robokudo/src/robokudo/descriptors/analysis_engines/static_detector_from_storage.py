@@ -63,7 +63,7 @@ class AnalysisEngine(robokudo.analysis_engine.AnalysisEngineInterface):
         :return: The name identifier of this analysis engine
         :rtype: str
         """
-        return "demo_from_storage"
+        return "static_detector_from_storage"
 
     def implementation(self):
         """Create a pipeline for static object detection.

@@ -22,7 +22,7 @@ from . import core
 from . import cv
 
 if TYPE_CHECKING:
-    from .. import object_knowledge_base
+    from semantic_digital_twin.world_description.world_entity import Body
 
 
 @dataclass
@@ -51,9 +51,9 @@ class AnalyzableAnnotation(core.IdentifiableAnnotation):
     Indices into point cloud
     """
 
-    object_knowledge: object_knowledge_base.ObjectKnowledge = None
+    object_knowledge: Body | None = None
     """
-    A reference to ObjectKnowledge, if present
+    A reference to an SDT Body, if present
     """
 
     roi: cv.ImageROI = field(default_factory=cv.ImageROI)

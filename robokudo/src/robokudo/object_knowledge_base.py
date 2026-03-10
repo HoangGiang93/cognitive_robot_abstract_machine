@@ -7,8 +7,11 @@ spatial relationships.
 """
 
 from dataclasses import field, dataclass
-from typing_extensions import Dict, List, Any
+from typing_extensions import Dict, List, Any, Optional
 
+from semantic_digital_twin.datastructures.prefixed_name import PrefixedName
+from semantic_digital_twin.world import World
+from semantic_digital_twin.world_description.world_entity import Body, SemanticAnnotation
 from . import defs
 
 
@@ -41,6 +44,11 @@ class ObjectKnowledge(defs.Region3DWithName):
         return self.frame is None or self.frame == ""
 
 
+@dataclass(eq=False)
+class PredefinedObject(SemanticAnnotation):
+    body: Body = field(default=None)
+
+
 class BaseObjectKnowledgeBase:
     """Base class for managing object knowledge.
 
@@ -52,8 +60,18 @@ class BaseObjectKnowledgeBase:
     def __init__(self):
         """Initialize an empty object knowledge base."""
 
-        self.entries: Dict[str, ObjectKnowledge] = dict()
         """Dictionary mapping object names to their knowledge"""
+        self.entries: Dict[str, ObjectKnowledge] = dict()
+
+        self.world = World()
+        root = Body(name=PrefixedName(name="root", prefix="world"))
+        with self.world.modify_world():
+            self.world.add_body(body=root)
+
+    def get_predefined_object_bodies(self) -> List[Body]:
+        """Get list of pre-defined objects."""
+        predefined_object_annotations = self.world.get_semantic_annotations_by_type(PredefinedObject)
+        return list([predefined_object.body for predefined_object in predefined_object_annotations])
 
     def add_entry(self, entry: ObjectKnowledge) -> None:
         """Add a single object knowledge entry.

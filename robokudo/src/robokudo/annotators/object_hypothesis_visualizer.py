@@ -177,20 +177,21 @@ class ObjectHypothesisVisualizer(robokudo.annotators.core.BaseAnnotator):
                 cluster_frame.transform(transform)
                 visualized_geometries.append(cluster_frame)
 
-                if object_hypothesis.object_knowledge is not None:
-                    ok = object_hypothesis.object_knowledge  # type:
-
-                    if ok.mesh_ros_package == "" or ok.mesh_relative_path == "":
-                        continue
-                    mesh_path = FileLoader.get_path_to_file_in_ros_package(
-                        ros_pkg_name=ok.mesh_ros_package,
-                        relative_path=ok.mesh_relative_path)
-
-                    if mesh_path not in self._mesh_cache:
-                        self._mesh_cache[mesh_path] = o3d.io.read_triangle_mesh(mesh_path)
-                    mesh_instance = copy.deepcopy(self._mesh_cache[mesh_path])
-                    mesh_instance.transform(transform)
-                    visualized_geometries.append(mesh_instance)
+                # TODO Fetch mesh from Body
+                # if object_hypothesis.object_knowledge is not None:
+                #     ok = object_hypothesis.object_knowledge  # type:
+                #
+                #     if ok.mesh_ros_package == "" or ok.mesh_relative_path == "":
+                #         continue
+                #     mesh_path = FileLoader.get_path_to_file_in_ros_package(
+                #         ros_pkg_name=ok.mesh_ros_package,
+                #         relative_path=ok.mesh_relative_path)
+                #
+                #     if mesh_path not in self._mesh_cache:
+                #         self._mesh_cache[mesh_path] = o3d.io.read_triangle_mesh(mesh_path)
+                #     mesh_instance = copy.deepcopy(self._mesh_cache[mesh_path])
+                #     mesh_instance.transform(transform)
+                #     visualized_geometries.append(mesh_instance)
 
         if self.descriptor.parameters.visualize_full_cloud:
             visualized_geometries.append(self.get_cas().get(CASViews.CLOUD))

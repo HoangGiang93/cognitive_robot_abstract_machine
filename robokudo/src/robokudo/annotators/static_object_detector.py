@@ -2,7 +2,7 @@
 Robokudo Static Object Detector Module
 
 This module provides functionality for detecting objects at predefined locations
-using either manually configured bounding boxes or object knowledge from a database.
+using either manually configured bounding boxes or SDT object knowledge from a database.
 The detector can create object hypotheses with poses, masks, and class labels.
 
 .. note::
@@ -29,9 +29,9 @@ import robokudo.utils.knowledge
 import robokudo.utils.o3d_helper
 import robokudo.utils.type_conversion
 from robokudo.cas import CASViews
-from robokudo.object_knowledge_base import ObjectKnowledge
 from robokudo.types.scene import ObjectHypothesis
 from robokudo.utils.transform import get_rotation_matrix_from_euler_angles
+from semantic_digital_twin.world_description.world_entity import Body
 
 
 class StaticObjectMode(Enum):
@@ -98,12 +98,12 @@ class StaticObjectDetectorAnnotator(robokudo.annotators.core.BaseAnnotator):
                 # If this is a true, a mask based on the ROI will be generated that marks every pixel as ON
                 self.create_mask = True
 
-                # If you use ObjectKnowledge to generate the detection, provide the knowledge base here
+                # If you use SDT object knowledge to generate the detection, provide the knowledge base here
                 self.object_knowledge_base_ros_package = "robokudo"
                 self.object_knowledge_base_name = "object_knowledge_iai_kitchen"
 
                 # If StaticObjectDetectorAnnotator.Mode.OBJECT_KNOWLEDGE_INSTANCE is used, set the desired instance here
-                self.object_knowledge_instance: ObjectKnowledge | None = None
+                self.object_knowledge_instance: Body | None = None
 
         parameters = Parameters()  # overwrite the parameters explicitly to enable auto-completion
 
@@ -122,7 +122,8 @@ class StaticObjectDetectorAnnotator(robokudo.annotators.core.BaseAnnotator):
         self.cloud = None
         self.cam_intrinsics = None
         self.object_kb = None
-        self.object_knowledge = None
+        self.object_body = None
+        self.object_bodies_by_name = {}
 
     def detect_from_bb_descriptor(self, color_rgb: np.ndarray) -> ObjectHypothesis:
         """
@@ -150,36 +151,65 @@ class StaticObjectDetectorAnnotator(robokudo.annotators.core.BaseAnnotator):
                                                                     class_name=self.descriptor.parameters.class_name)
         return object_hypothesis
 
-    def detect_from_object_knowledge(self, object_knowledge: ObjectKnowledge,
-                                     object_id: int = 0) -> ObjectHypothesis | None:
+    @staticmethod
+    def _body_raw_name(body: Body) -> str:
+        name = getattr(body, "name", None)
+        if name is None:
+            return ""
+        if hasattr(name, "name"):
+            return name.name
+        return str(name)
+
+    @staticmethod
+    def _select_body_shape_collection(body: Body):
+        if body.collision is not None and len(body.collision) > 0:
+            return body.collision
+        if body.visual is not None and len(body.visual) > 0:
+            return body.visual
+        return None
+
+    def _get_body_bb_size_and_center(self, body: Body) -> tuple[np.ndarray, np.ndarray] | None:
+        shape_collection = self._select_body_shape_collection(body)
+        if shape_collection is None or len(shape_collection) == 0:
+            self.rk_logger.warning("Body %s has no collision or visual shapes; skipping.", self._body_raw_name(body))
+            return None
+
+        bb = shape_collection.as_bounding_box_collection_in_frame(body).bounding_box()
+        size = np.array([bb.max_x - bb.min_x, bb.max_y - bb.min_y, bb.max_z - bb.min_z], dtype=float)
+        center = np.array([(bb.min_x + bb.max_x) / 2.0,
+                           (bb.min_y + bb.max_y) / 2.0,
+                           (bb.min_z + bb.max_z) / 2.0], dtype=float)
+        return size, center
+
+    def detect_from_body(self, body: Body, object_id: int = 0,
+                         world_to_cam_transform_matrix: np.ndarray | None = None) -> ObjectHypothesis | None:
         """
-        Detect from singular, passed ObjectKnowledge instance
+        Detect from singular, passed SDT Body instance
 
         :return: robokudo.types.scene.ObjectHypothesis
         """
         object_hypothesis = robokudo.types.scene.ObjectHypothesis()
         object_hypothesis.id = str(object_id)
         object_hypothesis.source = self.name
-        object_hypothesis.object_knowledge = object_knowledge
+        object_hypothesis.object_knowledge = body
 
-        # Check pose 2: Defined in cam or other frame?
-        if object_knowledge.is_frame_in_camera_coordinates():
-            object_knowledge_transform_in_cam = robokudo.utils.knowledge.get_transform_matrix_from_object_knowledge(
-                object_knowledge)
-        else:
-            # Currently, we only support cam or world frames. No tf lookup for other frames! Therefore, consider
-            # pose in object_knowledge as world frame
+        if world_to_cam_transform_matrix is None:
             world_to_cam_transform_matrix = robokudo.utils.annotator_helper.get_world_to_cam_transform_matrix(
                 self.get_cas())
-            object_knowledge_transform_in_world = robokudo.utils.knowledge.get_transform_matrix_from_object_knowledge(
-                object_knowledge)
 
-            object_knowledge_transform_in_cam = world_to_cam_transform_matrix @ object_knowledge_transform_in_world
+        body_bb = self._get_body_bb_size_and_center(body)
+        if body_bb is None:
+            return None
+        bb_size, bb_center_body = body_bb
+
+        world_T_body = body.global_pose.to_np()
+        body_T_bb_center = robokudo.utils.transform.get_transform_matrix_from_translation(bb_center_body)
+        world_T_bb = world_T_body @ body_T_bb_center
+        bb_transform_in_cam = world_to_cam_transform_matrix @ world_T_bb
 
         # Calculate Bounding Box and resulting 2D Image Corner points based on pose in cam coordinates
 
-        obb = robokudo.utils.knowledge.get_obb_for_object_and_transform(object_knowledge,
-                                                                        object_knowledge_transform_in_cam)
+        obb = robokudo.utils.o3d_helper.get_obb_from_size_and_transform(bb_size, bb_transform_in_cam)
         corner_points = robokudo.utils.o3d_helper.get_2d_bounding_rect_from_3d_bb(self.get_cas(), obb)
 
         image_height = self.get_cas().get(CASViews.COLOR_IMAGE).shape[0]
@@ -200,16 +230,16 @@ class StaticObjectDetectorAnnotator(robokudo.annotators.core.BaseAnnotator):
         object_hypothesis.roi = roi
         object_hypothesis.points = self.cloud.crop(obb)
 
-        object_knowledge_translation_in_cam = list(
-            robokudo.utils.transform.get_translation_from_transform_matrix(object_knowledge_transform_in_cam))
-        object_knowledge_rotation_in_cam = list(
-            robokudo.utils.transform.get_quaternion_from_transform_matrix(object_knowledge_transform_in_cam))
+        object_translation_in_cam = list(
+            robokudo.utils.transform.get_translation_from_transform_matrix(bb_transform_in_cam))
+        object_rotation_in_cam = list(
+            robokudo.utils.transform.get_quaternion_from_transform_matrix(bb_transform_in_cam))
 
         if self.descriptor.parameters.create_pose_annotation:
             pose_annotation = robokudo.types.annotation.PoseAnnotation()
             pose_annotation.source = 'StaticObjectDetectorAnnotator'
-            pose_annotation.translation = object_knowledge_translation_in_cam
-            pose_annotation.rotation = object_knowledge_rotation_in_cam
+            pose_annotation.translation = object_translation_in_cam
+            pose_annotation.rotation = object_rotation_in_cam
 
             object_hypothesis.annotations.append(pose_annotation)
 
@@ -217,21 +247,21 @@ class StaticObjectDetectorAnnotator(robokudo.annotators.core.BaseAnnotator):
             bb_annotation = robokudo.types.annotation.BoundingBox3DAnnotation()
             bb_annotation.source = 'StaticObjectDetectorAnnotator'
             bb_annotation.pose = robokudo.types.tf.Pose()
-            bb_annotation.pose.translation = object_knowledge_translation_in_cam
-            bb_annotation.pose.rotation = object_knowledge_rotation_in_cam
+            bb_annotation.pose.translation = object_translation_in_cam
+            bb_annotation.pose.rotation = object_rotation_in_cam
 
-            bb_annotation.x_length = object_knowledge.x_size
-            bb_annotation.y_length = object_knowledge.y_size
-            bb_annotation.z_length = object_knowledge.z_size
+            bb_annotation.x_length = float(bb_size[0])
+            bb_annotation.y_length = float(bb_size[1])
+            bb_annotation.z_length = float(bb_size[2])
 
             object_hypothesis.annotations.append(bb_annotation)
 
         StaticObjectDetectorAnnotator.add_classification_annotation(object_hypothesis=object_hypothesis,
-                                                                    class_name=object_knowledge.name)
+                                                                    class_name=self._body_raw_name(body))
 
         return object_hypothesis
 
-    def detect_from_object_knowledge_base(self) -> list[ObjectHypothesis]:
+    def detect_from_body_base(self, world_to_cam_transform_matrix: np.ndarray | None = None) -> list[ObjectHypothesis]:
         """
         Detect from a completed object knowledge base
 
@@ -239,8 +269,10 @@ class StaticObjectDetectorAnnotator(robokudo.annotators.core.BaseAnnotator):
         """
         object_hypotheses = []
         for class_name in self.descriptor.parameters.class_names:
-            object_knowledge = self.object_kb.entries[class_name]
-            object_hypothesis = self.detect_from_object_knowledge(object_knowledge)
+            body = self.object_bodies_by_name.get(class_name)
+            if body is None:
+                continue
+            object_hypothesis = self.detect_from_body(body, world_to_cam_transform_matrix=world_to_cam_transform_matrix)
             if object_hypothesis is not None:
                 object_hypotheses.append(object_hypothesis)
 
@@ -274,30 +306,37 @@ class StaticObjectDetectorAnnotator(robokudo.annotators.core.BaseAnnotator):
         self.cam_intrinsics = copy.deepcopy(self.get_cas().get(CASViews.CAM_INTRINSIC))
 
         world_frame_required = False
+        world_to_cam_transform_matrix = None
         if self.descriptor.parameters.mode == StaticObjectMode.OBJECT_KNOWLEDGE_BASE:
             self.object_kb = robokudo.utils.knowledge.load_object_knowledge_base(self)
-            self.rk_logger.info(f"Loaded KB: {self.object_kb.entries}")
+            object_bodies = self.object_kb.get_predefined_object_bodies()
+            self.object_bodies_by_name = {self._body_raw_name(body): body for body in object_bodies}
+            self.rk_logger.info(f"Loaded KB bodies: {list(self.object_bodies_by_name.keys())}")
 
             # Do some sanity checks and quit early if necessary
             for class_name in self.descriptor.parameters.class_names:
-                if class_name not in self.object_kb.entries:
+                if class_name not in self.object_bodies_by_name:
                     self.feedback_message = f"Couldn't find {class_name} in Object Knowledgebase"
                     self.rk_logger.warning(self.feedback_message)
                     return py_trees.common.Status.SUCCESS
 
-                if self.object_kb.entries[class_name].is_frame_in_camera_coordinates():
-                    world_frame_required = True
+            world_frame_required = True
 
         if self.descriptor.parameters.mode == StaticObjectMode.OBJECT_KNOWLEDGE_INSTANCE:
-            self.object_knowledge = self.descriptor.parameters.object_knowledge_instance
+            self.object_body = self.descriptor.parameters.object_knowledge_instance
 
             # Do some sanity checks and quit early if necessary
-            if self.descriptor.parameters.class_name is not self.object_knowledge.name:
+            if self.object_body is None:
+                self.feedback_message = "No Object Knowledge instance provided"
+                self.rk_logger.warning(self.feedback_message)
+                return py_trees.common.Status.SUCCESS
+
+            if self.descriptor.parameters.class_name != self._body_raw_name(self.object_body):
                 self.feedback_message = f"Couldn't find {self.descriptor.parameters.class_name} in Object Knowledge Instance"
                 self.rk_logger.warning(self.feedback_message)
                 return py_trees.common.Status.SUCCESS
 
-            world_frame_required = self.object_knowledge.is_frame_in_camera_coordinates()
+            world_frame_required = True
 
         if world_frame_required:
             try:
@@ -307,6 +346,8 @@ class StaticObjectDetectorAnnotator(robokudo.annotators.core.BaseAnnotator):
                 return py_trees.common.Status.FAILURE
 
             assert (isinstance(cam_to_world_transform, robokudo.types.tf.StampedTransform))
+            world_to_cam_transform_matrix = robokudo.utils.annotator_helper.get_world_to_cam_transform_matrix(
+                self.get_cas())
 
         # Scale the image down so that it matches the depth image size
         resized_color = None
@@ -329,12 +370,13 @@ class StaticObjectDetectorAnnotator(robokudo.annotators.core.BaseAnnotator):
                 return py_trees.common.Status.SUCCESS
             object_hypotheses.append(object_hypothesis)
         elif self.descriptor.parameters.mode == StaticObjectMode.OBJECT_KNOWLEDGE_BASE:
-            object_hypotheses = self.detect_from_object_knowledge_base()
+            object_hypotheses = self.detect_from_body_base(world_to_cam_transform_matrix=world_to_cam_transform_matrix)
             if len(object_hypotheses) == 0:
                 # Simply return early but don't die
                 return py_trees.common.Status.SUCCESS
         elif self.descriptor.parameters.mode == StaticObjectMode.OBJECT_KNOWLEDGE_INSTANCE:
-            object_hypothesis = self.detect_from_object_knowledge(self.descriptor.parameters.object_knowledge_instance)
+            object_hypothesis = self.detect_from_body(self.descriptor.parameters.object_knowledge_instance,
+                                                      world_to_cam_transform_matrix=world_to_cam_transform_matrix)
             if object_hypothesis is None:
                 return py_trees.common.Status.SUCCESS
             object_hypotheses.append(object_hypothesis)
