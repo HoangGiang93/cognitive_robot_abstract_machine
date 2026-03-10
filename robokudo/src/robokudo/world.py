@@ -36,11 +36,12 @@ def world_instance() -> World:
     """
     A singleton-like World instance.
 
-    :return: The world state which is the current belief state.
+    :return: The world state for the currently running perception pipeline.
+    This is NOT necessarily the belief state World based on the previous analysis results.
     :rtype: World
     """
     if this.world is None:
-        this.world = World()
+        this.clear_world()
 
         # Setup of this world is currently the responsibility of the other nodes, loaded URDF
         # and/or camera interface.
@@ -50,6 +51,10 @@ def world_instance() -> World:
 
 def set_world(world: World):
     this.world = world
+
+
+def clear_world():
+    this.world = World()
 
 
 def world_has_body_by_name(world: World, body_name: str):
