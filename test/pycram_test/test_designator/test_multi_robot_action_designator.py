@@ -59,7 +59,7 @@ from semantic_digital_twin.spatial_types import HomogeneousTransformationMatrix
 from semantic_digital_twin.world import World
 
 
-@pytest.fixture(scope="session", params=["hsrb", "stretch", "tiago", "pr2"])
+@pytest.fixture(scope="module", params=["hsrb", "stretch", "tiago", "pr2"])
 def setup_multi_robot_apartment(
     request,
     hsr_world_setup,
@@ -260,23 +260,26 @@ def test_follow_tcp_path_multi(immutable_multiple_robot_apartment):
     world, robot_view, context = immutable_multiple_robot_apartment
 
     if isinstance(robot_view, (Tiago)):
-        #do not allow since
+        # do not allow since
         robot_view.full_body_controlled = False
-        robot_view.root.parent_connection.origin = HomogeneousTransformationMatrix.from_xyz_rpy(
-            1.7, 1.7, 0, reference_frame=world.root
+        robot_view.root.parent_connection.origin = (
+            HomogeneousTransformationMatrix.from_xyz_rpy(
+                1.7, 1.7, 0, reference_frame=world.root
+            )
         )
         world.notify_state_change()
 
     if isinstance(robot_view, (Stretch)):
         # do not allow since
         robot_view.full_body_controlled = False
-        robot_view.root.parent_connection.origin = HomogeneousTransformationMatrix.from_xyz_rpy(
-            2.12, 2.2, 0, reference_frame=world.root
+        robot_view.root.parent_connection.origin = (
+            HomogeneousTransformationMatrix.from_xyz_rpy(
+                2.12, 2.2, 0, reference_frame=world.root
+            )
         )
         world.notify_state_change()
     # robot_view.full_body_controlled = True
     left_arm = ViewManager.get_arm_view(Arms.LEFT, robot_view)
-
 
     front_axis = tuple(
         int(v) for v in left_arm.manipulator.front_facing_axis.to_np()[:3]

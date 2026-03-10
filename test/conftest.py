@@ -1,9 +1,14 @@
+import gc
+import linecache
 import os
 import threading
 import time
+import tracemalloc
 from copy import deepcopy
+from functools import _lru_cache_wrapper
 
 import numpy as np
+import objgraph
 import pytest
 
 from semantic_digital_twin.adapters.package_resolver import PathResolver
@@ -103,6 +108,58 @@ def cleanup_after_test():
     yield
     # runs AFTER each test (even if the test fails or errors)
     SymbolGraph().clear()
+
+
+@pytest.fixture(autouse=True, scope="function")
+def cleanup_lru_cache_after_test():
+    yield
+    for obj in gc.get_objects():
+        if isinstance(obj, _lru_cache_wrapper):
+            obj.cache_clear()
+
+
+def display_top(snapshot, key_type="lineno", limit=10):
+    snapshot = snapshot.filter_traces(
+        (
+            tracemalloc.Filter(False, "<frozen importlib._bootstrap>"),
+            tracemalloc.Filter(False, "<unknown>"),
+        )
+    )
+    top_stats = snapshot.statistics(key_type)
+
+    print("Top %s lines" % limit)
+    for index, stat in enumerate(top_stats[:limit], 1):
+        frame = stat.traceback[0]
+        print(
+            "#%s: %s:%s: %.1f KiB"
+            % (index, frame.filename, frame.lineno, stat.size / 1024)
+        )
+        line = linecache.getline(frame.filename, frame.lineno).strip()
+        if line:
+            print("    %s" % line)
+
+    other = top_stats[limit:]
+    if other:
+        size = sum(stat.size for stat in other)
+        print("%s other: %.1f KiB" % (len(other), size / 1024))
+    total = sum(stat.size for stat in top_stats)
+    print("Total allocated size: %.1f KiB" % (total / 1024))
+
+
+# @pytest.fixture(autouse=True, scope="function")
+# def map_memory():
+#     tracemalloc.start()
+#     yield
+#     snapshot = tracemalloc.take_snapshot()
+#     display_top(snapshot, key_type="lineno", limit=10)
+
+
+@pytest.fixture(autouse=True, scope="function")
+def count_worlds():
+    yield
+    unreachable = gc.collect()
+    print("Unreachable objects found:", unreachable)
+    print(f"Number of worlds after test: {objgraph.count("World")}")
 
 
 @pytest.fixture(autouse=True, scope="session")
@@ -345,6 +402,7 @@ def world_with_urdf_factory(
         robot_semantic_annotation.from_world(world_with_urdf)
 
     with world_with_urdf.modify_world():
+        old_root = world_with_urdf.root
         map = Body(name=PrefixedName("map"))
         localization_body = Body(name=PrefixedName("odom_combined"))
 
@@ -355,7 +413,7 @@ def world_with_urdf_factory(
 
         c_root_bf = drive_connection_type.create_with_dofs(
             parent=localization_body,
-            child=world_with_urdf.root,
+            child=old_root,
             world=world_with_urdf,
         )
         world_with_urdf.add_connection(c_root_bf)
