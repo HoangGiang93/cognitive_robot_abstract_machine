@@ -118,48 +118,17 @@ def cleanup_lru_cache_after_test():
             obj.cache_clear()
 
 
-def display_top(snapshot, key_type="lineno", limit=10):
-    snapshot = snapshot.filter_traces(
-        (
-            tracemalloc.Filter(False, "<frozen importlib._bootstrap>"),
-            tracemalloc.Filter(False, "<unknown>"),
-        )
-    )
-    top_stats = snapshot.statistics(key_type)
-
-    print("Top %s lines" % limit)
-    for index, stat in enumerate(top_stats[:limit], 1):
-        frame = stat.traceback[0]
-        print(
-            "#%s: %s:%s: %.1f KiB"
-            % (index, frame.filename, frame.lineno, stat.size / 1024)
-        )
-        line = linecache.getline(frame.filename, frame.lineno).strip()
-        if line:
-            print("    %s" % line)
-
-    other = top_stats[limit:]
-    if other:
-        size = sum(stat.size for stat in other)
-        print("%s other: %.1f KiB" % (len(other), size / 1024))
-    total = sum(stat.size for stat in top_stats)
-    print("Total allocated size: %.1f KiB" % (total / 1024))
-
-
-# @pytest.fixture(autouse=True, scope="function")
-# def map_memory():
-#     tracemalloc.start()
-#     yield
-#     snapshot = tracemalloc.take_snapshot()
-#     display_top(snapshot, key_type="lineno", limit=10)
-
-
 @pytest.fixture(autouse=True, scope="function")
 def count_worlds():
     yield
     unreachable = gc.collect()
-    print("Unreachable objects found:", unreachable)
-    print(f"Number of worlds after test: {objgraph.count("World")}")
+    world_in_mem = objgraph.count("World")
+    if world_in_mem > 20:
+        print("Unreachable objects found:", unreachable)
+        print(f"Number of worlds after test: {objgraph.count("World")}")
+        raise MemoryError(
+            "Something is leaking worlds, there are more than 20 worlds in memory after the test"
+        )
 
 
 @pytest.fixture(autouse=True, scope="session")
