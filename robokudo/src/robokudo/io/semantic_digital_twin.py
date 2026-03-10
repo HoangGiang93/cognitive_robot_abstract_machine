@@ -434,13 +434,9 @@ class SemanticDigitalTwinAdapter:
         """
 
         diffs = []
-        matched_objects: set[uuid.UUID] = (
-            set()
-        )  # old objects that were already matched to a new object
+        # Old objects that were already matched to a new object
+        matched_objects: set[uuid.UUID] = set()
         for new_object in new_objects:
-            # Skip objects without YOLO classification
-            if "class" not in new_object.data:
-                continue
             best_matching_object = None
             best_matching_confidence = -float("inf")
 
