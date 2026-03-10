@@ -4,13 +4,10 @@ from dataclasses import dataclass
 from datetime import timedelta
 
 import numpy as np
-from typing_extensions import Union, Optional, Type, Any, Iterable
+from typing_extensions import Optional, Any
 
-from pycram.robot_plans.actions.core.navigation import LookAtActionDescription, NavigateActionDescription
 from pycram.config.action_conf import ActionConfig
-from pycram.datastructures.partial_designator import PartialDesignator
 from pycram.datastructures.pose import PoseStamped
-from pycram.language import SequentialPlan
 from pycram.robot_plans.actions.base import ActionDescription
 from pycram.tf_transformations import quaternion_from_euler
 
@@ -62,18 +59,3 @@ class FaceAtAction(ActionDescription):
     ):
         # The validation will be done in the LookAtActionPerformable.perform() method so no need to validate here.
         pass
-
-    @classmethod
-    def description(
-        cls,
-        pose: Union[Iterable[PoseStamped], PoseStamped],
-        keep_joint_states: Union[
-            Iterable[bool], bool
-        ] = ActionConfig.face_at_keep_joint_states,
-    ) -> PartialDesignator[FaceAtAction]:
-        return PartialDesignator(
-            FaceAtAction, pose=pose, keep_joint_states=keep_joint_states
-        )
-
-
-FaceAtActionDescription = FaceAtAction.description

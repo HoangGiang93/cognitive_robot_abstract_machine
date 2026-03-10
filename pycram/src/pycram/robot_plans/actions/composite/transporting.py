@@ -13,28 +13,14 @@ from semantic_digital_twin.semantic_annotations.semantic_annotations import Draw
 from semantic_digital_twin.world_description.world_entity import Body
 from typing_extensions import Union, Optional, Type, Any, Iterable
 
-from pycram.robot_plans.actions.composite.facing import FaceAtActionDescription
-from pycram.robot_plans.actions.core import (
-    ParkArmsActionDescription,
-    NavigateActionDescription,
-    PickUpActionDescription,
-    PlaceActionDescription,
-    OpenActionDescription,
-    MoveTorsoActionDescription,
-)
+
 from pycram.config.action_conf import ActionConfig
 from pycram.datastructures.enums import Arms, Grasp, VerticalAlignment
 from pycram.datastructures.grasp import GraspDescription
-from pycram.datastructures.partial_designator import PartialDesignator
+
 from pycram.datastructures.pose import PoseStamped
-from pycram.designators.location_designator import (
-    ProbabilisticCostmapLocation,
-    CostmapLocation,
-    GiskardLocation,
-)
-from pycram.designators.object_designator import BelieveObject
+
 from pycram.failures import ObjectUnfetchable, ConfigurationNotReached
-from pycram.language import SequentialPlan
 from pycram.robot_plans.actions.base import ActionDescription
 
 
@@ -60,14 +46,6 @@ class TransportAction(ActionDescription):
     """
     If True, the robot will place the object in the same orientation as it is itself, no matter how the object was grasped.
     """
-
-    _pre_perform_callbacks = []
-    """
-    List to save the callbacks which should be called before performing the action.
-    """
-
-    def __post_init__(self):
-        super().__post_init__()
 
     def inside_container(self) -> List[Body]:
         bodies = []
@@ -159,22 +137,6 @@ class TransportAction(ActionDescription):
         # The validation of each core action is done in the action itself, so no more validation needed here.
         pass
 
-    @classmethod
-    def description(
-        cls,
-        object_designator: Union[Iterable[Body], Body],
-        target_location: Union[Iterable[PoseStamped], PoseStamped],
-        arm: Union[Iterable[Arms], Arms] = None,
-        place_rotation_agnostic: Optional[bool] = False,
-    ) -> PartialDesignator[TransportAction]:
-        return PartialDesignator(
-            TransportAction,
-            object_designator=object_designator,
-            target_location=target_location,
-            arm=arm,
-            place_rotation_agnostic=place_rotation_agnostic,
-        )
-
 
 @dataclass
 class PickAndPlaceAction(ActionDescription):
@@ -197,10 +159,6 @@ class PickAndPlaceAction(ActionDescription):
     grasp_description: GraspDescription
     """
     Description of the grasp to pick up the target
-    """
-    _pre_perform_callbacks = []
-    """
-    List to save the callbacks which should be called before performing the action.
     """
 
     def __post_init__(self):
@@ -229,22 +187,6 @@ class PickAndPlaceAction(ActionDescription):
             pass
         else:
             raise ValueError("Object not moved to the target location")
-
-    @classmethod
-    def description(
-        cls,
-        object_designator: Union[Iterable[Body], Body],
-        target_location: Union[Iterable[PoseStamped], PoseStamped],
-        arm: Union[Iterable[Arms], Arms] = None,
-        grasp_description=GraspDescription,
-    ) -> PartialDesignator[PickAndPlaceAction]:
-        return PartialDesignator(
-            PickAndPlaceAction,
-            object_designator=object_designator,
-            target_location=target_location,
-            arm=arm,
-            grasp_description=grasp_description,
-        )
 
 
 @dataclass
@@ -294,25 +236,6 @@ class MoveAndPlaceAction(ActionDescription):
         # The validation will be done in each of the core action perform methods so no need to validate here.
         pass
 
-    @classmethod
-    def description(
-        cls,
-        standing_position: Union[Iterable[PoseStamped], PoseStamped],
-        object_designator: Union[Iterable[Body], Body],
-        target_location: Union[Iterable[PoseStamped], PoseStamped],
-        arm: Union[Iterable[Arms], Arms] = None,
-        keep_joint_states: Union[
-            Iterable[bool], bool
-        ] = ActionConfig.navigate_keep_joint_states,
-    ) -> PartialDesignator[MoveAndPlaceAction]:
-        return PartialDesignator(
-            MoveAndPlaceAction,
-            standing_position=standing_position,
-            object_designator=object_designator,
-            target_location=target_location,
-            arm=arm,
-        )
-
 
 @dataclass
 class MoveAndPickUpAction(ActionDescription):
@@ -345,11 +268,6 @@ class MoveAndPickUpAction(ActionDescription):
     Keep the joint states of the robot the same during the navigation.
     """
 
-    _pre_perform_callbacks = []
-    """
-    List to save the callbacks which should be called before performing the action.
-    """
-
     def __post_init__(self):
         super().__post_init__()
 
@@ -369,26 +287,6 @@ class MoveAndPickUpAction(ActionDescription):
     ):
         # The validation will be done in each of the core action perform methods so no need to validate here.
         pass
-
-    @classmethod
-    def description(
-        cls,
-        standing_position: Union[Iterable[PoseStamped], PoseStamped],
-        object_designator: Union[Iterable[PoseStamped], PoseStamped],
-        arm: Union[Iterable[Arms], Arms] = None,
-        grasp_description: Union[Iterable[Grasp], Grasp] = None,
-        keep_joint_states: Union[
-            Iterable[bool], bool
-        ] = ActionConfig.navigate_keep_joint_states,
-    ) -> PartialDesignator[MoveAndPickUpAction]:
-        return PartialDesignator(
-            MoveAndPickUpAction,
-            standing_position=standing_position,
-            object_designator=object_designator,
-            arm=arm,
-            grasp_description=grasp_description,
-            keep_joint_states=keep_joint_states,
-        )
 
 
 @dataclass
@@ -474,20 +372,3 @@ class EfficientTransportAction(ActionDescription):
         ).perform()
 
         ParkArmsActionDescription(Arms.BOTH).perform()
-
-    @classmethod
-    def description(
-        cls,
-        object_designator: Union[Iterable[Body], Body],
-        target_location: Union[Iterable[PoseStamped], PoseStamped],
-    ) -> PartialDesignator[EfficientTransportAction]:
-        return PartialDesignator(
-            cls, object_designator=object_designator, target_location=target_location
-        )
-
-
-TransportActionDescription = TransportAction.description
-PickAndPlaceActionDescription = PickAndPlaceAction.description
-MoveAndPlaceActionDescription = MoveAndPlaceAction.description
-MoveAndPickUpActionDescription = MoveAndPickUpAction.description
-EfficientTransportActionDescription = EfficientTransportAction.description

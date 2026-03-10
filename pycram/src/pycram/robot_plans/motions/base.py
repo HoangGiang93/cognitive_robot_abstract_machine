@@ -14,7 +14,6 @@ from semantic_digital_twin.robots.abstract_robot import AbstractRobot
 from pycram.datastructures.enums import ExecutionType
 from typing_extensions import TypeVar
 
-from pycram.designator import DesignatorDescription
 from pycram.motion_executor import MotionExecutor
 
 logger = logging.getLogger(__name__)
@@ -50,7 +49,7 @@ class AlternativeMotion(HasGeneric[T], ABC):
 
 
 @dataclass
-class BaseMotion(DesignatorDescription):
+class BaseMotion:
 
     @abstractmethod
     def perform(self):

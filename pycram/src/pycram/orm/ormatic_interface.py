@@ -25,11 +25,9 @@ import numpy
 import pycram.datastructures.dataclasses
 import pycram.datastructures.grasp
 import pycram.datastructures.pose
-import pycram.designator
 import pycram.language
 import pycram.orm.model
-import pycram.plan
-import pycram.robot_plans.actions.base
+import pycram.plans.plan_node
 import pycram.robot_plans.actions.composite.facing
 import pycram.robot_plans.actions.composite.searching
 import pycram.robot_plans.actions.composite.tool_based
@@ -94,7 +92,7 @@ class Base(DeclarativeBase):
 # Association tables for many-to-many relationships
 class CollisionGroupDAO_bodies_association(Base, AssociationDataAccessObject):
 
-    __tablename__ = "_6651560701151009658"
+    __tablename__ = "_4930084920683067415"
 
     database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     source_collisiongroupdao_id: Mapped[int] = mapped_column(
@@ -109,7 +107,7 @@ class CollisionMatrixDAO_collision_checks_association(
     Base, AssociationDataAccessObject
 ):
 
-    __tablename__ = "_-4438850945533142970"
+    __tablename__ = "_3498812856847415954"
 
     database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     source_collisionmatrixdao_id: Mapped[int] = mapped_column(
@@ -128,7 +126,7 @@ class AllowAlwaysInCollisionDAO_collision_checks_association(
     Base, AssociationDataAccessObject
 ):
 
-    __tablename__ = "_-1041169016181290690"
+    __tablename__ = "_-1933845893720462908"
 
     database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     source_allowalwaysincollisiondao_id: Mapped[int] = mapped_column(
@@ -147,7 +145,7 @@ class AllowCollisionBetweenGroupsDAO_body_group_a_association(
     Base, AssociationDataAccessObject
 ):
 
-    __tablename__ = "_6118959141192919777"
+    __tablename__ = "_6887013058513235475"
 
     database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     source_allowcollisionbetweengroupsdao_id: Mapped[int] = mapped_column(
@@ -162,7 +160,7 @@ class AllowCollisionBetweenGroupsDAO_body_group_b_association(
     Base, AssociationDataAccessObject
 ):
 
-    __tablename__ = "_128745082299541496"
+    __tablename__ = "_-3916450907087523541"
 
     database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     source_allowcollisionbetweengroupsdao_id: Mapped[int] = mapped_column(
@@ -177,7 +175,7 @@ class AllowCollisionForBodiesDAO_allowed_collision_bodies_association(
     Base, AssociationDataAccessObject
 ):
 
-    __tablename__ = "_-8396057250776889163"
+    __tablename__ = "_-7150539123476502299"
 
     database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     source_allowcollisionforbodiesdao_id: Mapped[int] = mapped_column(
@@ -190,7 +188,7 @@ class AllowCollisionForBodiesDAO_allowed_collision_bodies_association(
 
 class AllowDefaultInCollisionDAO_bodies_association(Base, AssociationDataAccessObject):
 
-    __tablename__ = "_8773484732103159150"
+    __tablename__ = "_-6100342830244953379"
 
     database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     source_allowdefaultincollisiondao_id: Mapped[int] = mapped_column(
@@ -205,7 +203,7 @@ class AllowNeverInCollisionDAO_collision_checks_association(
     Base, AssociationDataAccessObject
 ):
 
-    __tablename__ = "_8717764659907089533"
+    __tablename__ = "_-8504676869952721415"
 
     database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     source_allowneverincollisiondao_id: Mapped[int] = mapped_column(
@@ -224,7 +222,7 @@ class AvoidCollisionBetweenGroupsDAO_body_group_a_association(
     Base, AssociationDataAccessObject
 ):
 
-    __tablename__ = "_2870514893568066758"
+    __tablename__ = "_-3266392961803240060"
 
     database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     source_avoidcollisionbetweengroupsdao_id: Mapped[int] = mapped_column(
@@ -239,7 +237,7 @@ class AvoidCollisionBetweenGroupsDAO_body_group_b_association(
     Base, AssociationDataAccessObject
 ):
 
-    __tablename__ = "_-248624949773371819"
+    __tablename__ = "_179426945376475037"
 
     database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     source_avoidcollisionbetweengroupsdao_id: Mapped[int] = mapped_column(
@@ -254,7 +252,7 @@ class ExecutionDataDAO_added_world_modifications_association(
     Base, AssociationDataAccessObject
 ):
 
-    __tablename__ = "_-6022619246544885834"
+    __tablename__ = "_2006687510875288821"
 
     database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     source_executiondatadao_id: Mapped[int] = mapped_column(
@@ -272,7 +270,7 @@ class ExecutionDataDAO_added_world_modifications_association(
 
 class JointStateDAO_connections_association(Base, AssociationDataAccessObject):
 
-    __tablename__ = "_780666265237530544"
+    __tablename__ = "_-3129539791204439514"
 
     database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     source_jointstatedao_id: Mapped[int] = mapped_column(
@@ -291,7 +289,7 @@ class MaxAvoidedCollisionsOverrideDAO_bodies_association(
     Base, AssociationDataAccessObject
 ):
 
-    __tablename__ = "_1959281119843475317"
+    __tablename__ = "_3125913795951577177"
 
     database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     source_maxavoidedcollisionsoverridedao_id: Mapped[int] = mapped_column(
@@ -306,7 +304,7 @@ class MoveTCPWaypointsMotionDAO_waypoints_association(
     Base, AssociationDataAccessObject
 ):
 
-    __tablename__ = "_1336268579263624595"
+    __tablename__ = "_-3580080914775778334"
 
     database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     source_movetcpwaypointsmotiondao_id: Mapped[int] = mapped_column(
@@ -323,24 +321,24 @@ class MoveTCPWaypointsMotionDAO_waypoints_association(
 
 class PlanMappingDAO_nodes_association(Base, AssociationDataAccessObject):
 
-    __tablename__ = "_-230110649413181348"
+    __tablename__ = "_-6946256914865483226"
 
     database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     source_planmappingdao_id: Mapped[int] = mapped_column(
         ForeignKey("PlanMappingDAO.database_id")
     )
-    target_plannodemappingdao_id: Mapped[int] = mapped_column(
-        ForeignKey("PlanNodeMappingDAO.database_id")
+    target_plannodedao_id: Mapped[int] = mapped_column(
+        ForeignKey("PlanNodeDAO.database_id")
     )
 
-    target: Mapped[PlanNodeMappingDAO] = relationship(
-        "PlanNodeMappingDAO", foreign_keys=[target_plannodemappingdao_id]
+    target: Mapped[PlanNodeDAO] = relationship(
+        "PlanNodeDAO", foreign_keys=[target_plannodedao_id]
     )
 
 
 class PlanMappingDAO_edges_association(Base, AssociationDataAccessObject):
 
-    __tablename__ = "_4070386673011774172"
+    __tablename__ = "_-7527627881291058013"
 
     database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     source_planmappingdao_id: Mapped[int] = mapped_column(
@@ -359,7 +357,7 @@ class ShapeDAO_simulator_additional_properties_association(
     Base, AssociationDataAccessObject
 ):
 
-    __tablename__ = "_125630589827914232"
+    __tablename__ = "_264842425229926021"
 
     database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     source_shapedao_id: Mapped[int] = mapped_column(ForeignKey("ShapeDAO.database_id"))
@@ -375,7 +373,7 @@ class ShapeDAO_simulator_additional_properties_association(
 
 class ShapeCollectionDAO_shapes_association(Base, AssociationDataAccessObject):
 
-    __tablename__ = "_-7581312489435577068"
+    __tablename__ = "_-6839024953050805821"
 
     database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     source_shapecollectiondao_id: Mapped[int] = mapped_column(
@@ -392,7 +390,7 @@ class WorldMappingDAO_kinematic_structure_entities_association(
     Base, AssociationDataAccessObject
 ):
 
-    __tablename__ = "_2444944903114132013"
+    __tablename__ = "_871401783848019432"
 
     database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     source_worldmappingdao_id: Mapped[int] = mapped_column(
@@ -410,7 +408,7 @@ class WorldMappingDAO_kinematic_structure_entities_association(
 
 class WorldMappingDAO_connections_association(Base, AssociationDataAccessObject):
 
-    __tablename__ = "_-1872327633523489750"
+    __tablename__ = "_-604793197912295416"
 
     database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     source_worldmappingdao_id: Mapped[int] = mapped_column(
@@ -429,7 +427,7 @@ class WorldMappingDAO_semantic_annotations_association(
     Base, AssociationDataAccessObject
 ):
 
-    __tablename__ = "_-1131372042945498537"
+    __tablename__ = "_1033086662464395103"
 
     database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     source_worldmappingdao_id: Mapped[int] = mapped_column(
@@ -446,7 +444,7 @@ class WorldMappingDAO_semantic_annotations_association(
 
 class WorldMappingDAO_degrees_of_freedom_association(Base, AssociationDataAccessObject):
 
-    __tablename__ = "_-8370389418079273036"
+    __tablename__ = "_3332053566189098605"
 
     database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     source_worldmappingdao_id: Mapped[int] = mapped_column(
@@ -465,7 +463,7 @@ class ConnectionDAO_simulator_additional_properties_association(
     Base, AssociationDataAccessObject
 ):
 
-    __tablename__ = "_-2526724337773864218"
+    __tablename__ = "_-2461111162985939834"
 
     database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     source_connectiondao_id: Mapped[int] = mapped_column(
@@ -485,7 +483,7 @@ class WorldEntityWithSimulatorPropertiesDAO_simulator_additional_properties_asso
     Base, AssociationDataAccessObject
 ):
 
-    __tablename__ = "_4911595069299988821"
+    __tablename__ = "_-614444921198182738"
 
     database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     source_worldentitywithsimulatorpropertiesdao_id: Mapped[int] = mapped_column(
@@ -503,7 +501,7 @@ class WorldEntityWithSimulatorPropertiesDAO_simulator_additional_properties_asso
 
 class HasDoorsDAO_doors_association(Base, AssociationDataAccessObject):
 
-    __tablename__ = "_-697725993190245345"
+    __tablename__ = "_-4574393263720285125"
 
     database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     source_hasdoorsdao_id: Mapped[int] = mapped_column(
@@ -516,7 +514,7 @@ class HasDoorsDAO_doors_association(Base, AssociationDataAccessObject):
 
 class HasDrawersDAO_drawers_association(Base, AssociationDataAccessObject):
 
-    __tablename__ = "_-2380775003227754700"
+    __tablename__ = "_-2413972279794335587"
 
     database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     source_hasdrawersdao_id: Mapped[int] = mapped_column(
@@ -535,7 +533,7 @@ class SpoonDAO_simulator_additional_properties_association(
     Base, AssociationDataAccessObject
 ):
 
-    __tablename__ = "_5726685465338604624"
+    __tablename__ = "_1897992750596945793"
 
     database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     source_spoondao_id: Mapped[int] = mapped_column(ForeignKey("SpoonDAO.database_id"))
@@ -553,7 +551,7 @@ class CupDAO_simulator_additional_properties_association(
     Base, AssociationDataAccessObject
 ):
 
-    __tablename__ = "_2825586223077075516"
+    __tablename__ = "_-4889262417900474327"
 
     database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     source_cupdao_id: Mapped[int] = mapped_column(ForeignKey("CupDAO.database_id"))
@@ -571,7 +569,7 @@ class CandyDAO_simulator_additional_properties_association(
     Base, AssociationDataAccessObject
 ):
 
-    __tablename__ = "_-1555257929545171421"
+    __tablename__ = "_8990079616351850392"
 
     database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     source_candydao_id: Mapped[int] = mapped_column(ForeignKey("CandyDAO.database_id"))
@@ -589,7 +587,7 @@ class CerealDAO_simulator_additional_properties_association(
     Base, AssociationDataAccessObject
 ):
 
-    __tablename__ = "_3908286222490783809"
+    __tablename__ = "_1654566356066992067"
 
     database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     source_cerealdao_id: Mapped[int] = mapped_column(
@@ -609,7 +607,7 @@ class MilkDAO_simulator_additional_properties_association(
     Base, AssociationDataAccessObject
 ):
 
-    __tablename__ = "_4157181896337063920"
+    __tablename__ = "_-6211614179445267236"
 
     database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     source_milkdao_id: Mapped[int] = mapped_column(ForeignKey("MilkDAO.database_id"))
@@ -627,7 +625,7 @@ class NoodlesDAO_simulator_additional_properties_association(
     Base, AssociationDataAccessObject
 ):
 
-    __tablename__ = "_1351740870929279392"
+    __tablename__ = "_-2452333228172711469"
 
     database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     source_noodlesdao_id: Mapped[int] = mapped_column(
@@ -645,7 +643,7 @@ class NoodlesDAO_simulator_additional_properties_association(
 
 class HasAperturesDAO_apertures_association(Base, AssociationDataAccessObject):
 
-    __tablename__ = "_-3232812774942572862"
+    __tablename__ = "_-5459272949990106050"
 
     database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     source_hasaperturesdao_id: Mapped[int] = mapped_column(
@@ -662,7 +660,7 @@ class HasAperturesDAO_apertures_association(Base, AssociationDataAccessObject):
 
 class HasStorageSpaceDAO_objects_association(Base, AssociationDataAccessObject):
 
-    __tablename__ = "_-4282409017622480032"
+    __tablename__ = "_2058876134181518199"
 
     database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     source_hasstoragespacedao_id: Mapped[int] = mapped_column(
@@ -681,7 +679,7 @@ class BowlDAO_simulator_additional_properties_association(
     Base, AssociationDataAccessObject
 ):
 
-    __tablename__ = "_-5539395521015743743"
+    __tablename__ = "_-327380765881537839"
 
     database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     source_bowldao_id: Mapped[int] = mapped_column(ForeignKey("BowlDAO.database_id"))
@@ -697,7 +695,7 @@ class BowlDAO_simulator_additional_properties_association(
 
 class BowlDAO_objects_association(Base, AssociationDataAccessObject):
 
-    __tablename__ = "_-5830270850977264037"
+    __tablename__ = "_4634767343372623712"
 
     database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     source_bowldao_id: Mapped[int] = mapped_column(ForeignKey("BowlDAO.database_id"))
@@ -712,7 +710,7 @@ class BowlDAO_objects_association(Base, AssociationDataAccessObject):
 
 class CupboardDAO_objects_association(Base, AssociationDataAccessObject):
 
-    __tablename__ = "_3182044663443775082"
+    __tablename__ = "_-5121218080742711474"
 
     database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     source_cupboarddao_id: Mapped[int] = mapped_column(
@@ -729,7 +727,7 @@ class CupboardDAO_objects_association(Base, AssociationDataAccessObject):
 
 class DresserDAO_drawers_association(Base, AssociationDataAccessObject):
 
-    __tablename__ = "_-5312681828181590184"
+    __tablename__ = "_-3817253801823265642"
 
     database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     source_dresserdao_id: Mapped[int] = mapped_column(
@@ -746,7 +744,7 @@ class DresserDAO_drawers_association(Base, AssociationDataAccessObject):
 
 class DresserDAO_objects_association(Base, AssociationDataAccessObject):
 
-    __tablename__ = "_-4299712136370836475"
+    __tablename__ = "_-3072147695935035207"
 
     database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     source_dresserdao_id: Mapped[int] = mapped_column(
@@ -763,7 +761,7 @@ class DresserDAO_objects_association(Base, AssociationDataAccessObject):
 
 class FridgeDAO_doors_association(Base, AssociationDataAccessObject):
 
-    __tablename__ = "_-8529573607278201019"
+    __tablename__ = "_8186263343732736013"
 
     database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     source_fridgedao_id: Mapped[int] = mapped_column(
@@ -776,7 +774,7 @@ class FridgeDAO_doors_association(Base, AssociationDataAccessObject):
 
 class FridgeDAO_objects_association(Base, AssociationDataAccessObject):
 
-    __tablename__ = "_4481788974592076711"
+    __tablename__ = "_-7174702549609641820"
 
     database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     source_fridgedao_id: Mapped[int] = mapped_column(
@@ -793,7 +791,7 @@ class FridgeDAO_objects_association(Base, AssociationDataAccessObject):
 
 class WardrobeDAO_drawers_association(Base, AssociationDataAccessObject):
 
-    __tablename__ = "_-5168544338523440005"
+    __tablename__ = "_8929903663991622904"
 
     database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     source_wardrobedao_id: Mapped[int] = mapped_column(
@@ -810,7 +808,7 @@ class WardrobeDAO_drawers_association(Base, AssociationDataAccessObject):
 
 class WardrobeDAO_objects_association(Base, AssociationDataAccessObject):
 
-    __tablename__ = "_4219943315831355822"
+    __tablename__ = "_6908943388238827922"
 
     database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     source_wardrobedao_id: Mapped[int] = mapped_column(
@@ -829,7 +827,7 @@ class SaltContainerDAO_simulator_additional_properties_association(
     Base, AssociationDataAccessObject
 ):
 
-    __tablename__ = "_-5598172038830018670"
+    __tablename__ = "_2773536153986020432"
 
     database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     source_saltcontainerdao_id: Mapped[int] = mapped_column(
@@ -847,7 +845,7 @@ class SaltContainerDAO_simulator_additional_properties_association(
 
 class AbstractRobotDAO_manipulators_association(Base, AssociationDataAccessObject):
 
-    __tablename__ = "_303925157427889656"
+    __tablename__ = "_8997177831181731071"
 
     database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     source_abstractrobotdao_id: Mapped[int] = mapped_column(
@@ -864,7 +862,7 @@ class AbstractRobotDAO_manipulators_association(Base, AssociationDataAccessObjec
 
 class AbstractRobotDAO_sensors_association(Base, AssociationDataAccessObject):
 
-    __tablename__ = "_-3813434918447732859"
+    __tablename__ = "_3008073285477157508"
 
     database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     source_abstractrobotdao_id: Mapped[int] = mapped_column(
@@ -883,7 +881,7 @@ class AbstractRobotDAO_manipulator_chains_association(
     Base, AssociationDataAccessObject
 ):
 
-    __tablename__ = "_-4841278871265261557"
+    __tablename__ = "_5472870426405252663"
 
     database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     source_abstractrobotdao_id: Mapped[int] = mapped_column(
@@ -900,7 +898,7 @@ class AbstractRobotDAO_manipulator_chains_association(
 
 class AbstractRobotDAO_sensor_chains_association(Base, AssociationDataAccessObject):
 
-    __tablename__ = "_-8283775769146477590"
+    __tablename__ = "_712964050330804080"
 
     database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     source_abstractrobotdao_id: Mapped[int] = mapped_column(
@@ -917,7 +915,7 @@ class AbstractRobotDAO_sensor_chains_association(Base, AssociationDataAccessObje
 
 class HSRBDAO_arms_association(Base, AssociationDataAccessObject):
 
-    __tablename__ = "_5299355808488764519"
+    __tablename__ = "_-4202866963812537310"
 
     database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     source_hsrbdao_id: Mapped[int] = mapped_column(ForeignKey("HSRBDAO.database_id"))
@@ -928,7 +926,7 @@ class HSRBDAO_arms_association(Base, AssociationDataAccessObject):
 
 class PR2DAO_arms_association(Base, AssociationDataAccessObject):
 
-    __tablename__ = "_2719334858249378111"
+    __tablename__ = "_6941040081483217383"
 
     database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     source_pr2dao_id: Mapped[int] = mapped_column(ForeignKey("PR2DAO.database_id"))
@@ -941,7 +939,7 @@ class SemanticRobotAnnotationDAO_joint_states_association(
     Base, AssociationDataAccessObject
 ):
 
-    __tablename__ = "_3934660925234895276"
+    __tablename__ = "_-7329950073216435765"
 
     database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     source_semanticrobotannotationdao_id: Mapped[int] = mapped_column(
@@ -958,7 +956,7 @@ class SemanticRobotAnnotationDAO_joint_states_association(
 
 class KinematicChainDAO_sensors_association(Base, AssociationDataAccessObject):
 
-    __tablename__ = "_-8920616077488331408"
+    __tablename__ = "_-8339206743814782530"
 
     database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     source_kinematicchaindao_id: Mapped[int] = mapped_column(
@@ -975,7 +973,7 @@ class KinematicChainDAO_sensors_association(Base, AssociationDataAccessObject):
 
 class HumanoidGripperDAO_fingers_association(Base, AssociationDataAccessObject):
 
-    __tablename__ = "_7884920682015161081"
+    __tablename__ = "_-8984694514897726393"
 
     database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     source_humanoidgripperdao_id: Mapped[int] = mapped_column(
@@ -994,7 +992,7 @@ class WorldModelManagerDAO_model_modification_blocks_association(
     Base, AssociationDataAccessObject
 ):
 
-    __tablename__ = "_-6783781151778158816"
+    __tablename__ = "_-6310719690254068895"
 
     database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     source_worldmodelmanagerdao_id: Mapped[int] = mapped_column(
@@ -1014,7 +1012,7 @@ class AttributeUpdateModificationDAO_updated_kwargs_association(
     Base, AssociationDataAccessObject
 ):
 
-    __tablename__ = "_-668631998265100057"
+    __tablename__ = "_7880638402528817406"
 
     database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     source_attributeupdatemodificationdao_id: Mapped[int] = mapped_column(
@@ -1033,7 +1031,7 @@ class WorldModelModificationBlockDAO_modifications_association(
     Base, AssociationDataAccessObject
 ):
 
-    __tablename__ = "_-8372674429764530389"
+    __tablename__ = "_-7409125523265519640"
 
     database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     source_worldmodelmodificationblockdao_id: Mapped[int] = mapped_column(
@@ -1101,6 +1099,24 @@ class AccelerationVariableDAO(
     )
 
 
+class BaseMotionDAO(Base, DataAccessObject[pycram.robot_plans.motions.base.BaseMotion]):
+
+    __tablename__ = "BaseMotionDAO"
+
+    database_id: Mapped[builtins.int] = mapped_column(
+        Integer, primary_key=True, use_existing_column=True
+    )
+
+    polymorphic_type: Mapped[str] = mapped_column(
+        String(255), nullable=False, use_existing_column=True
+    )
+
+    __mapper_args__ = {
+        "polymorphic_on": "polymorphic_type",
+        "polymorphic_identity": "BaseMotionDAO",
+    }
+
+
 class BoundingBoxDAO(
     Base, DataAccessObject[semantic_digital_twin.world_description.geometry.BoundingBox]
 ):
@@ -1132,6 +1148,112 @@ class BoundingBoxDAO(
         foreign_keys=[origin_id],
         post_update=True,
     )
+
+
+class CarryActionDAO(
+    Base, DataAccessObject[pycram.robot_plans.actions.core.robot_body.CarryAction]
+):
+
+    __tablename__ = "CarryActionDAO"
+
+    database_id: Mapped[builtins.int] = mapped_column(
+        Integer, primary_key=True, use_existing_column=True
+    )
+
+    align: Mapped[typing.Optional[builtins.bool]] = mapped_column(
+        use_existing_column=True
+    )
+    tip_link: Mapped[typing.Optional[builtins.str]] = mapped_column(
+        String(255), use_existing_column=True
+    )
+    root_link: Mapped[typing.Optional[builtins.str]] = mapped_column(
+        String(255), use_existing_column=True
+    )
+
+    arm: Mapped[pycram.datastructures.enums.Arms] = mapped_column(
+        krrood.ormatic.custom_types.PolymorphicEnumType,
+        nullable=False,
+        use_existing_column=True,
+    )
+    tip_axis: Mapped[typing.Optional[pycram.datastructures.enums.AxisIdentifier]] = (
+        mapped_column(
+            krrood.ormatic.custom_types.PolymorphicEnumType,
+            nullable=True,
+            use_existing_column=True,
+        )
+    )
+    root_axis: Mapped[typing.Optional[pycram.datastructures.enums.AxisIdentifier]] = (
+        mapped_column(
+            krrood.ormatic.custom_types.PolymorphicEnumType,
+            nullable=True,
+            use_existing_column=True,
+        )
+    )
+
+
+class CloseActionDAO(
+    Base, DataAccessObject[pycram.robot_plans.actions.core.container.CloseAction]
+):
+
+    __tablename__ = "CloseActionDAO"
+
+    database_id: Mapped[builtins.int] = mapped_column(
+        Integer, primary_key=True, use_existing_column=True
+    )
+
+    grasping_prepose_distance: Mapped[builtins.float] = mapped_column(
+        use_existing_column=True
+    )
+
+    arm: Mapped[pycram.datastructures.enums.Arms] = mapped_column(
+        krrood.ormatic.custom_types.PolymorphicEnumType,
+        nullable=False,
+        use_existing_column=True,
+    )
+
+    object_designator_id: Mapped[int] = mapped_column(
+        ForeignKey("BodyDAO.database_id", use_alter=True),
+        nullable=True,
+        use_existing_column=True,
+    )
+
+    object_designator: Mapped[BodyDAO] = relationship(
+        "BodyDAO", uselist=False, foreign_keys=[object_designator_id], post_update=True
+    )
+
+
+class ClosingMotionDAO(
+    BaseMotionDAO, DataAccessObject[pycram.robot_plans.motions.container.ClosingMotion]
+):
+
+    __tablename__ = "ClosingMotionDAO"
+
+    database_id: Mapped[builtins.int] = mapped_column(
+        ForeignKey(BaseMotionDAO.database_id),
+        primary_key=True,
+        use_existing_column=True,
+    )
+
+    arm: Mapped[pycram.datastructures.enums.Arms] = mapped_column(
+        krrood.ormatic.custom_types.PolymorphicEnumType,
+        nullable=False,
+        use_existing_column=True,
+    )
+
+    object_part_id: Mapped[int] = mapped_column(
+        ForeignKey("BodyDAO.database_id", use_alter=True),
+        nullable=True,
+        use_existing_column=True,
+    )
+
+    object_part: Mapped[BodyDAO] = relationship(
+        "BodyDAO", uselist=False, foreign_keys=[object_part_id], post_update=True
+    )
+
+    __mapper_args__ = {
+        "polymorphic_identity": "ClosingMotionDAO",
+        "inherit_condition": database_id == BaseMotionDAO.database_id,
+    }
 
 
 class CollisionCheckDAO(
@@ -1781,6 +1903,11 @@ class ContextDAO(Base, DataAccessObject[pycram.datastructures.dataclasses.Contex
         Integer, primary_key=True, use_existing_column=True
     )
 
+    plan_id: Mapped[typing.Optional[builtins.int]] = mapped_column(
+        ForeignKey("PlanMappingDAO.database_id", use_alter=True),
+        nullable=True,
+        use_existing_column=True,
+    )
     world_id: Mapped[int] = mapped_column(
         ForeignKey("WorldMappingDAO.database_id", use_alter=True),
         nullable=True,
@@ -1791,20 +1918,58 @@ class ContextDAO(Base, DataAccessObject[pycram.datastructures.dataclasses.Contex
         nullable=True,
         use_existing_column=True,
     )
-    super_plan_id: Mapped[typing.Optional[builtins.int]] = mapped_column(
-        ForeignKey("PlanMappingDAO.database_id", use_alter=True),
-        nullable=True,
-        use_existing_column=True,
-    )
 
+    plan: Mapped[PlanMappingDAO] = relationship(
+        "PlanMappingDAO", uselist=False, foreign_keys=[plan_id], post_update=True
+    )
     world: Mapped[WorldMappingDAO] = relationship(
         "WorldMappingDAO", uselist=False, foreign_keys=[world_id], post_update=True
     )
     robot: Mapped[AbstractRobotDAO] = relationship(
         "AbstractRobotDAO", uselist=False, foreign_keys=[robot_id], post_update=True
     )
-    super_plan: Mapped[PlanMappingDAO] = relationship(
-        "PlanMappingDAO", uselist=False, foreign_keys=[super_plan_id], post_update=True
+
+
+class CuttingActionDAO(
+    Base,
+    DataAccessObject[pycram.robot_plans.actions.composite.tool_based.CuttingAction],
+):
+
+    __tablename__ = "CuttingActionDAO"
+
+    database_id: Mapped[builtins.int] = mapped_column(
+        Integer, primary_key=True, use_existing_column=True
+    )
+
+    technique: Mapped[typing.Optional[builtins.str]] = mapped_column(
+        String(255), use_existing_column=True
+    )
+    slice_thickness: Mapped[typing.Optional[builtins.float]] = mapped_column(
+        use_existing_column=True
+    )
+
+    arm: Mapped[pycram.datastructures.enums.Arms] = mapped_column(
+        krrood.ormatic.custom_types.PolymorphicEnumType,
+        nullable=False,
+        use_existing_column=True,
+    )
+
+    object__id: Mapped[int] = mapped_column(
+        ForeignKey("BodyDAO.database_id", use_alter=True),
+        nullable=True,
+        use_existing_column=True,
+    )
+    tool_id: Mapped[int] = mapped_column(
+        ForeignKey("SemanticAnnotationDAO.database_id", use_alter=True),
+        nullable=True,
+        use_existing_column=True,
+    )
+
+    object_: Mapped[BodyDAO] = relationship(
+        "BodyDAO", uselist=False, foreign_keys=[object__id], post_update=True
+    )
+    tool: Mapped[SemanticAnnotationDAO] = relationship(
+        "SemanticAnnotationDAO", uselist=False, foreign_keys=[tool_id], post_update=True
     )
 
 
@@ -1846,247 +2011,14 @@ class DegreeOfFreedomLimitsDAO(
     )
 
 
-class DesignatorDescriptionDAO(
-    Base, DataAccessObject[pycram.designator.DesignatorDescription]
-):
-
-    __tablename__ = "DesignatorDescriptionDAO"
-
-    database_id: Mapped[builtins.int] = mapped_column(
-        Integer, primary_key=True, use_existing_column=True
-    )
-
-    polymorphic_type: Mapped[str] = mapped_column(
-        String(255), nullable=False, use_existing_column=True
-    )
-
-    __mapper_args__ = {
-        "polymorphic_on": "polymorphic_type",
-        "polymorphic_identity": "DesignatorDescriptionDAO",
-    }
-
-
-class ActionDescriptionDAO(
-    DesignatorDescriptionDAO,
-    DataAccessObject[pycram.robot_plans.actions.base.ActionDescription],
-):
-
-    __tablename__ = "ActionDescriptionDAO"
-
-    database_id: Mapped[builtins.int] = mapped_column(
-        ForeignKey(DesignatorDescriptionDAO.database_id),
-        primary_key=True,
-        use_existing_column=True,
-    )
-
-    __mapper_args__ = {
-        "polymorphic_identity": "ActionDescriptionDAO",
-        "inherit_condition": database_id == DesignatorDescriptionDAO.database_id,
-    }
-
-
-class CarryActionDAO(
-    ActionDescriptionDAO,
-    DataAccessObject[pycram.robot_plans.actions.core.robot_body.CarryAction],
-):
-
-    __tablename__ = "CarryActionDAO"
-
-    database_id: Mapped[builtins.int] = mapped_column(
-        ForeignKey(ActionDescriptionDAO.database_id),
-        primary_key=True,
-        use_existing_column=True,
-    )
-
-    align: Mapped[typing.Optional[builtins.bool]] = mapped_column(
-        use_existing_column=True
-    )
-    tip_link: Mapped[typing.Optional[builtins.str]] = mapped_column(
-        String(255), use_existing_column=True
-    )
-    root_link: Mapped[typing.Optional[builtins.str]] = mapped_column(
-        String(255), use_existing_column=True
-    )
-
-    arm: Mapped[pycram.datastructures.enums.Arms] = mapped_column(
-        krrood.ormatic.custom_types.PolymorphicEnumType,
-        nullable=False,
-        use_existing_column=True,
-    )
-    tip_axis: Mapped[typing.Optional[pycram.datastructures.enums.AxisIdentifier]] = (
-        mapped_column(
-            krrood.ormatic.custom_types.PolymorphicEnumType,
-            nullable=True,
-            use_existing_column=True,
-        )
-    )
-    root_axis: Mapped[typing.Optional[pycram.datastructures.enums.AxisIdentifier]] = (
-        mapped_column(
-            krrood.ormatic.custom_types.PolymorphicEnumType,
-            nullable=True,
-            use_existing_column=True,
-        )
-    )
-
-    __mapper_args__ = {
-        "polymorphic_identity": "CarryActionDAO",
-        "inherit_condition": database_id == ActionDescriptionDAO.database_id,
-    }
-
-
-class CloseActionDAO(
-    ActionDescriptionDAO,
-    DataAccessObject[pycram.robot_plans.actions.core.container.CloseAction],
-):
-
-    __tablename__ = "CloseActionDAO"
-
-    database_id: Mapped[builtins.int] = mapped_column(
-        ForeignKey(ActionDescriptionDAO.database_id),
-        primary_key=True,
-        use_existing_column=True,
-    )
-
-    grasping_prepose_distance: Mapped[builtins.float] = mapped_column(
-        use_existing_column=True
-    )
-
-    arm: Mapped[pycram.datastructures.enums.Arms] = mapped_column(
-        krrood.ormatic.custom_types.PolymorphicEnumType,
-        nullable=False,
-        use_existing_column=True,
-    )
-
-    object_designator_id: Mapped[int] = mapped_column(
-        ForeignKey("BodyDAO.database_id", use_alter=True),
-        nullable=True,
-        use_existing_column=True,
-    )
-
-    object_designator: Mapped[BodyDAO] = relationship(
-        "BodyDAO", uselist=False, foreign_keys=[object_designator_id], post_update=True
-    )
-
-    __mapper_args__ = {
-        "polymorphic_identity": "CloseActionDAO",
-        "inherit_condition": database_id == ActionDescriptionDAO.database_id,
-    }
-
-
-class CuttingActionDAO(
-    ActionDescriptionDAO,
-    DataAccessObject[pycram.robot_plans.actions.composite.tool_based.CuttingAction],
-):
-
-    __tablename__ = "CuttingActionDAO"
-
-    database_id: Mapped[builtins.int] = mapped_column(
-        ForeignKey(ActionDescriptionDAO.database_id),
-        primary_key=True,
-        use_existing_column=True,
-    )
-
-    technique: Mapped[typing.Optional[builtins.str]] = mapped_column(
-        String(255), use_existing_column=True
-    )
-    slice_thickness: Mapped[typing.Optional[builtins.float]] = mapped_column(
-        use_existing_column=True
-    )
-
-    arm: Mapped[pycram.datastructures.enums.Arms] = mapped_column(
-        krrood.ormatic.custom_types.PolymorphicEnumType,
-        nullable=False,
-        use_existing_column=True,
-    )
-
-    object__id: Mapped[int] = mapped_column(
-        ForeignKey("BodyDAO.database_id", use_alter=True),
-        nullable=True,
-        use_existing_column=True,
-    )
-    tool_id: Mapped[int] = mapped_column(
-        ForeignKey("SemanticAnnotationDAO.database_id", use_alter=True),
-        nullable=True,
-        use_existing_column=True,
-    )
-
-    object_: Mapped[BodyDAO] = relationship(
-        "BodyDAO", uselist=False, foreign_keys=[object__id], post_update=True
-    )
-    tool: Mapped[SemanticAnnotationDAO] = relationship(
-        "SemanticAnnotationDAO", uselist=False, foreign_keys=[tool_id], post_update=True
-    )
-
-    __mapper_args__ = {
-        "polymorphic_identity": "CuttingActionDAO",
-        "inherit_condition": database_id == ActionDescriptionDAO.database_id,
-    }
-
-
-class BaseMotionDAO(
-    DesignatorDescriptionDAO,
-    DataAccessObject[pycram.robot_plans.motions.base.BaseMotion],
-):
-
-    __tablename__ = "BaseMotionDAO"
-
-    database_id: Mapped[builtins.int] = mapped_column(
-        ForeignKey(DesignatorDescriptionDAO.database_id),
-        primary_key=True,
-        use_existing_column=True,
-    )
-
-    __mapper_args__ = {
-        "polymorphic_identity": "BaseMotionDAO",
-        "inherit_condition": database_id == DesignatorDescriptionDAO.database_id,
-    }
-
-
-class ClosingMotionDAO(
-    BaseMotionDAO, DataAccessObject[pycram.robot_plans.motions.container.ClosingMotion]
-):
-
-    __tablename__ = "ClosingMotionDAO"
-
-    database_id: Mapped[builtins.int] = mapped_column(
-        ForeignKey(BaseMotionDAO.database_id),
-        primary_key=True,
-        use_existing_column=True,
-    )
-
-    arm: Mapped[pycram.datastructures.enums.Arms] = mapped_column(
-        krrood.ormatic.custom_types.PolymorphicEnumType,
-        nullable=False,
-        use_existing_column=True,
-    )
-
-    object_part_id: Mapped[int] = mapped_column(
-        ForeignKey("BodyDAO.database_id", use_alter=True),
-        nullable=True,
-        use_existing_column=True,
-    )
-
-    object_part: Mapped[BodyDAO] = relationship(
-        "BodyDAO", uselist=False, foreign_keys=[object_part_id], post_update=True
-    )
-
-    __mapper_args__ = {
-        "polymorphic_identity": "ClosingMotionDAO",
-        "inherit_condition": database_id == BaseMotionDAO.database_id,
-    }
-
-
 class DetectActionDAO(
-    ActionDescriptionDAO,
-    DataAccessObject[pycram.robot_plans.actions.core.misc.DetectAction],
+    Base, DataAccessObject[pycram.robot_plans.actions.core.misc.DetectAction]
 ):
 
     __tablename__ = "DetectActionDAO"
 
     database_id: Mapped[builtins.int] = mapped_column(
-        ForeignKey(ActionDescriptionDAO.database_id),
-        primary_key=True,
-        use_existing_column=True,
+        Integer, primary_key=True, use_existing_column=True
     )
 
     technique: Mapped[pycram.datastructures.enums.DetectionTechnique] = mapped_column(
@@ -2115,11 +2047,6 @@ class DetectActionDAO(
         "RegionDAO", uselist=False, foreign_keys=[region_id], post_update=True
     )
 
-    __mapper_args__ = {
-        "polymorphic_identity": "DetectActionDAO",
-        "inherit_condition": database_id == ActionDescriptionDAO.database_id,
-    }
-
 
 class DetectingMotionDAO(
     BaseMotionDAO, DataAccessObject[pycram.robot_plans.motions.misc.DetectingMotion]
@@ -2140,7 +2067,7 @@ class DetectingMotionDAO(
 
 
 class EfficientTransportActionDAO(
-    ActionDescriptionDAO,
+    Base,
     DataAccessObject[
         pycram.robot_plans.actions.composite.transporting.EfficientTransportAction
     ],
@@ -2149,9 +2076,7 @@ class EfficientTransportActionDAO(
     __tablename__ = "EfficientTransportActionDAO"
 
     database_id: Mapped[builtins.int] = mapped_column(
-        ForeignKey(ActionDescriptionDAO.database_id),
-        primary_key=True,
-        use_existing_column=True,
+        Integer, primary_key=True, use_existing_column=True
     )
 
     object_designator_id: Mapped[int] = mapped_column(
@@ -2174,11 +2099,6 @@ class EfficientTransportActionDAO(
         foreign_keys=[target_location_id],
         post_update=True,
     )
-
-    __mapper_args__ = {
-        "polymorphic_identity": "EfficientTransportActionDAO",
-        "inherit_condition": database_id == ActionDescriptionDAO.database_id,
-    }
 
 
 class ExecutionDataDAO(
@@ -2289,16 +2209,13 @@ class ExternalCollisionVariableManagerDAO(
 
 
 class FaceAtActionDAO(
-    ActionDescriptionDAO,
-    DataAccessObject[pycram.robot_plans.actions.composite.facing.FaceAtAction],
+    Base, DataAccessObject[pycram.robot_plans.actions.composite.facing.FaceAtAction]
 ):
 
     __tablename__ = "FaceAtActionDAO"
 
     database_id: Mapped[builtins.int] = mapped_column(
-        ForeignKey(ActionDescriptionDAO.database_id),
-        primary_key=True,
-        use_existing_column=True,
+        Integer, primary_key=True, use_existing_column=True
     )
 
     keep_joint_states: Mapped[builtins.bool] = mapped_column(use_existing_column=True)
@@ -2312,11 +2229,6 @@ class FaceAtActionDAO(
     pose: Mapped[PoseStampedDAO] = relationship(
         "PoseStampedDAO", uselist=False, foreign_keys=[pose_id], post_update=True
     )
-
-    __mapper_args__ = {
-        "polymorphic_identity": "FaceAtActionDAO",
-        "inherit_condition": database_id == ActionDescriptionDAO.database_id,
-    }
 
 
 class FieldOfViewDAO(
@@ -2334,16 +2246,14 @@ class FieldOfViewDAO(
 
 
 class FollowTCPPathActionDAO(
-    ActionDescriptionDAO,
+    Base,
     DataAccessObject[pycram.robot_plans.actions.core.robot_body.FollowTCPPathAction],
 ):
 
     __tablename__ = "FollowTCPPathActionDAO"
 
     database_id: Mapped[builtins.int] = mapped_column(
-        ForeignKey(ActionDescriptionDAO.database_id),
-        primary_key=True,
-        use_existing_column=True,
+        Integer, primary_key=True, use_existing_column=True
     )
 
     arm: Mapped[pycram.datastructures.enums.Arms] = mapped_column(
@@ -2351,11 +2261,6 @@ class FollowTCPPathActionDAO(
         nullable=False,
         use_existing_column=True,
     )
-
-    __mapper_args__ = {
-        "polymorphic_identity": "FollowTCPPathActionDAO",
-        "inherit_condition": database_id == ActionDescriptionDAO.database_id,
-    }
 
 
 class GraspDescriptionDAO(
@@ -2400,16 +2305,13 @@ class GraspDescriptionDAO(
 
 
 class GraspingActionDAO(
-    ActionDescriptionDAO,
-    DataAccessObject[pycram.robot_plans.actions.core.pick_up.GraspingAction],
+    Base, DataAccessObject[pycram.robot_plans.actions.core.pick_up.GraspingAction]
 ):
 
     __tablename__ = "GraspingActionDAO"
 
     database_id: Mapped[builtins.int] = mapped_column(
-        ForeignKey(ActionDescriptionDAO.database_id),
-        primary_key=True,
-        use_existing_column=True,
+        Integer, primary_key=True, use_existing_column=True
     )
 
     arm: Mapped[pycram.datastructures.enums.Arms] = mapped_column(
@@ -2438,11 +2340,6 @@ class GraspingActionDAO(
         foreign_keys=[grasp_description_id],
         post_update=True,
     )
-
-    __mapper_args__ = {
-        "polymorphic_identity": "GraspingActionDAO",
-        "inherit_condition": database_id == ActionDescriptionDAO.database_id,
-    }
 
 
 class HeaderDAO(Base, DataAccessObject[pycram.datastructures.pose.Header]):
@@ -2678,16 +2575,13 @@ class InsideOfDAO(
 
 
 class LookAtActionDAO(
-    ActionDescriptionDAO,
-    DataAccessObject[pycram.robot_plans.actions.core.navigation.LookAtAction],
+    Base, DataAccessObject[pycram.robot_plans.actions.core.navigation.LookAtAction]
 ):
 
     __tablename__ = "LookAtActionDAO"
 
     database_id: Mapped[builtins.int] = mapped_column(
-        ForeignKey(ActionDescriptionDAO.database_id),
-        primary_key=True,
-        use_existing_column=True,
+        Integer, primary_key=True, use_existing_column=True
     )
 
     target_id: Mapped[int] = mapped_column(
@@ -2707,11 +2601,6 @@ class LookAtActionDAO(
     camera: Mapped[CameraDAO] = relationship(
         "CameraDAO", uselist=False, foreign_keys=[camera_id], post_update=True
     )
-
-    __mapper_args__ = {
-        "polymorphic_identity": "LookAtActionDAO",
-        "inherit_condition": database_id == ActionDescriptionDAO.database_id,
-    }
 
 
 class LookingMotionDAO(
@@ -2827,16 +2716,13 @@ class MaxAvoidedCollisionsOverrideDAO(
 
 
 class MixingActionDAO(
-    ActionDescriptionDAO,
-    DataAccessObject[pycram.robot_plans.actions.composite.tool_based.MixingAction],
+    Base, DataAccessObject[pycram.robot_plans.actions.composite.tool_based.MixingAction]
 ):
 
     __tablename__ = "MixingActionDAO"
 
     database_id: Mapped[builtins.int] = mapped_column(
-        ForeignKey(ActionDescriptionDAO.database_id),
-        primary_key=True,
-        use_existing_column=True,
+        Integer, primary_key=True, use_existing_column=True
     )
 
     technique: Mapped[typing.Optional[builtins.str]] = mapped_column(
@@ -2867,14 +2753,9 @@ class MixingActionDAO(
         "SemanticAnnotationDAO", uselist=False, foreign_keys=[tool_id], post_update=True
     )
 
-    __mapper_args__ = {
-        "polymorphic_identity": "MixingActionDAO",
-        "inherit_condition": database_id == ActionDescriptionDAO.database_id,
-    }
-
 
 class MoveAndPickUpActionDAO(
-    ActionDescriptionDAO,
+    Base,
     DataAccessObject[
         pycram.robot_plans.actions.composite.transporting.MoveAndPickUpAction
     ],
@@ -2883,9 +2764,7 @@ class MoveAndPickUpActionDAO(
     __tablename__ = "MoveAndPickUpActionDAO"
 
     database_id: Mapped[builtins.int] = mapped_column(
-        ForeignKey(ActionDescriptionDAO.database_id),
-        primary_key=True,
-        use_existing_column=True,
+        Integer, primary_key=True, use_existing_column=True
     )
 
     keep_joint_states: Mapped[builtins.bool] = mapped_column(use_existing_column=True)
@@ -2928,14 +2807,9 @@ class MoveAndPickUpActionDAO(
         post_update=True,
     )
 
-    __mapper_args__ = {
-        "polymorphic_identity": "MoveAndPickUpActionDAO",
-        "inherit_condition": database_id == ActionDescriptionDAO.database_id,
-    }
-
 
 class MoveAndPlaceActionDAO(
-    ActionDescriptionDAO,
+    Base,
     DataAccessObject[
         pycram.robot_plans.actions.composite.transporting.MoveAndPlaceAction
     ],
@@ -2944,9 +2818,7 @@ class MoveAndPlaceActionDAO(
     __tablename__ = "MoveAndPlaceActionDAO"
 
     database_id: Mapped[builtins.int] = mapped_column(
-        ForeignKey(ActionDescriptionDAO.database_id),
-        primary_key=True,
-        use_existing_column=True,
+        Integer, primary_key=True, use_existing_column=True
     )
 
     keep_joint_states: Mapped[builtins.bool] = mapped_column(use_existing_column=True)
@@ -2988,11 +2860,6 @@ class MoveAndPlaceActionDAO(
         foreign_keys=[target_location_id],
         post_update=True,
     )
-
-    __mapper_args__ = {
-        "polymorphic_identity": "MoveAndPlaceActionDAO",
-        "inherit_condition": database_id == ActionDescriptionDAO.database_id,
-    }
 
 
 class MoveGripperMotionDAO(
@@ -3205,16 +3072,13 @@ class MoveTCPWaypointsMotionDAO(
 
 
 class MoveTorsoActionDAO(
-    ActionDescriptionDAO,
-    DataAccessObject[pycram.robot_plans.actions.core.robot_body.MoveTorsoAction],
+    Base, DataAccessObject[pycram.robot_plans.actions.core.robot_body.MoveTorsoAction]
 ):
 
     __tablename__ = "MoveTorsoActionDAO"
 
     database_id: Mapped[builtins.int] = mapped_column(
-        ForeignKey(ActionDescriptionDAO.database_id),
-        primary_key=True,
-        use_existing_column=True,
+        Integer, primary_key=True, use_existing_column=True
     )
 
     torso_state: Mapped[semantic_digital_twin.datastructures.definitions.TorsoState] = (
@@ -3225,23 +3089,15 @@ class MoveTorsoActionDAO(
         )
     )
 
-    __mapper_args__ = {
-        "polymorphic_identity": "MoveTorsoActionDAO",
-        "inherit_condition": database_id == ActionDescriptionDAO.database_id,
-    }
-
 
 class NavigateActionDAO(
-    ActionDescriptionDAO,
-    DataAccessObject[pycram.robot_plans.actions.core.navigation.NavigateAction],
+    Base, DataAccessObject[pycram.robot_plans.actions.core.navigation.NavigateAction]
 ):
 
     __tablename__ = "NavigateActionDAO"
 
     database_id: Mapped[builtins.int] = mapped_column(
-        ForeignKey(ActionDescriptionDAO.database_id),
-        primary_key=True,
-        use_existing_column=True,
+        Integer, primary_key=True, use_existing_column=True
     )
 
     keep_joint_states: Mapped[builtins.bool] = mapped_column(use_existing_column=True)
@@ -3259,23 +3115,15 @@ class NavigateActionDAO(
         post_update=True,
     )
 
-    __mapper_args__ = {
-        "polymorphic_identity": "NavigateActionDAO",
-        "inherit_condition": database_id == ActionDescriptionDAO.database_id,
-    }
-
 
 class OpenActionDAO(
-    ActionDescriptionDAO,
-    DataAccessObject[pycram.robot_plans.actions.core.container.OpenAction],
+    Base, DataAccessObject[pycram.robot_plans.actions.core.container.OpenAction]
 ):
 
     __tablename__ = "OpenActionDAO"
 
     database_id: Mapped[builtins.int] = mapped_column(
-        ForeignKey(ActionDescriptionDAO.database_id),
-        primary_key=True,
-        use_existing_column=True,
+        Integer, primary_key=True, use_existing_column=True
     )
 
     grasping_prepose_distance: Mapped[builtins.float] = mapped_column(
@@ -3297,11 +3145,6 @@ class OpenActionDAO(
     object_designator: Mapped[BodyDAO] = relationship(
         "BodyDAO", uselist=False, foreign_keys=[object_designator_id], post_update=True
     )
-
-    __mapper_args__ = {
-        "polymorphic_identity": "OpenActionDAO",
-        "inherit_condition": database_id == ActionDescriptionDAO.database_id,
-    }
 
 
 class OpeningMotionDAO(
@@ -3339,16 +3182,13 @@ class OpeningMotionDAO(
 
 
 class ParkArmsActionDAO(
-    ActionDescriptionDAO,
-    DataAccessObject[pycram.robot_plans.actions.core.robot_body.ParkArmsAction],
+    Base, DataAccessObject[pycram.robot_plans.actions.core.robot_body.ParkArmsAction]
 ):
 
     __tablename__ = "ParkArmsActionDAO"
 
     database_id: Mapped[builtins.int] = mapped_column(
-        ForeignKey(ActionDescriptionDAO.database_id),
-        primary_key=True,
-        use_existing_column=True,
+        Integer, primary_key=True, use_existing_column=True
     )
 
     arm: Mapped[pycram.datastructures.enums.Arms] = mapped_column(
@@ -3357,14 +3197,9 @@ class ParkArmsActionDAO(
         use_existing_column=True,
     )
 
-    __mapper_args__ = {
-        "polymorphic_identity": "ParkArmsActionDAO",
-        "inherit_condition": database_id == ActionDescriptionDAO.database_id,
-    }
-
 
 class PickAndPlaceActionDAO(
-    ActionDescriptionDAO,
+    Base,
     DataAccessObject[
         pycram.robot_plans.actions.composite.transporting.PickAndPlaceAction
     ],
@@ -3373,9 +3208,7 @@ class PickAndPlaceActionDAO(
     __tablename__ = "PickAndPlaceActionDAO"
 
     database_id: Mapped[builtins.int] = mapped_column(
-        ForeignKey(ActionDescriptionDAO.database_id),
-        primary_key=True,
-        use_existing_column=True,
+        Integer, primary_key=True, use_existing_column=True
     )
 
     arm: Mapped[pycram.datastructures.enums.Arms] = mapped_column(
@@ -3416,23 +3249,15 @@ class PickAndPlaceActionDAO(
         post_update=True,
     )
 
-    __mapper_args__ = {
-        "polymorphic_identity": "PickAndPlaceActionDAO",
-        "inherit_condition": database_id == ActionDescriptionDAO.database_id,
-    }
-
 
 class PickUpActionDAO(
-    ActionDescriptionDAO,
-    DataAccessObject[pycram.robot_plans.actions.core.pick_up.PickUpAction],
+    Base, DataAccessObject[pycram.robot_plans.actions.core.pick_up.PickUpAction]
 ):
 
     __tablename__ = "PickUpActionDAO"
 
     database_id: Mapped[builtins.int] = mapped_column(
-        ForeignKey(ActionDescriptionDAO.database_id),
-        primary_key=True,
-        use_existing_column=True,
+        Integer, primary_key=True, use_existing_column=True
     )
 
     arm: Mapped[pycram.datastructures.enums.Arms] = mapped_column(
@@ -3462,23 +3287,15 @@ class PickUpActionDAO(
         post_update=True,
     )
 
-    __mapper_args__ = {
-        "polymorphic_identity": "PickUpActionDAO",
-        "inherit_condition": database_id == ActionDescriptionDAO.database_id,
-    }
-
 
 class PlaceActionDAO(
-    ActionDescriptionDAO,
-    DataAccessObject[pycram.robot_plans.actions.core.placing.PlaceAction],
+    Base, DataAccessObject[pycram.robot_plans.actions.core.placing.PlaceAction]
 ):
 
     __tablename__ = "PlaceActionDAO"
 
     database_id: Mapped[builtins.int] = mapped_column(
-        ForeignKey(ActionDescriptionDAO.database_id),
-        primary_key=True,
-        use_existing_column=True,
+        Integer, primary_key=True, use_existing_column=True
     )
 
     arm: Mapped[pycram.datastructures.enums.Arms] = mapped_column(
@@ -3507,11 +3324,6 @@ class PlaceActionDAO(
         foreign_keys=[target_location_id],
         post_update=True,
     )
-
-    __mapper_args__ = {
-        "polymorphic_identity": "PlaceActionDAO",
-        "inherit_condition": database_id == ActionDescriptionDAO.database_id,
-    }
 
 
 class PlanMappingDAO(Base, DataAccessObject[pycram.orm.model.PlanMapping]):
@@ -3522,16 +3334,25 @@ class PlanMappingDAO(Base, DataAccessObject[pycram.orm.model.PlanMapping]):
         Integer, primary_key=True, use_existing_column=True
     )
 
-    polymorphic_type: Mapped[str] = mapped_column(
-        String(255), nullable=False, use_existing_column=True
+    root_id: Mapped[int] = mapped_column(
+        ForeignKey("PlanNodeDAO.database_id", use_alter=True),
+        nullable=True,
+        use_existing_column=True,
     )
-
     context_id: Mapped[int] = mapped_column(
         ForeignKey("ContextDAO.database_id", use_alter=True),
         nullable=True,
         use_existing_column=True,
     )
+    initial_world_id: Mapped[typing.Optional[builtins.int]] = mapped_column(
+        ForeignKey("WorldMappingDAO.database_id", use_alter=True),
+        nullable=True,
+        use_existing_column=True,
+    )
 
+    root: Mapped[PlanNodeDAO] = relationship(
+        "PlanNodeDAO", uselist=False, foreign_keys=[root_id], post_update=True
+    )
     nodes: Mapped[builtins.list[PlanMappingDAO_nodes_association]] = relationship(
         "PlanMappingDAO_nodes_association",
         collection_class=builtins.list,
@@ -3547,147 +3368,12 @@ class PlanMappingDAO(Base, DataAccessObject[pycram.orm.model.PlanMapping]):
     context: Mapped[ContextDAO] = relationship(
         "ContextDAO", uselist=False, foreign_keys=[context_id], post_update=True
     )
-
-    __mapper_args__ = {
-        "polymorphic_on": "polymorphic_type",
-        "polymorphic_identity": "PlanMappingDAO",
-    }
-
-
-class LanguagePlanDAO(PlanMappingDAO, DataAccessObject[pycram.language.LanguagePlan]):
-
-    __tablename__ = "LanguagePlanDAO"
-
-    database_id: Mapped[builtins.int] = mapped_column(
-        ForeignKey(PlanMappingDAO.database_id),
-        primary_key=True,
-        use_existing_column=True,
-    )
-
-    __mapper_args__ = {
-        "polymorphic_identity": "LanguagePlanDAO",
-        "inherit_condition": database_id == PlanMappingDAO.database_id,
-    }
-
-
-class CodePlanDAO(LanguagePlanDAO, DataAccessObject[pycram.language.CodePlan]):
-
-    __tablename__ = "CodePlanDAO"
-
-    database_id: Mapped[builtins.int] = mapped_column(
-        ForeignKey(LanguagePlanDAO.database_id),
-        primary_key=True,
-        use_existing_column=True,
-    )
-
-    current_plan_id: Mapped[typing.Optional[builtins.int]] = mapped_column(
-        ForeignKey("PlanMappingDAO.database_id", use_alter=True),
-        nullable=True,
-        use_existing_column=True,
-    )
-    current_node_id: Mapped[typing.Optional[builtins.int]] = mapped_column(
-        ForeignKey("PlanNodeMappingDAO.database_id", use_alter=True),
-        nullable=True,
-        use_existing_column=True,
-    )
-
-    current_plan: Mapped[PlanMappingDAO] = relationship(
-        "PlanMappingDAO",
+    initial_world: Mapped[WorldMappingDAO] = relationship(
+        "WorldMappingDAO",
         uselist=False,
-        foreign_keys=[current_plan_id],
+        foreign_keys=[initial_world_id],
         post_update=True,
     )
-    current_node: Mapped[PlanNodeMappingDAO] = relationship(
-        "PlanNodeMappingDAO",
-        uselist=False,
-        foreign_keys=[current_node_id],
-        post_update=True,
-    )
-
-    __mapper_args__ = {
-        "polymorphic_identity": "CodePlanDAO",
-        "inherit_condition": database_id == LanguagePlanDAO.database_id,
-    }
-
-
-class MonitorPlanDAO(LanguagePlanDAO, DataAccessObject[pycram.language.MonitorPlan]):
-
-    __tablename__ = "MonitorPlanDAO"
-
-    database_id: Mapped[builtins.int] = mapped_column(
-        ForeignKey(LanguagePlanDAO.database_id),
-        primary_key=True,
-        use_existing_column=True,
-    )
-
-    current_plan_id: Mapped[typing.Optional[builtins.int]] = mapped_column(
-        ForeignKey("PlanMappingDAO.database_id", use_alter=True),
-        nullable=True,
-        use_existing_column=True,
-    )
-    current_node_id: Mapped[typing.Optional[builtins.int]] = mapped_column(
-        ForeignKey("PlanNodeMappingDAO.database_id", use_alter=True),
-        nullable=True,
-        use_existing_column=True,
-    )
-
-    current_plan: Mapped[PlanMappingDAO] = relationship(
-        "PlanMappingDAO",
-        uselist=False,
-        foreign_keys=[current_plan_id],
-        post_update=True,
-    )
-    current_node: Mapped[PlanNodeMappingDAO] = relationship(
-        "PlanNodeMappingDAO",
-        uselist=False,
-        foreign_keys=[current_node_id],
-        post_update=True,
-    )
-
-    __mapper_args__ = {
-        "polymorphic_identity": "MonitorPlanDAO",
-        "inherit_condition": database_id == LanguagePlanDAO.database_id,
-    }
-
-
-class ParallelPlanDAO(LanguagePlanDAO, DataAccessObject[pycram.language.ParallelPlan]):
-
-    __tablename__ = "ParallelPlanDAO"
-
-    database_id: Mapped[builtins.int] = mapped_column(
-        ForeignKey(LanguagePlanDAO.database_id),
-        primary_key=True,
-        use_existing_column=True,
-    )
-
-    current_plan_id: Mapped[typing.Optional[builtins.int]] = mapped_column(
-        ForeignKey("PlanMappingDAO.database_id", use_alter=True),
-        nullable=True,
-        use_existing_column=True,
-    )
-    current_node_id: Mapped[typing.Optional[builtins.int]] = mapped_column(
-        ForeignKey("PlanNodeMappingDAO.database_id", use_alter=True),
-        nullable=True,
-        use_existing_column=True,
-    )
-
-    current_plan: Mapped[PlanMappingDAO] = relationship(
-        "PlanMappingDAO",
-        uselist=False,
-        foreign_keys=[current_plan_id],
-        post_update=True,
-    )
-    current_node: Mapped[PlanNodeMappingDAO] = relationship(
-        "PlanNodeMappingDAO",
-        uselist=False,
-        foreign_keys=[current_node_id],
-        post_update=True,
-    )
-
-    __mapper_args__ = {
-        "polymorphic_identity": "ParallelPlanDAO",
-        "inherit_condition": database_id == LanguagePlanDAO.database_id,
-    }
 
 
 class PlanEdgeDAO(Base, DataAccessObject[pycram.orm.model.PlanEdge]):
@@ -3699,27 +3385,27 @@ class PlanEdgeDAO(Base, DataAccessObject[pycram.orm.model.PlanEdge]):
     )
 
     parent_id: Mapped[int] = mapped_column(
-        ForeignKey("PlanNodeMappingDAO.database_id", use_alter=True),
+        ForeignKey("PlanNodeDAO.database_id", use_alter=True),
         nullable=True,
         use_existing_column=True,
     )
     child_id: Mapped[int] = mapped_column(
-        ForeignKey("PlanNodeMappingDAO.database_id", use_alter=True),
+        ForeignKey("PlanNodeDAO.database_id", use_alter=True),
         nullable=True,
         use_existing_column=True,
     )
 
-    parent: Mapped[PlanNodeMappingDAO] = relationship(
-        "PlanNodeMappingDAO", uselist=False, foreign_keys=[parent_id], post_update=True
+    parent: Mapped[PlanNodeDAO] = relationship(
+        "PlanNodeDAO", uselist=False, foreign_keys=[parent_id], post_update=True
     )
-    child: Mapped[PlanNodeMappingDAO] = relationship(
-        "PlanNodeMappingDAO", uselist=False, foreign_keys=[child_id], post_update=True
+    child: Mapped[PlanNodeDAO] = relationship(
+        "PlanNodeDAO", uselist=False, foreign_keys=[child_id], post_update=True
     )
 
 
-class PlanNodeMappingDAO(Base, DataAccessObject[pycram.orm.model.PlanNodeMapping]):
+class PlanNodeDAO(Base, DataAccessObject[pycram.plans.plan_node.PlanNode]):
 
-    __tablename__ = "PlanNodeMappingDAO"
+    __tablename__ = "PlanNodeDAO"
 
     database_id: Mapped[builtins.int] = mapped_column(
         Integer, primary_key=True, use_existing_column=True
@@ -3741,151 +3427,33 @@ class PlanNodeMappingDAO(Base, DataAccessObject[pycram.orm.model.PlanNodeMapping
         String(255), nullable=False, use_existing_column=True
     )
 
+    plan_id: Mapped[typing.Optional[builtins.int]] = mapped_column(
+        ForeignKey("PlanMappingDAO.database_id", use_alter=True),
+        nullable=True,
+        use_existing_column=True,
+    )
+
+    plan: Mapped[PlanMappingDAO] = relationship(
+        "PlanMappingDAO", uselist=False, foreign_keys=[plan_id], post_update=True
+    )
+
     __mapper_args__ = {
         "polymorphic_on": "polymorphic_type",
-        "polymorphic_identity": "PlanNodeMappingDAO",
+        "polymorphic_identity": "PlanNodeDAO",
     }
 
 
-class DesignatorNodeMappingDAO(
-    PlanNodeMappingDAO, DataAccessObject[pycram.orm.model.DesignatorNodeMapping]
-):
-
-    __tablename__ = "DesignatorNodeMappingDAO"
-
-    database_id: Mapped[builtins.int] = mapped_column(
-        ForeignKey(PlanNodeMappingDAO.database_id),
-        primary_key=True,
-        use_existing_column=True,
-    )
-
-    designator_type: Mapped[TypeType] = mapped_column(
-        TypeType, nullable=False, use_existing_column=True
-    )
-
-    designator_ref_id: Mapped[int] = mapped_column(
-        ForeignKey("DesignatorDescriptionDAO.database_id", use_alter=True),
-        nullable=True,
-        use_existing_column=True,
-    )
-
-    designator_ref: Mapped[DesignatorDescriptionDAO] = relationship(
-        "DesignatorDescriptionDAO",
-        uselist=False,
-        foreign_keys=[designator_ref_id],
-        post_update=True,
-    )
-
-    __mapper_args__ = {
-        "polymorphic_identity": "DesignatorNodeMappingDAO",
-        "inherit_condition": database_id == PlanNodeMappingDAO.database_id,
-    }
-
-
-class BaseActionNodeDAO(
-    DesignatorNodeMappingDAO, DataAccessObject[pycram.plan.BaseActionNode]
-):
-
-    __tablename__ = "BaseActionNodeDAO"
-
-    database_id: Mapped[builtins.int] = mapped_column(
-        ForeignKey(DesignatorNodeMappingDAO.database_id),
-        primary_key=True,
-        use_existing_column=True,
-    )
-
-    __mapper_args__ = {
-        "polymorphic_identity": "BaseActionNodeDAO",
-        "inherit_condition": database_id == DesignatorNodeMappingDAO.database_id,
-    }
-
-
-class ActionDescriptionNodeMappingDAO(
-    BaseActionNodeDAO, DataAccessObject[pycram.orm.model.ActionDescriptionNodeMapping]
-):
-
-    __tablename__ = "ActionDescriptionNodeMappingDAO"
-
-    database_id: Mapped[builtins.int] = mapped_column(
-        ForeignKey(BaseActionNodeDAO.database_id),
-        primary_key=True,
-        use_existing_column=True,
-    )
-
-    __mapper_args__ = {
-        "polymorphic_identity": "ActionDescriptionNodeMappingDAO",
-        "inherit_condition": database_id == BaseActionNodeDAO.database_id,
-    }
-
-
-class ActionNodeMappingDAO(
-    BaseActionNodeDAO, DataAccessObject[pycram.orm.model.ActionNodeMapping]
-):
-
-    __tablename__ = "ActionNodeMappingDAO"
-
-    database_id: Mapped[builtins.int] = mapped_column(
-        ForeignKey(BaseActionNodeDAO.database_id),
-        primary_key=True,
-        use_existing_column=True,
-    )
-
-    execution_data_id: Mapped[int] = mapped_column(
-        ForeignKey("ExecutionDataDAO.database_id", use_alter=True),
-        nullable=True,
-        use_existing_column=True,
-    )
-
-    execution_data: Mapped[ExecutionDataDAO] = relationship(
-        "ExecutionDataDAO",
-        uselist=False,
-        foreign_keys=[execution_data_id],
-        post_update=True,
-    )
-
-    __mapper_args__ = {
-        "polymorphic_identity": "ActionNodeMappingDAO",
-        "inherit_condition": database_id == BaseActionNodeDAO.database_id,
-    }
-
-
-class MotionNodeMappingDAO(
-    DesignatorNodeMappingDAO, DataAccessObject[pycram.orm.model.MotionNodeMapping]
-):
-
-    __tablename__ = "MotionNodeMappingDAO"
-
-    database_id: Mapped[builtins.int] = mapped_column(
-        ForeignKey(DesignatorNodeMappingDAO.database_id),
-        primary_key=True,
-        use_existing_column=True,
-    )
-
-    __mapper_args__ = {
-        "polymorphic_identity": "MotionNodeMappingDAO",
-        "inherit_condition": database_id == DesignatorNodeMappingDAO.database_id,
-    }
-
-
-class LanguageNodeDAO(
-    PlanNodeMappingDAO, DataAccessObject[pycram.language.LanguageNode]
-):
+class LanguageNodeDAO(PlanNodeDAO, DataAccessObject[pycram.language.LanguageNode]):
 
     __tablename__ = "LanguageNodeDAO"
 
     database_id: Mapped[builtins.int] = mapped_column(
-        ForeignKey(PlanNodeMappingDAO.database_id),
-        primary_key=True,
-        use_existing_column=True,
-    )
-
-    designator_type: Mapped[TypeType] = mapped_column(
-        TypeType, nullable=False, use_existing_column=True
+        ForeignKey(PlanNodeDAO.database_id), primary_key=True, use_existing_column=True
     )
 
     __mapper_args__ = {
         "polymorphic_identity": "LanguageNodeDAO",
-        "inherit_condition": database_id == PlanNodeMappingDAO.database_id,
+        "inherit_condition": database_id == PlanNodeDAO.database_id,
     }
 
 
@@ -3897,16 +3465,6 @@ class CodeNodeDAO(LanguageNodeDAO, DataAccessObject[pycram.language.CodeNode]):
         ForeignKey(LanguageNodeDAO.database_id),
         primary_key=True,
         use_existing_column=True,
-    )
-
-    plan_id: Mapped[typing.Optional[builtins.int]] = mapped_column(
-        ForeignKey("PlanMappingDAO.database_id", use_alter=True),
-        nullable=True,
-        use_existing_column=True,
-    )
-
-    plan: Mapped[PlanMappingDAO] = relationship(
-        "PlanMappingDAO", uselist=False, foreign_keys=[plan_id], post_update=True
     )
 
     __mapper_args__ = {
@@ -3923,16 +3481,6 @@ class ParallelNodeDAO(LanguageNodeDAO, DataAccessObject[pycram.language.Parallel
         ForeignKey(LanguageNodeDAO.database_id),
         primary_key=True,
         use_existing_column=True,
-    )
-
-    plan_id: Mapped[typing.Optional[builtins.int]] = mapped_column(
-        ForeignKey("PlanMappingDAO.database_id", use_alter=True),
-        nullable=True,
-        use_existing_column=True,
-    )
-
-    plan: Mapped[PlanMappingDAO] = relationship(
-        "PlanMappingDAO", uselist=False, foreign_keys=[plan_id], post_update=True
     )
 
     __mapper_args__ = {
@@ -4127,16 +3675,14 @@ class PositionVariableDAO(
 
 
 class PouringActionDAO(
-    ActionDescriptionDAO,
+    Base,
     DataAccessObject[pycram.robot_plans.actions.composite.tool_based.PouringAction],
 ):
 
     __tablename__ = "PouringActionDAO"
 
     database_id: Mapped[builtins.int] = mapped_column(
-        ForeignKey(ActionDescriptionDAO.database_id),
-        primary_key=True,
-        use_existing_column=True,
+        Integer, primary_key=True, use_existing_column=True
     )
 
     technique: Mapped[typing.Optional[builtins.str]] = mapped_column(
@@ -4169,11 +3715,6 @@ class PouringActionDAO(
     tool: Mapped[SemanticAnnotationDAO] = relationship(
         "SemanticAnnotationDAO", uselist=False, foreign_keys=[tool_id], post_update=True
     )
-
-    __mapper_args__ = {
-        "polymorphic_identity": "PouringActionDAO",
-        "inherit_condition": database_id == ActionDescriptionDAO.database_id,
-    }
 
 
 class PreferredGraspAlignmentDAO(
@@ -4315,16 +3856,13 @@ class QuaternionMappingDAO(
 
 
 class ReachActionDAO(
-    ActionDescriptionDAO,
-    DataAccessObject[pycram.robot_plans.actions.core.pick_up.ReachAction],
+    Base, DataAccessObject[pycram.robot_plans.actions.core.pick_up.ReachAction]
 ):
 
     __tablename__ = "ReachActionDAO"
 
     database_id: Mapped[builtins.int] = mapped_column(
-        ForeignKey(ActionDescriptionDAO.database_id),
-        primary_key=True,
-        use_existing_column=True,
+        Integer, primary_key=True, use_existing_column=True
     )
 
     reverse_reach_order: Mapped[builtins.bool] = mapped_column(use_existing_column=True)
@@ -4363,11 +3901,6 @@ class ReachActionDAO(
     object_designator: Mapped[BodyDAO] = relationship(
         "BodyDAO", uselist=False, foreign_keys=[object_designator_id], post_update=True
     )
-
-    __mapper_args__ = {
-        "polymorphic_identity": "ReachActionDAO",
-        "inherit_condition": database_id == ActionDescriptionDAO.database_id,
-    }
 
 
 class ReachMotionDAO(
@@ -4424,46 +3957,6 @@ class ReachMotionDAO(
     }
 
 
-class RepeatPlanDAO(LanguagePlanDAO, DataAccessObject[pycram.language.RepeatPlan]):
-
-    __tablename__ = "RepeatPlanDAO"
-
-    database_id: Mapped[builtins.int] = mapped_column(
-        ForeignKey(LanguagePlanDAO.database_id),
-        primary_key=True,
-        use_existing_column=True,
-    )
-
-    current_plan_id: Mapped[typing.Optional[builtins.int]] = mapped_column(
-        ForeignKey("PlanMappingDAO.database_id", use_alter=True),
-        nullable=True,
-        use_existing_column=True,
-    )
-    current_node_id: Mapped[typing.Optional[builtins.int]] = mapped_column(
-        ForeignKey("PlanNodeMappingDAO.database_id", use_alter=True),
-        nullable=True,
-        use_existing_column=True,
-    )
-
-    current_plan: Mapped[PlanMappingDAO] = relationship(
-        "PlanMappingDAO",
-        uselist=False,
-        foreign_keys=[current_plan_id],
-        post_update=True,
-    )
-    current_node: Mapped[PlanNodeMappingDAO] = relationship(
-        "PlanNodeMappingDAO",
-        uselist=False,
-        foreign_keys=[current_node_id],
-        post_update=True,
-    )
-
-    __mapper_args__ = {
-        "polymorphic_identity": "RepeatPlanDAO",
-        "inherit_condition": database_id == LanguagePlanDAO.database_id,
-    }
-
-
 class RotationMatrixMappingDAO(
     Base, DataAccessObject[semantic_digital_twin.orm.model.RotationMatrixMapping]
 ):
@@ -4504,16 +3997,13 @@ class ScaleDAO(
 
 
 class SearchActionDAO(
-    ActionDescriptionDAO,
-    DataAccessObject[pycram.robot_plans.actions.composite.searching.SearchAction],
+    Base, DataAccessObject[pycram.robot_plans.actions.composite.searching.SearchAction]
 ):
 
     __tablename__ = "SearchActionDAO"
 
     database_id: Mapped[builtins.int] = mapped_column(
-        ForeignKey(ActionDescriptionDAO.database_id),
-        primary_key=True,
-        use_existing_column=True,
+        Integer, primary_key=True, use_existing_column=True
     )
 
     object_sem_annotation: Mapped[TypeType] = mapped_column(
@@ -4532,11 +4022,6 @@ class SearchActionDAO(
         foreign_keys=[target_location_id],
         post_update=True,
     )
-
-    __mapper_args__ = {
-        "polymorphic_identity": "SearchActionDAO",
-        "inherit_condition": database_id == ActionDescriptionDAO.database_id,
-    }
 
 
 class SelfCollisionMatrixRuleDAO(
@@ -4593,16 +4078,6 @@ class SequentialNodeDAO(
         use_existing_column=True,
     )
 
-    plan_id: Mapped[typing.Optional[builtins.int]] = mapped_column(
-        ForeignKey("PlanMappingDAO.database_id", use_alter=True),
-        nullable=True,
-        use_existing_column=True,
-    )
-
-    plan: Mapped[PlanMappingDAO] = relationship(
-        "PlanMappingDAO", uselist=False, foreign_keys=[plan_id], post_update=True
-    )
-
     __mapper_args__ = {
         "polymorphic_identity": "SequentialNodeDAO",
         "inherit_condition": database_id == LanguageNodeDAO.database_id,
@@ -4635,7 +4110,7 @@ class RepeatNodeDAO(SequentialNodeDAO, DataAccessObject[pycram.language.RepeatNo
         use_existing_column=True,
     )
 
-    repeat: Mapped[builtins.int] = mapped_column(use_existing_column=True)
+    repetitions: Mapped[builtins.int] = mapped_column(use_existing_column=True)
 
     __mapper_args__ = {
         "polymorphic_identity": "RepeatNodeDAO",
@@ -4643,59 +4118,14 @@ class RepeatNodeDAO(SequentialNodeDAO, DataAccessObject[pycram.language.RepeatNo
     }
 
 
-class SequentialPlanDAO(
-    LanguagePlanDAO, DataAccessObject[pycram.language.SequentialPlan]
-):
-
-    __tablename__ = "SequentialPlanDAO"
-
-    database_id: Mapped[builtins.int] = mapped_column(
-        ForeignKey(LanguagePlanDAO.database_id),
-        primary_key=True,
-        use_existing_column=True,
-    )
-
-    current_plan_id: Mapped[typing.Optional[builtins.int]] = mapped_column(
-        ForeignKey("PlanMappingDAO.database_id", use_alter=True),
-        nullable=True,
-        use_existing_column=True,
-    )
-    current_node_id: Mapped[typing.Optional[builtins.int]] = mapped_column(
-        ForeignKey("PlanNodeMappingDAO.database_id", use_alter=True),
-        nullable=True,
-        use_existing_column=True,
-    )
-
-    current_plan: Mapped[PlanMappingDAO] = relationship(
-        "PlanMappingDAO",
-        uselist=False,
-        foreign_keys=[current_plan_id],
-        post_update=True,
-    )
-    current_node: Mapped[PlanNodeMappingDAO] = relationship(
-        "PlanNodeMappingDAO",
-        uselist=False,
-        foreign_keys=[current_node_id],
-        post_update=True,
-    )
-
-    __mapper_args__ = {
-        "polymorphic_identity": "SequentialPlanDAO",
-        "inherit_condition": database_id == LanguagePlanDAO.database_id,
-    }
-
-
 class SetGripperActionDAO(
-    ActionDescriptionDAO,
-    DataAccessObject[pycram.robot_plans.actions.core.robot_body.SetGripperAction],
+    Base, DataAccessObject[pycram.robot_plans.actions.core.robot_body.SetGripperAction]
 ):
 
     __tablename__ = "SetGripperActionDAO"
 
     database_id: Mapped[builtins.int] = mapped_column(
-        ForeignKey(ActionDescriptionDAO.database_id),
-        primary_key=True,
-        use_existing_column=True,
+        Integer, primary_key=True, use_existing_column=True
     )
 
     gripper: Mapped[pycram.datastructures.enums.Arms] = mapped_column(
@@ -4710,11 +4140,6 @@ class SetGripperActionDAO(
             use_existing_column=True,
         )
     )
-
-    __mapper_args__ = {
-        "polymorphic_identity": "SetGripperActionDAO",
-        "inherit_condition": database_id == ActionDescriptionDAO.database_id,
-    }
 
 
 class ShapeDAO(
@@ -4999,16 +4424,14 @@ class TransformStampedDAO(
 
 
 class TransportActionDAO(
-    ActionDescriptionDAO,
+    Base,
     DataAccessObject[pycram.robot_plans.actions.composite.transporting.TransportAction],
 ):
 
     __tablename__ = "TransportActionDAO"
 
     database_id: Mapped[builtins.int] = mapped_column(
-        ForeignKey(ActionDescriptionDAO.database_id),
-        primary_key=True,
-        use_existing_column=True,
+        Integer, primary_key=True, use_existing_column=True
     )
 
     place_rotation_agnostic: Mapped[typing.Optional[builtins.bool]] = mapped_column(
@@ -5041,11 +4464,6 @@ class TransportActionDAO(
         foreign_keys=[target_location_id],
         post_update=True,
     )
-
-    __mapper_args__ = {
-        "polymorphic_identity": "TransportActionDAO",
-        "inherit_condition": database_id == ActionDescriptionDAO.database_id,
-    }
 
 
 class TriangleMeshDAO(
@@ -5087,22 +4505,6 @@ class TryAllNodeDAO(ParallelNodeDAO, DataAccessObject[pycram.language.TryAllNode
     }
 
 
-class TryAllPLanDAO(ParallelPlanDAO, DataAccessObject[pycram.language.TryAllPLan]):
-
-    __tablename__ = "TryAllPLanDAO"
-
-    database_id: Mapped[builtins.int] = mapped_column(
-        ForeignKey(ParallelPlanDAO.database_id),
-        primary_key=True,
-        use_existing_column=True,
-    )
-
-    __mapper_args__ = {
-        "polymorphic_identity": "TryAllPLanDAO",
-        "inherit_condition": database_id == ParallelPlanDAO.database_id,
-    }
-
-
 class TryInOrderNodeDAO(
     SequentialNodeDAO, DataAccessObject[pycram.language.TryInOrderNode]
 ):
@@ -5118,48 +4520,6 @@ class TryInOrderNodeDAO(
     __mapper_args__ = {
         "polymorphic_identity": "TryInOrderNodeDAO",
         "inherit_condition": database_id == SequentialNodeDAO.database_id,
-    }
-
-
-class TryInOrderPlanDAO(
-    LanguagePlanDAO, DataAccessObject[pycram.language.TryInOrderPlan]
-):
-
-    __tablename__ = "TryInOrderPlanDAO"
-
-    database_id: Mapped[builtins.int] = mapped_column(
-        ForeignKey(LanguagePlanDAO.database_id),
-        primary_key=True,
-        use_existing_column=True,
-    )
-
-    current_plan_id: Mapped[typing.Optional[builtins.int]] = mapped_column(
-        ForeignKey("PlanMappingDAO.database_id", use_alter=True),
-        nullable=True,
-        use_existing_column=True,
-    )
-    current_node_id: Mapped[typing.Optional[builtins.int]] = mapped_column(
-        ForeignKey("PlanNodeMappingDAO.database_id", use_alter=True),
-        nullable=True,
-        use_existing_column=True,
-    )
-
-    current_plan: Mapped[PlanMappingDAO] = relationship(
-        "PlanMappingDAO",
-        uselist=False,
-        foreign_keys=[current_plan_id],
-        post_update=True,
-    )
-    current_node: Mapped[PlanNodeMappingDAO] = relationship(
-        "PlanNodeMappingDAO",
-        uselist=False,
-        foreign_keys=[current_node_id],
-        post_update=True,
-    )
-
-    __mapper_args__ = {
-        "polymorphic_identity": "TryInOrderPlanDAO",
-        "inherit_condition": database_id == LanguagePlanDAO.database_id,
     }
 
 
@@ -5408,11 +4768,6 @@ class WorldMappingDAO(
         nullable=True,
         use_existing_column=True,
     )
-    model_manager_id: Mapped[int] = mapped_column(
-        ForeignKey("WorldModelManagerDAO.database_id", use_alter=True),
-        nullable=True,
-        use_existing_column=True,
-    )
 
     kinematic_structure_entities: Mapped[
         builtins.list[WorldMappingDAO_kinematic_structure_entities_association]
@@ -5448,12 +4803,6 @@ class WorldMappingDAO(
     )
     state: Mapped[WorldStateMappingDAO] = relationship(
         "WorldStateMappingDAO", uselist=False, foreign_keys=[state_id], post_update=True
-    )
-    model_manager: Mapped[WorldModelManagerDAO] = relationship(
-        "WorldModelManagerDAO",
-        uselist=False,
-        foreign_keys=[model_manager_id],
-        post_update=True,
     )
 
 

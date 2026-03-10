@@ -1,10 +1,12 @@
 import logging
 import os
+import runpy
 from dataclasses import is_dataclass
+from pathlib import Path
 
 import pycram.datastructures.pose
 import pycram.language
-import semantic_digital_twin.orm.ormatic_interface
+
 from krrood.class_diagrams import ClassDiagram
 from krrood.ormatic.helper import get_classes_of_ormatic_interface
 from krrood.ormatic.ormatic import ORMatic
@@ -12,9 +14,10 @@ from krrood.ormatic.type_dict import TypeDict
 from krrood.ormatic.utils import classes_of_module
 from krrood.utils import recursive_subclasses
 from pycram.datastructures import grasp
+from pycram.datastructures.dataclasses import ExecutionData
 from pycram.language import SequentialNode, RepeatNode, LanguageNode
 from pycram.orm.model import *
-from pycram.plan import BaseActionNode
+from pycram.plans.plan_node import PlanNode
 from pycram.robot_plans.actions.composite import (
     facing,
     searching,
@@ -29,6 +32,7 @@ from pycram.robot_plans.actions.core import (
     placing,
     robot_body,
 )
+from pycram.plans.plan_callbacks import PlanCallback  # type: ignore
 from pycram.robot_plans.motions import BaseMotion
 from pycram.robot_plans.motions import (
     container as motion_container,
@@ -37,7 +41,6 @@ from pycram.robot_plans.motions import (
     misc as motion_misc,
     robot_body as motion_robot_body,
 )
-from semantic_digital_twin.world import WorldModelManager
 from semantic_digital_twin.world_description.world_entity import Body
 from semantic_digital_twin.world_description.world_modification import (
     WorldModelModificationBlock,
@@ -50,6 +53,12 @@ from semantic_digital_twin.world_description.world_modification import (
 # information on how to map them.
 # ----------------------------------------------------------------------------------------------------------------------
 
+# execute semantic digital twins orm generation
+repo_root = Path(__file__).resolve().parents[2]
+generate_orm_path = repo_root / "semantic_digital_twin" / "scripts" / "generate_orm.py"
+# Execute the ORM generation script as a standalone module
+runpy.run_path(str(generate_orm_path), run_name="__main__")
+import semantic_digital_twin.orm.ormatic_interface
 
 # import classes from the existing interface
 classes, alternative_mappings, type_mappings = get_classes_of_ormatic_interface(
@@ -78,8 +87,6 @@ classes |= set(classes_of_module(misc))
 classes |= set(classes_of_module(navigation))
 classes |= set(classes_of_module(placing))
 classes |= set(classes_of_module(robot_body))  # | {ActionDescription}
-classes |= {ActionDescription}
-classes |= {DesignatorDescription}
 classes |= {BaseMotion}
 classes |= set(classes_of_module(grasp))
 classes |= {WorldModelModificationBlock, WorldModelModification}
@@ -98,11 +105,9 @@ classes |= {
     PlanNode,
     SequentialNode,
     RepeatNode,
-    ActionNode,
     Plan,
     PlanEdge,
     LanguageNode,
-    BaseActionNode,
 }
 classes |= set(classes_of_module(pycram.language))
 

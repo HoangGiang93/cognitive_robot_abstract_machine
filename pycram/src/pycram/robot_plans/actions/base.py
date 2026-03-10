@@ -2,24 +2,18 @@ from __future__ import annotations
 
 import abc
 import logging
+from abc import ABC
 from dataclasses import dataclass
 
-from typing_extensions import Any, Optional, Callable, TypeVar
+from typing_extensions import Any, Optional, Callable
 
-from pycram.designator import DesignatorDescription
 from pycram.failures import PlanFailure
 
 logger = logging.getLogger(__name__)
 
 
 @dataclass
-class ActionDescription(DesignatorDescription):
-    _pre_perform_callbacks = []
-    _post_perform_callbacks = []
-
-    def __post_init__(self):
-        pass
-        # self._pre_perform_callbacks.append(self._update_robot_params)
+class ActionDescription:
 
     def perform(self) -> Any:
         """
@@ -75,6 +69,3 @@ class ActionDescription(DesignatorDescription):
     def post_perform(cls, func) -> Callable:
         cls._post_perform_callbacks.append(func)
         return func
-
-
-ActionType = TypeVar("ActionType", bound=ActionDescription)

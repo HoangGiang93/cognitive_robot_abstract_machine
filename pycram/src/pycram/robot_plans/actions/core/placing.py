@@ -1,31 +1,29 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import timedelta
 
-from semantic_digital_twin.datastructures.definitions import GripperState
-from semantic_digital_twin.world_description.connections import Connection6DoF
-from semantic_digital_twin.world_description.world_entity import Body
-from typing_extensions import Union, Optional, Type, Any, Iterable
+from typing_extensions import Optional, Any
 
-from pycram.robot_plans.actions.core.pick_up import ReachActionDescription, PickUpAction
-from pycram.config.action_conf import ActionConfig
-from pycram.robot_plans.motions.gripper import MoveTCPMotion, MoveGripperMotion, ReachMotion
 from pycram.datastructures.enums import (
     Arms,
     ApproachDirection,
     VerticalAlignment,
 )
 from pycram.datastructures.grasp import GraspDescription
-from pycram.datastructures.partial_designator import PartialDesignator
 from pycram.datastructures.pose import PoseStamped
 from pycram.failures import ObjectNotPlacedAtTargetLocation, ObjectStillInContact
-from pycram.language import SequentialPlan
-from pycram.view_manager import ViewManager
 from pycram.robot_plans.actions.base import ActionDescription
-from pycram.utils import translate_pose_along_local_axis
+from pycram.robot_plans.actions.core.pick_up import PickUpAction
+from pycram.robot_plans.motions.gripper import (
+    MoveTCPMotion,
+    MoveGripperMotion,
+)
 from pycram.validation.error_checkers import PoseErrorChecker
-from pycram.visualization import plot_rustworkx_interactive
+from pycram.view_manager import ViewManager
+from semantic_digital_twin.datastructures.definitions import GripperState
+from semantic_digital_twin.world_description.connections import Connection6DoF
+from semantic_digital_twin.world_description.world_entity import Body
 
 
 @dataclass
@@ -136,20 +134,3 @@ class PlaceAction(ActionDescription):
             raise ObjectNotPlacedAtTargetLocation(
                 self.object_designator, self.target_location, World.robot, self.arm
             )
-
-    @classmethod
-    def description(
-        cls,
-        object_designator: Union[Iterable[Body], Body],
-        target_location: Union[Iterable[PoseStamped], PoseStamped],
-        arm: Union[Iterable[Arms], Arms],
-    ) -> PartialDesignator[PlaceAction]:
-        return PartialDesignator[PlaceAction](
-            PlaceAction,
-            object_designator=object_designator,
-            target_location=target_location,
-            arm=arm,
-        )
-
-
-PlaceActionDescription = PlaceAction.description

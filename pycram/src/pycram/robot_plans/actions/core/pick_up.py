@@ -4,28 +4,23 @@ import logging
 from dataclasses import dataclass
 from datetime import timedelta
 
-from typing_extensions import Union, Optional, Type, Any, Iterable
+from typing_extensions import Optional, Any
 
-from semantic_digital_twin.datastructures.definitions import GripperState
-from semantic_digital_twin.spatial_types import HomogeneousTransformationMatrix
-from semantic_digital_twin.world_description.connections import FixedConnection
-from semantic_digital_twin.world_description.world_entity import Body
-from pycram.robot_plans.motions.gripper import MoveGripperMotion, MoveTCPMotion
-from pycram.config.action_conf import ActionConfig
 from pycram.datastructures.enums import (
     Arms,
     MovementType,
     FindBodyInRegionMethod,
 )
 from pycram.datastructures.grasp import GraspDescription
-from pycram.datastructures.partial_designator import PartialDesignator
 from pycram.datastructures.pose import PoseStamped
 from pycram.failures import ObjectNotGraspedError
 from pycram.failures import ObjectNotInGraspingArea
-from pycram.language import SequentialPlan
-from pycram.view_manager import ViewManager
+
 from pycram.robot_plans.actions.base import ActionDescription
-from pycram.utils import translate_pose_along_local_axis
+from pycram.robot_plans.motions.gripper import MoveGripperMotion, MoveTCPMotion
+from pycram.view_manager import ViewManager
+from semantic_digital_twin.datastructures.definitions import GripperState
+from semantic_digital_twin.world_description.world_entity import Body
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +61,6 @@ class ReachAction(ActionDescription):
         target_pre_pose, target_pose, _ = self.grasp_description._pose_sequence(
             self.target_pose, self.object_designator, reverse=self.reverse_reach_order
         )
-
         SequentialPlan(
             self.context,
             MoveTCPMotion(target_pre_pose, self.arm, allow_gripper_collision=False),
@@ -102,24 +96,6 @@ class ReachAction(ActionDescription):
                 f"Cannot validate reaching to pick up action for arm {self.arm} as no finger links are defined."
             )
 
-    @classmethod
-    def description(
-        cls,
-        target_pose: Union[Iterable[PoseStamped], PoseStamped],
-        arm: Union[Iterable[Arms], Arms] = None,
-        grasp_description: Union[Iterable[GraspDescription], GraspDescription] = None,
-        object_designator: Union[Iterable[Body], Body] = None,
-        reverse_reach_order: Union[Iterable[bool], bool] = False,
-    ) -> PartialDesignator[ReachAction]:
-        return PartialDesignator[ReachAction](
-            ReachAction,
-            target_pose=target_pose,
-            arm=arm,
-            grasp_description=grasp_description,
-            object_designator=object_designator,
-            reverse_reach_order=reverse_reach_order,
-        )
-
 
 @dataclass
 class PickUpAction(ActionDescription):
@@ -141,14 +117,6 @@ class PickUpAction(ActionDescription):
     """
     The GraspDescription that should be used for picking up the object
     """
-
-    _pre_perform_callbacks = []
-    """
-    List to save the callbacks which should be called before performing the action.
-    """
-
-    def __post_init__(self):
-        super().__post_init__()
 
     def execute(self) -> None:
         SequentialPlan(
@@ -196,20 +164,6 @@ class PickUpAction(ActionDescription):
                 self.object_designator, World.robot, self.arm, self.grasp_description
             )
 
-    @classmethod
-    def description(
-        cls,
-        object_designator: Union[Iterable[Body], Body],
-        arm: Union[Iterable[Arms], Arms] = None,
-        grasp_description: Union[Iterable[GraspDescription], GraspDescription] = None,
-    ) -> PartialDesignator[PickUpAction]:
-        return PartialDesignator[PickUpAction](
-            PickUpAction,
-            object_designator=object_designator,
-            arm=arm,
-            grasp_description=grasp_description,
-        )
-
 
 @dataclass
 class GraspingAction(ActionDescription):
@@ -256,24 +210,3 @@ class GraspingAction(ActionDescription):
             raise ObjectNotGraspedError(
                 self.object_designator, World.robot, self.arm, None
             )
-
-    @classmethod
-    def description(
-        cls,
-        object_designator: Union[Iterable[Body], Body],
-        arm: Union[Iterable[Arms], Arms] = None,
-        grasp_description: Union[
-            Iterable[GraspDescription], GraspDescription
-        ] = ActionConfig.grasping_prepose_distance,
-    ) -> PartialDesignator[GraspingAction]:
-        return PartialDesignator[GraspingAction](
-            GraspingAction,
-            object_designator=object_designator,
-            arm=arm,
-            grasp_description=grasp_description,
-        )
-
-
-ReachActionDescription = ReachAction.description
-PickUpActionDescription = PickUpAction.description
-GraspingActionDescription = GraspingAction.description

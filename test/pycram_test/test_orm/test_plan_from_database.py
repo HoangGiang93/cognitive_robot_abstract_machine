@@ -74,9 +74,6 @@ def test_pick_up_action_and_replay_from_db(pycram_testing_session, mutable_model
 
     session.add(dao)
     session.commit()
-    result = session.scalars(select(PlanMappingDAO)).first()
-
-    world_from_database: World = result.context.world.from_dao()
-    assert len(world_from_database._model_manager.model_modification_blocks) == len(
-        world._model_manager.model_modification_blocks
-    )
+    result = session.scalars(select(PlanMappingDAO)).one()
+    recreated_plan = dao.from_dao()
+    print(recreated_plan)

@@ -7,14 +7,13 @@ from datetime import timedelta
 from semantic_digital_twin.world_description.world_entity import SemanticAnnotation
 from typing_extensions import Union, Optional, Type, Any, Iterable
 
-from pycram.robot_plans.actions.core.misc import DetectActionDescription
-from pycram.robot_plans.actions.core.navigation import LookAtActionDescription, NavigateActionDescription
+
 from pycram.datastructures.enums import DetectionTechnique
-from pycram.datastructures.partial_designator import PartialDesignator
+
 from pycram.datastructures.pose import PoseStamped
-from pycram.designators.location_designator import CostmapLocation
+
 from pycram.failures import PerceptionObjectNotFound
-from pycram.language import TryInOrderPlan, SequentialPlan
+
 from pycram.robot_plans.actions.base import ActionDescription
 
 
@@ -95,16 +94,3 @@ class SearchAction(ActionDescription):
         self, result: Optional[Any] = None, max_wait_time: Optional[timedelta] = None
     ):
         pass
-
-    @classmethod
-    def description(
-        cls,
-        target_location: Union[Iterable[PoseStamped], PoseStamped],
-        object_type: Union[Iterable[SemanticAnnotation], SemanticAnnotation],
-    ) -> PartialDesignator[SearchAction]:
-        return PartialDesignator(
-            SearchAction, target_location=target_location, object_type=object_type
-        )
-
-
-SearchActionDescription = SearchAction.description

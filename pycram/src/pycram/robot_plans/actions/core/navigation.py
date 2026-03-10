@@ -3,20 +3,16 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import timedelta
 
-import numpy as np
-from typing_extensions import Union, Optional, Type, Any, Iterable
+from typing_extensions import Optional, Any
 
-from semantic_digital_twin.robots.abstract_robot import Camera
-from pycram.robot_plans.actions.base import ActionDescription
-from pycram.robot_plans.motions.robot_body import LookingMotion
-from pycram.robot_plans.motions.navigation import MoveMotion
 from pycram.config.action_conf import ActionConfig
-from pycram.datastructures.partial_designator import PartialDesignator
 from pycram.datastructures.pose import PoseStamped
-from pycram.failures import LookAtGoalNotReached
 from pycram.failures import NavigationGoalNotReachedError
-from pycram.language import SequentialPlan
+from pycram.robot_plans.actions.base import ActionDescription
+from pycram.robot_plans.motions.navigation import MoveMotion
+from pycram.robot_plans.motions.robot_body import LookingMotion
 from pycram.validation.error_checkers import PoseErrorChecker
+from semantic_digital_twin.robots.abstract_robot import Camera
 
 
 @dataclass
@@ -49,20 +45,6 @@ class NavigateAction(ActionDescription):
         ):
             raise NavigationGoalNotReachedError(World.robot.pose, self.target_location)
 
-    @classmethod
-    def description(
-        cls,
-        target_location: Union[Iterable[PoseStamped], PoseStamped],
-        keep_joint_states: Union[
-            Iterable[bool], bool
-        ] = ActionConfig.navigate_keep_joint_states,
-    ) -> PartialDesignator[NavigateAction]:
-        return PartialDesignator[NavigateAction](
-            NavigateAction,
-            target_location=target_location,
-            keep_joint_states=keep_joint_states,
-        )
-
 
 @dataclass
 class LookAtAction(ActionDescription):
@@ -94,17 +76,3 @@ class LookAtAction(ActionDescription):
         creating a ray from the camera and checking if it intersects with the object.
         """
         return
-
-    @classmethod
-    def description(
-        cls,
-        target: Union[Iterable[PoseStamped], PoseStamped],
-        camera: Optional[Union[Iterable[Camera], Camera]] = None,
-    ) -> PartialDesignator[LookAtAction]:
-        return PartialDesignator[LookAtAction](
-            LookAtAction, target=target, camera=camera
-        )
-
-
-NavigateActionDescription = NavigateAction.description
-LookAtActionDescription = LookAtAction.description

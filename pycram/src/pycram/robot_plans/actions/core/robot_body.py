@@ -5,24 +5,22 @@ from dataclasses import dataclass
 from datetime import timedelta
 from typing import Tuple, List
 
-from typing_extensions import Union, Optional, Type, Dict, Any, Iterable
+from typing_extensions import Optional, Dict, Any
 
+from pycram.datastructures.enums import AxisIdentifier, Arms
+from pycram.datastructures.pose import Vector3Stamped
+from pycram.datastructures.trajectory import PoseTrajectory
+from pycram.failures import TorsoGoalNotReached, ConfigurationNotReached
+from pycram.robot_plans.actions.base import ActionDescription
+from pycram.robot_plans.motions.gripper import MoveGripperMotion, MoveTCPWaypointsMotion
+from pycram.robot_plans.motions.robot_body import MoveJointsMotion
+from pycram.validation.goal_validator import create_multiple_joint_goal_validator
+from pycram.view_manager import ViewManager
 from semantic_digital_twin.datastructures.definitions import (
     TorsoState,
     GripperState,
     StaticJointState,
 )
-from pycram.datastructures.enums import AxisIdentifier, Arms
-from pycram.datastructures.partial_designator import PartialDesignator
-from pycram.datastructures.pose import Vector3Stamped
-from pycram.datastructures.trajectory import PoseTrajectory
-from pycram.failures import TorsoGoalNotReached, ConfigurationNotReached
-from pycram.language import SequentialPlan
-from pycram.view_manager import ViewManager
-from pycram.robot_plans.actions.base import ActionDescription
-from pycram.robot_plans.motions.gripper import MoveGripperMotion, MoveTCPWaypointsMotion
-from pycram.robot_plans.motions.robot_body import MoveJointsMotion
-from pycram.validation.goal_validator import create_multiple_joint_goal_validator
 
 
 @dataclass
@@ -70,14 +68,6 @@ class MoveTorsoAction(ActionDescription):
         if not validator.goal_achieved:
             raise TorsoGoalNotReached(validator)
 
-    @classmethod
-    def description(
-        cls, torso_state: Union[Iterable[TorsoState], TorsoState]
-    ) -> PartialDesignator[MoveTorsoAction]:
-        return PartialDesignator[MoveTorsoAction](
-            MoveTorsoAction, torso_state=torso_state
-        )
-
 
 @dataclass
 class SetGripperAction(ActionDescription):
@@ -110,16 +100,6 @@ class SetGripperAction(ActionDescription):
         Needs gripper state to be read or perceived.
         """
         pass
-
-    @classmethod
-    def description(
-        cls,
-        gripper: Union[Iterable[Arms], Arms],
-        motion: Union[Iterable[GripperState], GripperState] = None,
-    ) -> PartialDesignator[SetGripperAction]:
-        return PartialDesignator[SetGripperAction](
-            SetGripperAction, gripper=gripper, motion=motion
-        )
 
 
 @dataclass
@@ -172,12 +152,6 @@ class ParkArmsAction(ActionDescription):
             raise ConfigurationNotReached(
                 validator, configuration_type=StaticJointState.Park
             )
-
-    @classmethod
-    def description(
-        cls, arm: Union[Iterable[Arms], Arms]
-    ) -> PartialDesignator[ParkArmsAction]:
-        return PartialDesignator[ParkArmsAction](cls, arm=arm)
 
 
 @dataclass
@@ -283,26 +257,6 @@ class CarryAction(ActionDescription):
                 validator, configuration_type=StaticJointState.Park
             )
 
-    @classmethod
-    def description(
-        cls,
-        arm: Union[Iterable[Arms], Arms],
-        align: Optional[bool] = False,
-        tip_link: Optional[str] = None,
-        tip_axis: Optional[AxisIdentifier] = None,
-        root_link: Optional[str] = None,
-        root_axis: Optional[AxisIdentifier] = None,
-    ) -> PartialDesignator[CarryAction]:
-        return PartialDesignator[CarryAction](
-            cls,
-            arm=arm,
-            align=align,
-            tip_link=tip_link,
-            tip_axis=tip_axis,
-            root_link=root_link,
-            root_axis=root_axis,
-        )
-
 
 @dataclass
 class FollowTCPPathAction(ActionDescription):
@@ -338,19 +292,3 @@ class FollowTCPPathAction(ActionDescription):
         max_wait_time: timedelta = timedelta(seconds=2),
     ):
         pass
-
-    @classmethod
-    def description(
-        cls,
-        arm: Union[Iterable[Arms], Arms],
-        target_locations: Union[Iterable[PoseTrajectory], PoseTrajectory],
-    ) -> PartialDesignator[FollowTCPPathAction]:
-        return PartialDesignator(cls, target_location=target_locations, arm=arm)
-
-
-
-MoveTorsoActionDescription = MoveTorsoAction.description
-SetGripperActionDescription = SetGripperAction.description
-ParkArmsActionDescription = ParkArmsAction.description
-CarryActionDescription = CarryAction.description
-FollowTCPPathActionDescription = FollowTCPPathAction.description

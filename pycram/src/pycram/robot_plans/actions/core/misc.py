@@ -3,6 +3,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import timedelta
 
+from typing_extensions import Optional, Type, Any
+
+from pycram.datastructures.enums import DetectionTechnique, DetectionState
+from pycram.perception import PerceptionQuery
+from pycram.robot_plans.actions.base import ActionDescription
 from semantic_digital_twin.spatial_types import HomogeneousTransformationMatrix
 from semantic_digital_twin.world_description.geometry import BoundingBox
 from semantic_digital_twin.world_description.world_entity import (
@@ -10,12 +15,6 @@ from semantic_digital_twin.world_description.world_entity import (
     SemanticAnnotation,
     SemanticEnvironmentAnnotation,
 )
-from typing_extensions import Union, Optional, Type, Any, Iterable
-
-from pycram.perception import PerceptionQuery
-from pycram.datastructures.enums import DetectionTechnique, DetectionState
-from pycram.datastructures.partial_designator import PartialDesignator
-from pycram.robot_plans.actions.base import ActionDescription
 
 
 @dataclass
@@ -82,24 +81,3 @@ class DetectAction(ActionDescription):
         return
         # if not result:
         #     raise PerceptionObjectNotFound(self.object_designator, self.technique, self.region)
-
-    @classmethod
-    def description(
-        cls,
-        technique: Union[Iterable[DetectionTechnique], DetectionTechnique],
-        state: Union[Iterable[DetectionState], DetectionState] = None,
-        object_sem_annotation: Union[
-            Iterable[Type[SemanticAnnotation]], Type[SemanticAnnotation]
-        ] = None,
-        region: Union[Iterable[Region], Region] = None,
-    ) -> PartialDesignator[DetectAction]:
-        return PartialDesignator[DetectAction](
-            DetectAction,
-            technique=technique,
-            state=state,
-            object_sem_annotation=object_sem_annotation,
-            region=region,
-        )
-
-
-DetectActionDescription = DetectAction.description

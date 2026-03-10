@@ -1,11 +1,8 @@
-import os
-import unittest
 from copy import deepcopy
 
 import numpy as np
 import pytest
 
-from giskardpy.motion_statechart.tasks.cartesian_tasks import CartesianPose
 from giskardpy.motion_statechart.tasks.joint_tasks import JointPositionList
 from pycram.datastructures.dataclasses import Context
 from pycram.datastructures.enums import (
@@ -15,20 +12,16 @@ from pycram.datastructures.enums import (
 )
 from pycram.datastructures.grasp import GraspDescription
 from pycram.datastructures.pose import PoseStamped
-from pycram.language import SequentialPlan
-from pycram.plan import MotionNode
-from pycram.motion_executor import simulated_robot, no_execution, real_robot
+from pycram.plans.factories import sequential
+
+from pycram.plans.plan_node import MotionNode, ActionNode
+from pycram.motion_executor import simulated_robot, real_robot
 from pycram.robot_plans import (
-    MoveMotion,
-    BaseMotion,
-    PickUpActionDescription,
-    NavigateActionDescription,
-    MoveTorsoActionDescription,
     PickUpAction,
+    NavigateAction,
+    MoveTorsoAction,
 )
-from semantic_digital_twin.adapters.urdf import URDFParser
 from semantic_digital_twin.datastructures.definitions import TorsoState
-from semantic_digital_twin.robots.hsrb import HSRB
 from semantic_digital_twin.robots.pr2 import PR2
 
 try:
@@ -49,18 +42,22 @@ def test_pick_up_motion(immutable_model_world):
         VerticalAlignment.NoAlignment,
         test_robot.left_arm.manipulator,
     )
-    description = PickUpActionDescription(
-        test_world.get_body_by_name("milk.stl"), [Arms.LEFT], [grasp_description]
+    pick_up = PickUpAction(
+        test_world.get_body_by_name("milk.stl"), Arms.LEFT, grasp_description
     )
 
-    plan = plan = SequentialPlan(
+    plan = sequential(
         Context.from_world(test_world),
-        NavigateActionDescription(
-            PoseStamped.from_list([1.7, 1.5, 0], [0, 0, 0, 1], test_world.root),
-            True,
-        ),
-        MoveTorsoActionDescription([TorsoState.HIGH]),
-        description,
+        [
+            ActionNode(
+                action=NavigateAction(
+                    PoseStamped.from_list([1.7, 1.5, 0], [0, 0, 0, 1], test_world.root),
+                    True,
+                )
+            ),
+            MoveTorsoAction(TorsoState.HIGH),
+            pick_up,
+        ],
     )
     with simulated_robot:
         plan.perform()

@@ -18,7 +18,6 @@ from pycram.costmaps import Costmap, OccupancyCostmap, VisibilityCostmap
 import matplotlib.colorbar
 from pycram.datastructures.pose import PoseStamped
 from pycram.ros import create_publisher, Duration
-from pycram.units import meter
 
 from pint import Quantity
 from probabilistic_model.probabilistic_circuit.rx.helper import uniform_measure_of_event
@@ -83,7 +82,7 @@ class ProbabilisticCostmap:
     def __init__(
         self,
         origin: PoseStamped,
-        size: Quantity = 2 * meter,
+        size: Quantity = 2,
         max_cells=10000,
         costmap_type: Type[Costmap] = OccupancyCostmap,
         world: Optional[World] = None,
@@ -96,7 +95,7 @@ class ProbabilisticCostmap:
 
         # calculate the number of cells per axis
         number_of_cells = int(np.sqrt(max_cells))
-        resolution = self.size.to(meter) / number_of_cells
+        resolution = size / number_of_cells
 
         if costmap_type == OccupancyCostmap:
             robot_bounding_box = BoundingBoxCollection(

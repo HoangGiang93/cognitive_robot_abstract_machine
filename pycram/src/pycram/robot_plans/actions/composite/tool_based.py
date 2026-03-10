@@ -14,7 +14,6 @@ from typing_extensions import Union, Optional, Iterable
 from pycram.robot_plans.motions.gripper import MoveTCPMotion
 from pycram import utils
 from pycram.datastructures.pose import PoseStamped
-from pycram.datastructures.partial_designator import PartialDesignator
 from pycram.datastructures.enums import (
     Arms,
     AxisIdentifier,
@@ -67,18 +66,6 @@ class MixingAction(ActionDescription):
             MoveTCPMotion(spiral, self.arm).perform()
 
         World.current_world.remove_vis_axis()
-
-    @classmethod
-    def description(
-        cls,
-        object_: Union[Iterable[Body], Body],
-        tool: Union[Iterable[SemanticAnnotation], SemanticAnnotation],
-        arm: Optional[Union[Iterable[Arms], Arms]] = None,
-        technique: Optional[Union[Iterable[str], str]] = None,
-    ):
-        return PartialDesignator(
-            cls, object_=object_, tool=tool, arm=arm, technique=technique
-        )
 
 
 @dataclass
@@ -156,19 +143,6 @@ class PouringAction(ActionDescription):
 
         World.current_world.remove_vis_axis()
 
-    @classmethod
-    def description(
-        cls,
-        object_: Union[Iterable[Body], Body],
-        tool: Union[Iterable[SemanticAnnotation], SemanticAnnotation],
-        arm: Optional[Union[Iterable[Arms], Arms]] = None,
-        technique: Optional[Union[Iterable[str], str]] = None,
-        angle: Optional[Union[Iterable[float], float]] = 90,
-    ):
-        return PartialDesignator(
-            cls, object_=object_, tool=tool, arm=arm, technique=technique, angle=angle
-        )
-
 
 @dataclass
 class CuttingAction(ActionDescription):
@@ -238,24 +212,6 @@ class CuttingAction(ActionDescription):
             lift_pose = new_pose.copy()
             lift_pose.pose.position.z += height
 
-    @classmethod
-    def description(
-        cls,
-        object_: Union[Iterable[Body], Body],
-        tool: Union[Iterable[SemanticAnnotation], SemanticAnnotation],
-        arm: Optional[Union[Iterable[Arms], Arms]] = None,
-        technique: Optional[Union[Iterable[str], str]] = None,
-        slice_thickness: Optional[float] = 0.03,
-    ):
-        return PartialDesignator(
-            cls,
-            object_=object_,
-            tool=tool,
-            arm=arm,
-            technique=technique,
-            slice_thickness=slice_thickness,
-        )
-
     def calculate_slices(self, obj_length):
         if self.technique == "Halving":
             return 1, 0
@@ -295,8 +251,3 @@ class CuttingAction(ActionDescription):
         fy, ay = pose_a.is_facing_2d_axis(pose_b, axis=AxisIdentifier.Y)
 
         return (-90 if abs(ax) > abs(ay) else 90), ay
-
-
-CuttingActionDescription = CuttingAction.description
-PouringActionDescription = PouringAction.description
-MixingActionDescription = MixingAction.description

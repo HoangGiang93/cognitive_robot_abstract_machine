@@ -18,7 +18,6 @@ from pycram.costmaps import (
     OrientationGenerator,
 )
 from pycram.probabilistic_costmap import ProbabilisticCostmap
-from pycram.units import meter, centimeter
 from pycram.datastructures.pose import PoseStamped
 import plotly.graph_objects as go
 
