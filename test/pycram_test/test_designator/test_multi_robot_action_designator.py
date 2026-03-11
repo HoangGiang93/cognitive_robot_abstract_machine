@@ -504,9 +504,8 @@ def test_open(immutable_multiple_robot_apartment):
     ).position == pytest.approx(0.45, abs=0.1)
 
 
-def test_close(immutable_multiple_robot_apartment, rclpy_node):
+def test_close(immutable_multiple_robot_apartment):
     world, robot_view, context = immutable_multiple_robot_apartment
-    VizMarkerPublisher(_world=world, node=rclpy_node).with_tf_publisher()
 
     world.get_connection_by_name("cabinet10_drawer_middle_joint").position = 0.3
     world.notify_state_change()
