@@ -2,7 +2,6 @@ import logging
 import inspect
 import os
 import shutil
-import time
 import trimesh
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
@@ -132,6 +131,16 @@ class MultiSimError(Exception):
 class MultiSimCamera(SimulatorAdditionalProperty):
     """
     Additional property representing a camera in MultiSim.
+    """
+
+    name: str = ""
+    """
+    The name of the camera.
+    """
+
+    body: Any = None
+    """
+    The body that the camera is attached to. This can be set to the name of the body or a reference to the body object itself.
     """
 
 
@@ -756,7 +765,7 @@ class MujocoActuator(SimulatorAdditionalProperty):
 
 
 @dataclass
-class MujocoCamera(SimulatorAdditionalProperty):
+class MujocoCamera(MultiSimCamera):
     """
     Additional property representing a MuJoCo camera in the world model.
     """
@@ -1251,7 +1260,10 @@ class MujocoCameraConverter(CameraConverter, ABC):
         self, entity: MujocoCamera, camera_props: Dict[str, Any], **kwargs
     ) -> Dict[str, Any]:
         camera_props["mode"] = entity.mode
-        camera_props["orthographic"] = entity.orthographic
+        if mujoco.mj_version() >= 3005000:
+            camera_props["proj"] = mujoco.mjtProjection.mjPROJ_ORTHOGRAPHIC if entity.orthographic else mujoco.mjtProjection.mjPROJ_PERSPECTIVE
+        else:
+            camera_props["orthographic"] = entity.orthographic
         camera_props["fovy"] = entity.fovy
         camera_props["resolution"] = entity.resolution
         camera_props["focal_length"] = entity.focal_length
@@ -1706,7 +1718,7 @@ class MujocoBuilder(MultiSimBuilder):
             )
 
     def _build_camera(self, camera: MultiSimCamera):
-        camera_name = camera.name.name
+        camera_name = camera.name
         camera_props = MujocoCameraConverter.convert(camera)
         body_name = camera_props.pop("body")
         body_spec = self._find_entity(
@@ -2296,19 +2308,14 @@ class MujocoActuatorSpawner(MujocoEntitySpawner, ActuatorSpawner):
         )
 
 
-@dataclass
+@dataclass(eq=False)
 class MultiSimSynchronizer(ModelChangeCallback, ABC):
     """
     A callback to synchronize the world model with the simulator.
     This callback will listen to the world model changes and update the simulator accordingly.
     """
 
-    world: World
-    """
-    The world to synchronize with the simulator.
-    """
-
-    simulator: BaseSimulator
+    simulator: BaseSimulator = field(kw_only=True)
     """
     The simulator to synchronize with the world.
     """
@@ -2324,7 +2331,7 @@ class MultiSimSynchronizer(ModelChangeCallback, ABC):
     """
 
     def _notify(self, **kwargs):
-        for modification in self.world._model_manager.model_modification_blocks[-1]:
+        for modification in self._world._model_manager.model_modification_blocks[-1]:
             if isinstance(modification, AddKinematicStructureEntityModification):
                 entity = modification.kinematic_structure_entity
                 self.entity_spawner.spawn(simulator=self.simulator, entity=entity)
@@ -2336,10 +2343,10 @@ class MultiSimSynchronizer(ModelChangeCallback, ABC):
                 self.entity_spawner.spawn(simulator=self.simulator, entity=entity)
 
     def stop(self):
-        self.world._model_manager.model_change_callbacks.remove(self)
+        self._world._model_manager.model_change_callbacks.remove(self)
 
 
-@dataclass
+@dataclass(eq=False)
 class MujocoSynchronizer(MultiSimSynchronizer):
     simulator: MujocoSimulator
     entity_converter: Type[EntityConverter] = field(default=MujocoConverter)
@@ -2399,12 +2406,12 @@ class MultiSim(ABC):
         self.builder_class().build_world(world=world, file_path=self.default_file_path)
         self.simulator = self.simulator_class(
             file_path=self.default_file_path,
-            headless=headless,
-            step_size=step_size,
-            **kwargs,
+            _headless=headless,
+            _step_size=step_size,
+            config=kwargs,
         )
         self.synchronizer = self.synchronizer_class(
-            world=world,
+            _world=world,
             simulator=self.simulator,
         )
 
