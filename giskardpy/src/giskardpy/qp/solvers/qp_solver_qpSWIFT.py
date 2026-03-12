@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 
 from line_profiler.explicit_profiler import profile
 
+from giskardpy.qp.exceptions import InfeasibleException, QPSolverException
 from giskardpy.qp.qp_data import QPDataExplicit
 
 if TYPE_CHECKING:
@@ -61,15 +62,13 @@ class QPSolverQPSwift(QPSolver[QPDataExplicit]):
             options=self.opts,
         )
         exit_flag = result.exit_flag
-        # print(result)
-        # if not self.ignore_fail:
-        #     if exit_flag == 4:
-        #         # print(":((")
-        #
-        #         error_code = QPSWIFTExitFlags(exit_flag)
-        #         if error_code == QPSWIFTExitFlags.INFEASIBLE:
-        #             raise InfeasibleException(f"Failed to solve qp: {str(error_code)}")
-        #         raise QPSolverException(f"Failed to solve qp: {str(error_code)}")
+        print(result)
+        if not self.ignore_fail:
+            if exit_flag == 4:
+                error_code = QPSWIFTExitFlags(exit_flag)
+                if error_code == QPSWIFTExitFlags.INFEASIBLE:
+                    raise InfeasibleException(f"Failed to solve qp: {str(error_code)}")
+                raise QPSolverException(f"Failed to solve qp: {str(error_code)}")
         return result.x
 
     solver_call = solver_call_explicit_interface

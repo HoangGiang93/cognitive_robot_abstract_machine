@@ -10,7 +10,6 @@ from giskardpy.motion_statechart.motion_statechart import MotionStatechart
 from giskardpy.motion_statechart.tasks.joint_tasks import JointPositionList
 from giskardpy.qp.qp_controller_config import QPControllerConfig
 from giskardpy.qp.qp_data import (
-    NoConditioningStrategy,
     JerkOneConditioningStrategy,
     HessianOneConditioningStrategy,
 )
@@ -21,19 +20,19 @@ logger = logging.getLogger(__name__)
 
 installed_qp_solvers: list[type[QPSolver]] = []
 
-# try:
-#     from giskardpy.qp.solvers.qp_solver_qpSWIFT import QPSolverQPSwift
-#
-#     installed_qp_solvers.append(QPSolverQPSwift)
-# except Exception as e:
-#     logger.warning(f"Could not import QP solver: {e}")
-#
-# try:
-#     from giskardpy.qp.solvers.qp_solver_gurobi import QPSolverGurobi
-#
-#     installed_qp_solvers.append(QPSolverGurobi)
-# except Exception as e:
-#     logger.warning(f"Could not import QP solver: {e}")
+try:
+    from giskardpy.qp.solvers.qp_solver_qpSWIFT import QPSolverQPSwift
+
+    installed_qp_solvers.append(QPSolverQPSwift)
+except Exception as e:
+    logger.warning(f"Could not import QP solver: {e}")
+
+try:
+    from giskardpy.qp.solvers.qp_solver_gurobi import QPSolverGurobi
+
+    installed_qp_solvers.append(QPSolverGurobi)
+except Exception as e:
+    logger.warning(f"Could not import QP solver: {e}")
 
 try:
     from giskardpy.qp.solvers.qp_solver_qpalm import QPSolverQPalm
@@ -52,7 +51,8 @@ except Exception as e:
 
 @pytest.mark.parametrize("solver", installed_qp_solvers)
 @pytest.mark.parametrize(
-    "conditioning_strategies", [NoConditioningStrategy, JerkOneConditioningStrategy]
+    "conditioning_strategies",
+    [None, HessianOneConditioningStrategy, JerkOneConditioningStrategy],
 )
 def test_joint_goal(solver, pr2_world_state_reset, conditioning_strategies):
     msc = MotionStatechart()

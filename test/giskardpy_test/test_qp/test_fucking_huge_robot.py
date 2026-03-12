@@ -19,37 +19,6 @@ from semantic_digital_twin.datastructures.joint_state import JointState
 from semantic_digital_twin.spatial_types import Point3
 
 
-def test_joint_goal(fucking_huge_robot, rclpy_node):
-    VizMarkerPublisher(_world=fucking_huge_robot, node=rclpy_node).with_tf_publisher()
-    msc = MotionStatechart()
-    goal = 1
-
-    msc.add_node(
-        node1 := JointPositionList(
-            goal_state=JointState.from_str_dict(
-                {
-                    "map_T_link1": goal,
-                    "link1_T_link2": goal,
-                    "link2_T_link3": goal,
-                    "link3_T_link4": goal,
-                    "link4_T_link5": goal,
-                    "link5_T_eef": goal,
-                },
-                world=fucking_huge_robot,
-            )
-        )
-    )
-    msc.add_node(EndMotion.when_true(node1))
-
-    kin_sim = Executor(
-        MotionStatechartContext(world=fucking_huge_robot),
-        pacer=SimulationPacer(real_time_factor=1),
-    )
-    kin_sim.compile(motion_statechart=msc)
-
-    kin_sim.tick_until_end()
-
-
 def execute(link_length: float, vel_limit: float, rclpy_node):
     fucking_huge_robot = robot_factory(
         fucking_huge_link_length=link_length, vel_limit=vel_limit
@@ -102,5 +71,13 @@ def execute(link_length: float, vel_limit: float, rclpy_node):
     kin_sim.tick_until_end(10_000)
 
 
-def test_cart_goal(rclpy_node):
+def test_cart_goal01(rclpy_node):
+    execute(0.1, 0.1, rclpy_node)
+
+
+def test_cart_goal1(rclpy_node):
+    execute(1.0, 0.1, rclpy_node)
+
+
+def test_cart_goal1000(rclpy_node):
     execute(1000.0, 0.1, rclpy_node)
