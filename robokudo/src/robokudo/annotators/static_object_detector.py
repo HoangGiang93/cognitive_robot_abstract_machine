@@ -36,7 +36,6 @@ from semantic_digital_twin.world_description.world_entity import Body
 
 class StaticObjectMode(Enum):
     BOUNDING_BOX = "bounding_box"
-    OBJECT_KNOWLEDGE_INSTANCE = "object_knowledge_instance"
     OBJECT_KNOWLEDGE_BASE = "object_knowledge_base"
 
 
@@ -102,9 +101,6 @@ class StaticObjectDetectorAnnotator(robokudo.annotators.core.BaseAnnotator):
                 self.object_knowledge_base_ros_package = "robokudo"
                 self.object_knowledge_base_name = "object_knowledge_iai_kitchen"
 
-                # If StaticObjectDetectorAnnotator.Mode.OBJECT_KNOWLEDGE_INSTANCE is used, set the desired instance here
-                self.object_knowledge_instance: Body | None = None
-
         parameters = Parameters()  # overwrite the parameters explicitly to enable auto-completion
 
     def __init__(self, name="StaticObjectDetector", descriptor=Descriptor()):
@@ -152,13 +148,8 @@ class StaticObjectDetectorAnnotator(robokudo.annotators.core.BaseAnnotator):
         return object_hypothesis
 
     @staticmethod
-    def _body_raw_name(body: Body) -> str:
-        name = getattr(body, "name", None)
-        if name is None:
-            return ""
-        if hasattr(name, "name"):
-            return name.name
-        return str(name)
+    def _body_name(body: Body) -> str:
+        return body.name.name
 
     @staticmethod
     def _select_body_shape_collection(body: Body):
@@ -171,7 +162,7 @@ class StaticObjectDetectorAnnotator(robokudo.annotators.core.BaseAnnotator):
     def _get_body_bb_size_and_center(self, body: Body) -> tuple[np.ndarray, np.ndarray] | None:
         shape_collection = self._select_body_shape_collection(body)
         if shape_collection is None or len(shape_collection) == 0:
-            self.rk_logger.warning("Body %s has no collision or visual shapes; skipping.", self._body_raw_name(body))
+            self.rk_logger.warning("Body %s has no collision or visual shapes; skipping.", self._body_name(body))
             return None
 
         bb = shape_collection.as_bounding_box_collection_in_frame(body).bounding_box()
@@ -257,7 +248,7 @@ class StaticObjectDetectorAnnotator(robokudo.annotators.core.BaseAnnotator):
             object_hypothesis.annotations.append(bb_annotation)
 
         StaticObjectDetectorAnnotator.add_classification_annotation(object_hypothesis=object_hypothesis,
-                                                                    class_name=self._body_raw_name(body))
+                                                                    class_name=self._body_name(body))
 
         return object_hypothesis
 
@@ -310,7 +301,7 @@ class StaticObjectDetectorAnnotator(robokudo.annotators.core.BaseAnnotator):
         if self.descriptor.parameters.mode == StaticObjectMode.OBJECT_KNOWLEDGE_BASE:
             self.object_kb = robokudo.utils.knowledge.load_object_knowledge_base(self)
             object_bodies = self.object_kb.get_predefined_object_bodies()
-            self.object_bodies_by_name = {self._body_raw_name(body): body for body in object_bodies}
+            self.object_bodies_by_name = {self._body_name(body): body for body in object_bodies}
             self.rk_logger.info(f"Loaded KB bodies: {list(self.object_bodies_by_name.keys())}")
 
             # Do some sanity checks and quit early if necessary
@@ -322,35 +313,15 @@ class StaticObjectDetectorAnnotator(robokudo.annotators.core.BaseAnnotator):
 
             world_frame_required = True
 
-        if self.descriptor.parameters.mode == StaticObjectMode.OBJECT_KNOWLEDGE_INSTANCE:
-            self.object_body = self.descriptor.parameters.object_knowledge_instance
-
-            # Do some sanity checks and quit early if necessary
-            if self.object_body is None:
-                self.feedback_message = "No Object Knowledge instance provided"
-                self.rk_logger.warning(self.feedback_message)
-                return py_trees.common.Status.SUCCESS
-
-            if self.descriptor.parameters.class_name != self._body_raw_name(self.object_body):
-                self.feedback_message = f"Couldn't find {self.descriptor.parameters.class_name} in Object Knowledge Instance"
-                self.rk_logger.warning(self.feedback_message)
-                return py_trees.common.Status.SUCCESS
-
-            world_frame_required = True
-
         if world_frame_required:
             try:
-                cam_to_world_transform = self.get_cas().get(CASViews.VIEWPOINT_CAM_TO_WORLD)
+                world_to_cam_transform_matrix = robokudo.utils.annotator_helper.get_world_to_cam_transform_matrix(
+                    self.get_cas())
             except:
-                self.rk_logger.warning("Couldn't find viewpoint in the CAS")
+                self.rk_logger.warning("Couldn't find world-to-cam transform in the CAS")
                 return py_trees.common.Status.FAILURE
 
-            assert (isinstance(cam_to_world_transform, robokudo.types.tf.StampedTransform))
-            world_to_cam_transform_matrix = robokudo.utils.annotator_helper.get_world_to_cam_transform_matrix(
-                self.get_cas())
-
         # Scale the image down so that it matches the depth image size
-        resized_color = None
         try:
             resized_color = robokudo.utils.cv_helper.get_scaled_color_image_for_depth_image(self.get_cas(), self.color)
             robokudo.utils.annotator_helper.scale_cam_intrinsics(self)
@@ -374,12 +345,6 @@ class StaticObjectDetectorAnnotator(robokudo.annotators.core.BaseAnnotator):
             if len(object_hypotheses) == 0:
                 # Simply return early but don't die
                 return py_trees.common.Status.SUCCESS
-        elif self.descriptor.parameters.mode == StaticObjectMode.OBJECT_KNOWLEDGE_INSTANCE:
-            object_hypothesis = self.detect_from_body(self.descriptor.parameters.object_knowledge_instance,
-                                                      world_to_cam_transform_matrix=world_to_cam_transform_matrix)
-            if object_hypothesis is None:
-                return py_trees.common.Status.SUCCESS
-            object_hypotheses.append(object_hypothesis)
         else:
             raise Exception("Unknown static object mode")
 
@@ -431,7 +396,6 @@ class StaticObjectDetectorAnnotator(robokudo.annotators.core.BaseAnnotator):
         :param rotation_w:
         :return: 4-dim list with Quaternion
         """
-        rotation_list = None
         if self.descriptor.parameters.pose_use_euler_angles:
             rot_matrix = get_rotation_matrix_from_euler_angles(rotation_x,
                                                                rotation_y,
