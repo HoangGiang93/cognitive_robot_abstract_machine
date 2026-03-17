@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import numpy as np
 import piqp
+from line_profiler.explicit_profiler import profile
 
 from giskardpy.qp.exceptions import InfeasibleException
 from giskardpy.qp.qp_data import QPDataExplicit
@@ -13,16 +14,20 @@ from giskardpy.utils.math import fast_sparse_diagonal
 
 @dataclass
 class QPSolverPIQP(QPSolver[QPDataExplicit]):
+    solver: piqp.SparseSolver = field(default_factory=piqp.SparseSolver)
 
+    def __post_init__(self):
+        self.solver.settings.eps_abs = 1e-6
+        self.solver.settings.eps_rel = 1e-7
+        self.solver.settings.eps_duality_gap_abs = 1e-4
+        self.solver.settings.eps_duality_gap_rel = 1e-5
+        # self.solver.settings.kkt_solver = piqp.KKTSolver.sparse_multistage
+
+    @profile
     def solver_call_explicit_interface(self, qp_data: QPDataExplicit) -> np.ndarray:
         weight_matrix = fast_sparse_diagonal(qp_data.quadratic_weights)
-        solver = piqp.SparseSolver()
-        solver.settings.eps_abs = 1e-6
-        solver.settings.eps_rel = 1e-7
-        solver.settings.eps_duality_gap_abs = 1e-4
-        solver.settings.eps_duality_gap_rel = 1e-5
         if len(qp_data.inequality_upper_bounds) == 0:
-            solver.setup(
+            self.solver.setup(
                 P=weight_matrix,
                 c=qp_data.linear_weights,
                 A=qp_data.equality_matrix,
@@ -31,7 +36,7 @@ class QPSolverPIQP(QPSolver[QPDataExplicit]):
                 x_u=qp_data.box_upper_constraints,
             )
         else:
-            solver.setup(
+            self.solver.setup(
                 P=weight_matrix,
                 c=qp_data.linear_weights,
                 A=qp_data.equality_matrix,
@@ -43,9 +48,9 @@ class QPSolverPIQP(QPSolver[QPDataExplicit]):
                 x_u=qp_data.box_upper_constraints,
             )
 
-        status = solver.solve()
+        status = self.solver.solve()
         if status.value != piqp.PIQP_SOLVED:
             raise InfeasibleException(f"Solver status: {status.value}")
-        return solver.result.x
+        return self.solver.result.x
 
     solver_call = solver_call_explicit_interface
