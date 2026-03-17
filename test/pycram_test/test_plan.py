@@ -751,7 +751,7 @@ def test_parameterization_of_pick_up(mutable_model_world):
     model = fully_factorized(parameters.variables.values())
     registry = DictRegistry({PickUpAction: model})
 
-    pm_backend = ProbabilisticBackend(registry, 10)
+    pm_backend = ProbabilisticBackend(model_registry=registry, number_of_samples=10)
     action = next(pm_backend.evaluate(pick_up_description))
     plan = SequentialPlan(context, action)
 
