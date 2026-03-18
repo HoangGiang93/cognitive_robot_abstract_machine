@@ -2411,7 +2411,6 @@ class MujocoSynchronizer(MultiSimSynchronizer):
     entity_spawner: Type[EntitySpawner] = field(default=MujocoEntitySpawner)
 
 
-@dataclass
 class MultiSim(ABC):
     """
     Class to handle the simulation of a world using the simulator.
@@ -2516,7 +2515,6 @@ class MultiSim(ABC):
         return self.simulator.state == SimulatorState.RUNNING
 
 
-@dataclass
 class MujocoSim(MultiSim):
     simulator_class: ClassVar[Type[BaseSimulator]] = MujocoSimulator
     synchronizer_class: ClassVar[Type[MultiSimSynchronizer]] = MujocoSynchronizer
