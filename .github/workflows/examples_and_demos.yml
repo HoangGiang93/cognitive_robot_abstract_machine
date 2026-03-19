@@ -32,6 +32,8 @@ jobs:
         include:
           - script: pycram/scripts/test_notebook_examples.sh
           - script: semantic_digital_twin/scripts/test_notebook_examples.sh
+          - script: semantic_digital_twin/scripts/test_exercises.sh
+          - script: semantic_digital_twin/scripts/test_quizzes.sh
     uses: ./.github/workflows/example_demo_reusable.yml
     with:
       script: ${{ matrix.script }}
