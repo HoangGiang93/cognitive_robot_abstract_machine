@@ -5,13 +5,12 @@ from typing import Optional
 from robokudo.object_knowledge_base import (
     BaseObjectKnowledgeBase,
     ObjectKnowledge,
-    PredefinedObject,
+    PredefinedObject, RegionSpec,
 )
 from semantic_digital_twin.datastructures.prefixed_name import PrefixedName
 from robokudo.object_knowledge_base import BaseObjectKnowledgeBase, ObjectSpec
 from semantic_digital_twin.spatial_types import HomogeneousTransformationMatrix
 from semantic_digital_twin.world_description.geometry import Color, Scale
-
 
 
 @dataclass
@@ -21,11 +20,11 @@ class ObjectKnowledgeBase(BaseObjectKnowledgeBase):
         root = self.world.root
 
         milk_path = (
-            Path(__file__).resolve().parents[5]
-            / "semantic_digital_twin"
-            / "resources"
-            / "stl"
-            / "milk.stl"
+                Path(__file__).resolve().parents[5]
+                / "semantic_digital_twin"
+                / "resources"
+                / "stl"
+                / "milk.stl"
         )
 
         specs = [
@@ -46,3 +45,12 @@ class ObjectKnowledgeBase(BaseObjectKnowledgeBase):
         ]
 
         self.build_objects(root, specs)
+
+        region_specs = [RegionSpec(
+            name="kitchen_island",
+            box_scale=Scale(1.0, 2.5, 0.85),
+            pose=HomogeneousTransformationMatrix.from_xyz_rpy(
+                x=-1.10, y=1.7, z=1.20, reference_frame=root
+            ),
+        )]
+        self.build_regions(root, region_specs)

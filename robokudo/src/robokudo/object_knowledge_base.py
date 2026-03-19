@@ -17,11 +17,7 @@ from semantic_digital_twin.world import World
 from semantic_digital_twin.world_description.connections import Connection6DoF
 from semantic_digital_twin.world_description.geometry import Box, FileMesh, Scale, Color
 from semantic_digital_twin.world_description.shape_collection import ShapeCollection
-from semantic_digital_twin.world_description.world_entity import Body, SemanticAnnotation
-from semantic_digital_twin.world_description.world_entity import (
-    Body,
-    SemanticAnnotation,
-)
+from semantic_digital_twin.world_description.world_entity import Body, Region, SemanticAnnotation
 from . import defs
 
 @dataclass
@@ -38,6 +34,20 @@ class ObjectSpec:
     box_scale: Optional[Scale] = None
     center_mesh: bool = True
     color: Color = field(default_factory=lambda: Color(0.1, 0.2, 0.8, 1.0))
+
+
+@dataclass
+class RegionSpec:
+    """
+    Data structure to define typical properties for predefined regions.
+    Will be consumed by BaseObjectKnowledgeBase.build_regions to create
+    regions and their connections.
+    """
+
+    name: str
+    pose: HomogeneousTransformationMatrix
+    box_scale: Scale
+    color: Color = field(default_factory=Color)
 
 
 @dataclass
@@ -153,6 +163,41 @@ class BaseObjectKnowledgeBase:
                 )
                 self.world.add_connection(connection)
                 self.world.add_semantic_annotation(PredefinedObject(body=body))
+                connections[spec.name] = connection
+
+        # Set origins in a separate modification block so FK is compiled first
+        with self.world.modify_world():
+            for spec in specs:
+                connections[spec.name].origin = spec.pose
+
+        return connections
+
+    def build_regions(
+        self, root: Body, specs: List[RegionSpec]
+    ) -> Dict[str, Connection6DoF]:
+        """Create regions and connections from region specs.
+
+        Each spec must provide:
+        - name: region name
+        - pose: HomogeneousTransformationMatrix for world->region connection
+        - box_scale: Scale for a Box shape representing the region
+        - color: Color for the Box shape
+        """
+        connections: Dict[str, Connection6DoF] = {}
+
+        with self.world.modify_world():
+            for spec in specs:
+                box = Box(scale=spec.box_scale, color=spec.color)
+                region = Region(name=PrefixedName(name=spec.name))
+                area = ShapeCollection()
+                area.reference_frame = region
+                area.append(box)
+                region.area = area
+
+                connection = Connection6DoF.create_with_dofs(
+                    parent=root, child=region, world=self.world
+                )
+                self.world.add_connection(connection)
                 connections[spec.name] = connection
 
         # Set origins in a separate modification block so FK is compiled first
