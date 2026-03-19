@@ -16,6 +16,7 @@ from py_trees.blackboard import Blackboard
 from typing_extensions import List, Any, Optional, Set, Type
 
 from robokudo.annotators.outputs import AnnotatorOutputs
+from robokudo.defs import PACKAGE_NAME
 from robokudo.pipeline import Pipeline
 
 
@@ -144,7 +145,7 @@ class Visualizer(object):
             )
             self.shared_visualizer_state.active_annotator_i = 0
 
-        self.rk_logger: logging.Logger = logging.getLogger(robokudo.defs.PACKAGE_NAME)
+        self.rk_logger: logging.Logger = logging.getLogger(PACKAGE_NAME)
         """Logger instance"""
 
     def identifier(self) -> str:

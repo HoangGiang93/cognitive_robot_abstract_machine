@@ -27,11 +27,11 @@ import rclpy
 from geometry_msgs.msg import PoseStamped
 from py_trees.blackboard import Blackboard
 from py_trees.common import Status
-from rclpy.action import ActionServer, GoalResponse, CancelResponse
-from rclpy.action.server import ServerGoalHandle
+from rclpy.action import GoalResponse, CancelResponse
+from rclpy.action.server import ServerGoalHandle, ActionServer
 from rclpy.node import Node
 from robokudo_msgs.msg import ObjectDesignator
-from typing_extensions import Any, Optional
+from typing_extensions import Any, Optional, Type
 
 from robokudo.annotators.core import BaseAnnotator
 from robokudo.cas import CASViews
@@ -364,7 +364,7 @@ class QueryActionServer(Node):
         name: str,
         feedback_instance: Query.Feedback = Query.Feedback(),
         result_instance: Query.Result = Query.Result(),
-        action_type: Query = None,
+        action_type: Type = Query,
     ) -> None:
         super().__init__(name, namespace="robokudo")
         self._action_name = name
