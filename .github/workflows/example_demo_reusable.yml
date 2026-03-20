@@ -40,7 +40,6 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y xvfb libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-render-util0 libxcb-xinerama0 libxcb-xkb1 libxkbcommon-x11-0 libegl1
           poetry install
-          pip install treon jupytext
 
       - name: Restore cache
         uses: actions/cache/restore@v4
@@ -67,4 +66,4 @@ jobs:
           cd cognitive_robot_abstract_machine
           source /opt/ros/overlay_ws/install/setup.bash
           source /opt/ros/cram-env/bin/activate
-          bash ./${{inputs.script}}
+          ./${{inputs.script}}
