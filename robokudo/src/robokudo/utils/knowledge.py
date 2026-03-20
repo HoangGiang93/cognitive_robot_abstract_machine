@@ -1,17 +1,17 @@
-"""Object knowledge utilities for Robokudo.
+"""Legacy object-knowledge utilities for Robokudo.
 
 This module provides utility functions for working with object knowledge bases
 and transforming object representations. It supports:
 
 * Transform matrix generation from object knowledge
 * Bounding box calculations
-* Object knowledge base loading
+* Legacy world descriptor loading
 * Oriented bounding box generation for objects and their parts
 
 The module integrates with:
 * Open3D for geometric operations
 * NumPy for numerical computations
-* Object knowledge base system
+* Legacy object knowledge definitions
 """
 
 from __future__ import annotations
@@ -26,7 +26,7 @@ from . import transform
 
 if TYPE_CHECKING:
     import numpy.typing as npt
-    from ..object_knowledge_base import ObjectKnowledge, BaseObjectKnowledgeBase
+    from ..world_descriptor import ObjectKnowledge, BaseWorldDescriptor
     from ..annotators.core import BaseAnnotator
 
 
@@ -80,18 +80,18 @@ def get_bb_size_from_object_knowledge(
     return numpy.array([ok.x_size, ok.y_size, ok.z_size])
 
 
-def load_object_knowledge_base(
+def load_world_descriptor(
     annotator: BaseAnnotator,
-) -> BaseObjectKnowledgeBase:
-    """Load object knowledge base from annotator parameters.
+) -> BaseWorldDescriptor:
+    """Load world descriptor from annotator parameters.
 
-    :param annotator: Annotator containing knowledge base parameters
-    :return: Loaded object knowledge base
+    :param annotator: Annotator containing world descriptor parameters
+    :return: Loaded world descriptor
     """
     loader = module_loader.ModuleLoader()
-    return loader.load_object_knowledge_base(
-        annotator.descriptor.parameters.object_knowledge_base_ros_package,
-        annotator.descriptor.parameters.object_knowledge_base_name,
+    return loader.load_world_descriptor(
+        annotator.descriptor.parameters.world_descriptor_ros_package,
+        annotator.descriptor.parameters.world_descriptor_name,
     )
 
 

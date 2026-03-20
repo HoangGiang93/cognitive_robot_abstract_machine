@@ -8,8 +8,7 @@ It supports loading:
 * Camera configurations
 * Action servers
 * IO modules
-* Semantic maps
-* Object knowledge bases
+* World descriptors
 * Tree components
 * Types and utilities
 
@@ -39,8 +38,7 @@ from ..descriptors.camera_configs.base_camera_config import BaseCameraConfig
 if TYPE_CHECKING:
     from types import ModuleType
     from ..analysis_engine import AnalysisEngineInterface
-    from ..object_knowledge_base import BaseObjectKnowledgeBase
-    from ..semantic_map import BaseSemanticMap
+    from ..world_descriptor import BaseWorldDescriptor
 
 
 class RobokudoModuleType(enum.Enum):
@@ -61,11 +59,8 @@ class RobokudoModuleType(enum.Enum):
     IO = ["io"]
     """Input/output modules"""
 
-    SemanticMap = ["descriptors", "semantic_maps"]
-    """Semantic map modules"""
-
-    ObjectKnowledgeBase = ["descriptors", "object_knowledge"]
-    """Object knowledge base modules"""
+    WorldDescriptor = ["descriptors", "worlds"]
+    """World descriptor modules"""
 
     TreeComponents = ["tree_components"]
     """Behavior tree components"""
@@ -181,41 +176,25 @@ class ModuleLoader:
         # return loaded_module.YourIoClass()
         return loaded_module
 
-    def load_object_knowledge_base(
+    def load_world_descriptor(
         self, ros_pkg_name: str, module_name: str
-    ) -> BaseObjectKnowledgeBase:
-        """Load an ObjectKnowledgeBase given the module name and the ros package name.
+    ) -> BaseWorldDescriptor:
+        """Load a WorldDescriptor given the module name and the ros package name.
 
-        The path to the AE within the package is meant to be:
-        $package_path/src/PACKAGE_NAME/descriptors/object_knowledge/.
+        The path within the package is meant to be:
+        $package_path/src/PACKAGE_NAME/descriptors/worlds/.
 
-        :param ros_pkg_name: Name of ROS package containing knowledge base
-        :param module_name: Name of knowledge base module
-        :return: Loaded object knowledge base
+        :param ros_pkg_name: Name of ROS package containing world descriptor
+        :param module_name: Name of world descriptor module
+        :return: Loaded world descriptor
         """
-        module_name = f"{module_name}.py"
-        module_type = RobokudoModuleType.ObjectKnowledgeBase
+        module_type = RobokudoModuleType.WorldDescriptor
 
         loaded_module = self._load_module(
             ros_pkg_name=ros_pkg_name, module_type=module_type, module_name=module_name
         )
-        loaded_object_knowledge_base = loaded_module.ObjectKnowledgeBase()
-        return loaded_object_knowledge_base
-
-    def load_semantic_map(
-        self, ros_pkg_name: str, module_name: str, _skip_ros: bool = False
-    ) -> BaseSemanticMap:
-        """Load a semantic map module. Expects class `SemanticMap`.
-
-        :param ros_pkg_name: Name of ROS package containing semantic map
-        :param module_name: Name of semantic map module
-        :param _skip_ros: Skip ROS-related initialization in SemanticMap constructor
-        :type _skip_ros: bool
-        :return: Loaded semantic map
-        """
-        module_type = RobokudoModuleType.SemanticMap
-        loaded_module = self._load_module(ros_pkg_name, module_type, module_name)
-        return loaded_module.SemanticMap()
+        loaded_world_descriptor = loaded_module.WorldDescriptor()
+        return loaded_world_descriptor
 
     def load_tree_components(self, ros_pkg_name: str, module_name: str) -> ModuleType:
         """Load tree components. If there's a main class, instantiate it here.

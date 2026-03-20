@@ -5,6 +5,10 @@ This module provides an annotator for visualizing semantic map regions in both
 between different reference frames to properly display regions.
 """
 
+raise RuntimeError(
+    "RegionVisualizer has been replaced by WorldVisualizer."
+)
+
 import sys
 from timeit import default_timer
 

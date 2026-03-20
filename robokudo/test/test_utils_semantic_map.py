@@ -1,14 +1,12 @@
 import numpy as np
 import pytest
 
-from robokudo.semantic_map import SemanticMapEntry
-from robokudo.utils.semantic_map import get_obb_from_semantic_map_region, \
-    get_obb_from_semantic_map_region_in_cam_coordinates, get_obb_from_semantic_map_region_with_transform_matrix
-
-
+@pytest.mark.skip(reason="Semantic maps are deprecated in favor of world descriptors.")
 class TestUtilsSemanticMap:
     @pytest.fixture
-    def region(self) -> SemanticMapEntry:
+    def region(self):
+        from robokudo.semantic_map import SemanticMapEntry
+
         region = SemanticMapEntry()
         region.x_size = 1.0
         region.y_size = 2.0
@@ -22,7 +20,9 @@ class TestUtilsSemanticMap:
         region.position_z = 1.0
         return region
 
-    def test_get_obb_from_semantic_map_region(self, region: SemanticMapEntry):
+    def test_get_obb_from_semantic_map_region(self, region):
+        from robokudo.utils.semantic_map import get_obb_from_semantic_map_region
+
         obb = get_obb_from_semantic_map_region(region)
 
         assert np.all(obb.extent == [1.0, 2.0, 3.0])
@@ -33,7 +33,9 @@ class TestUtilsSemanticMap:
             [0.0, 1.0, 0.0]
         ])
 
-    def test_get_obb_from_semantic_map_region_in_cam_coordinates_camera_frame_region(self, region: SemanticMapEntry):
+    def test_get_obb_from_semantic_map_region_in_cam_coordinates_camera_frame_region(self, region):
+        from robokudo.utils.semantic_map import get_obb_from_semantic_map_region_in_cam_coordinates
+
         region.frame_id = "camera_link"
         obb = get_obb_from_semantic_map_region_in_cam_coordinates(region, world_frame_name="map",
                                                                   world_to_cam_transform_matrix=np.eye(3))
@@ -46,7 +48,9 @@ class TestUtilsSemanticMap:
             [0.0, 1.0, 0.0]
         ])
 
-    def test_get_obb_from_semantic_map_region_in_cam_coordinates_world_frame_region(self, region: SemanticMapEntry):
+    def test_get_obb_from_semantic_map_region_in_cam_coordinates_world_frame_region(self, region):
+        from robokudo.utils.semantic_map import get_obb_from_semantic_map_region_in_cam_coordinates
+
         region.frame_id = "map"
 
         world_to_cam = np.array([
@@ -67,7 +71,9 @@ class TestUtilsSemanticMap:
             [-1.0, 0.0, 0.0]
         ])
 
-    def test_get_obb_from_semantic_map_region_with_transform_matrix(self, region: SemanticMapEntry):
+    def test_get_obb_from_semantic_map_region_with_transform_matrix(self, region):
+        from robokudo.utils.semantic_map import get_obb_from_semantic_map_region_with_transform_matrix
+
         world_to_cam = np.array([
             [0.0, 0.0, 1.0, 1.0],
             [-1.0, 0.0, 0.0, 2.0],

@@ -15,3 +15,7 @@ Available semantic maps include:
     Each semantic map is implemented as a separate module and can be
     imported individually based on the application requirements.
 """
+
+raise RuntimeError(
+    "descriptors/semantic_maps is deprecated. Use descriptors/worlds instead."
+)

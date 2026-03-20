@@ -5,9 +5,9 @@ import open3d as o3d
 import pytest
 
 from robokudo.annotators.static_object_detector import StaticObjectDetectorAnnotator
-from robokudo.object_knowledge_base import ObjectKnowledge, BaseObjectKnowledgeBase, PredefinedObject
+from robokudo.world_descriptor import ObjectKnowledge, BaseWorldDescriptor, PredefinedObject
 from robokudo.utils.knowledge import get_quaternion_from_rotation_information, \
-    get_transform_matrix_from_object_knowledge, get_bb_size_from_object_knowledge, load_object_knowledge_base, \
+    get_transform_matrix_from_object_knowledge, get_bb_size_from_object_knowledge, load_world_descriptor, \
     get_obb_for_object_and_transform, get_obb_for_child_object_and_transform, get_obbs_for_object_and_childs
 from semantic_digital_twin.datastructures.prefixed_name import PrefixedName
 from semantic_digital_twin.spatial_types import HomogeneousTransformationMatrix
@@ -119,9 +119,9 @@ class TestUtilsKnowledge(object):
 
         assert np.all(bb_size == [object_knowledge.x_size, object_knowledge.y_size, object_knowledge.z_size])
 
-    def test_load_object_knowledge_base(self):
+    def test_load_world_descriptor(self):
         ann = StaticObjectDetectorAnnotator()
-        assert load_object_knowledge_base(ann)
+        assert load_world_descriptor(ann)
 
     def test_get_obb_for_object_and_transform(self):
         object_knowledge = ObjectKnowledge()
@@ -210,7 +210,7 @@ class TestUtilsKnowledge(object):
             assert isinstance(obb, o3d.geometry.OrientedBoundingBox)
 
     def test_get_predefined_objects(self):
-        empty_knowledge_base = BaseObjectKnowledgeBase()
+        empty_knowledge_base = BaseWorldDescriptor()
         test_world = empty_knowledge_base.world
         root = test_world.root
 

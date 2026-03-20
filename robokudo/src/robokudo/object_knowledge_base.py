@@ -6,6 +6,10 @@ in RoboKudo. It includes support for object components, features, and their
 spatial relationships.
 """
 
+raise RuntimeError(
+    "object_knowledge_base.py has been replaced by world_descriptor.py."
+)
+
 from dataclasses import field, dataclass
 from pathlib import Path
 

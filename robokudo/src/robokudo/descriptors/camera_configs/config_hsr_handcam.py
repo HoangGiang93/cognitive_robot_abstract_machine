@@ -7,7 +7,7 @@ from robokudo.descriptors.camera_configs.components import (
     ColorComponent,
     TfComponent,
     StableViewpointComponent,
-    SemanticMapComponent,
+    WorldDescriptorComponent,
 )
 
 
@@ -17,7 +17,7 @@ class HsrHandCameraConfig(
     ColorComponent,
     TfComponent,
     StableViewpointComponent,
-    SemanticMapComponent,
+    WorldDescriptorComponent,
 ):
     """Camera config for the camera-in-hand on the Toyota HSR robot."""
 

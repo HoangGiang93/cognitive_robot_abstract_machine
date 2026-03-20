@@ -42,20 +42,13 @@ class TestUtilsModuleLoader(object):
     def test_load_io_invalid_input(self, module_loader: ModuleLoader, pkg_name: str, module_name: str):
         assert pytest.raises(ImportError, module_loader.load_io, pkg_name, module_name)
 
-    def test_load_object_knowledge_base(self, module_loader: ModuleLoader):
-        assert module_loader.load_object_knowledge_base("robokudo", "object_knowledge_iai_kitchen.py")
+    def test_load_world_descriptor(self, module_loader: ModuleLoader):
+        assert module_loader.load_world_descriptor("robokudo", "world_iai_kitchen20.py")
 
     @pytest.mark.parametrize(["pkg_name", "module_name"], invalid_modules)
-    def test_load_object_knowledge_base_invalid_input(self, module_loader: ModuleLoader, pkg_name: str,
-                                                      module_name: str):
-        assert pytest.raises(ImportError, module_loader.load_object_knowledge_base, pkg_name, module_name)
-
-    def test_load_semantic_map(self, module_loader: ModuleLoader):
-        assert module_loader.load_semantic_map("robokudo", "semantic_map_iai_kitchen.py", _skip_ros=True)
-
-    @pytest.mark.parametrize(["pkg_name", "module_name"], invalid_modules)
-    def test_load_semantic_map_invalid_input(self, module_loader: ModuleLoader, pkg_name: str, module_name: str):
-        assert pytest.raises(ImportError, module_loader.load_semantic_map, pkg_name, module_name)
+    def test_load_world_descriptor_invalid_input(self, module_loader: ModuleLoader, pkg_name: str,
+                                                 module_name: str):
+        assert pytest.raises(ImportError, module_loader.load_world_descriptor, pkg_name, module_name)
 
     def test_load_tree_components(self, module_loader: ModuleLoader):
         assert module_loader.load_tree_components("robokudo", "query_based_task_scheduler.py")

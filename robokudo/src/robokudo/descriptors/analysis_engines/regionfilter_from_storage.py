@@ -1,7 +1,7 @@
-"""Analysis engine for region-based filtering using semantic maps.
+"""Analysis engine for region-based filtering using world descriptors.
 
 This module provides an analysis engine that demonstrates how to filter point
-cloud data based on predefined regions from semantic maps. It processes stored
+cloud data based on predefined regions from world descriptors. It processes stored
 camera data and applies region-based filtering to focus on specific areas of
 interest.
 
@@ -9,12 +9,12 @@ The pipeline implements the following functionality:
 
 * Reading stored camera data from MongoDB
 * Image preprocessing
-* Region-based filtering using semantic map data
+* Region-based filtering using world descriptor data
 * Optional pipeline trigger for step-by-step execution
 * Optional camera viewpoint visualization
 
 .. note::
-    This engine requires properly configured semantic maps with defined regions
+    This engine requires properly configured world descriptors with defined regions
     of interest. The regions are used to filter the point cloud data during
     processing.
 """
@@ -32,7 +32,7 @@ class AnalysisEngine(AnalysisEngineInterface):
     """Analysis engine for region-based point cloud filtering.
 
     This class implements a pipeline that filters point cloud data based on
-    predefined regions from semantic maps. It processes stored camera data
+    predefined regions from world descriptors. It processes stored camera data
     and applies region filtering to focus on specific areas of interest.
 
     The pipeline includes:
@@ -60,7 +60,7 @@ class AnalysisEngine(AnalysisEngineInterface):
         """Create a pipeline for region-based point cloud filtering.
 
         This method constructs a processing pipeline that applies region-based
-        filtering to point cloud data. The regions are defined in semantic maps
+        filtering to point cloud data. The regions are defined in world descriptors
         and used to filter the data during processing.
 
         Pipeline execution sequence:

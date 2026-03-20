@@ -63,11 +63,11 @@ class StableViewpointComponent:
 
 
 @dataclass(kw_only=True)
-class SemanticMapComponent:
-    """Camera component with configuration for semantic maps."""
+class WorldDescriptorComponent:
+    """Camera component with configuration for world descriptors."""
 
-    semantic_map: str = "semantic_map_iai_kitchen"
-    """Filename of the semantic map configuration"""
+    world_descriptor: str = "world_iai_kitchen20"
+    """Filename of the world descriptor configuration"""
 
 
 @dataclass(kw_only=True)

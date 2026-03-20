@@ -15,3 +15,7 @@ Available knowledge bases include:
     Each knowledge base is implemented as a separate module and can be
     imported individually based on the application requirements.
 """
+
+raise RuntimeError(
+    "descriptors/object_knowledge is deprecated. Use descriptors/worlds instead."
+)

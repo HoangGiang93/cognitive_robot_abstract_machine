@@ -16,6 +16,10 @@ The semantic map includes:
     and includes detailed specifications for regions like the kitchen island.
 """
 
+raise RuntimeError(
+    "Semantic maps are deprecated. Use world descriptors instead."
+)
+
 from robokudo.semantic_map import SemanticMapEntry, BaseSemanticMap
 
 

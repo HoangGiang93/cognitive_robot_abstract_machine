@@ -12,6 +12,10 @@ The module supports:
 
 from __future__ import annotations
 
+raise RuntimeError(
+    "semantic_map.py has been replaced by world descriptors."
+)
+
 from dataclasses import dataclass
 
 from rclpy.node import Node

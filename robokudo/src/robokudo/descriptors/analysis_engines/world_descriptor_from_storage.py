@@ -1,16 +1,16 @@
-"""Analysis engine for object detection and knowledge visualization from stored data.
+"""Analysis engine for object detection and world visualization from stored data.
 
 This module provides an analysis engine that demonstrates object detection and
-knowledge visualization using stored camera data. It combines static object
+world visualization using stored camera data. It combines static object
 detection with various visualization components to display object hypotheses,
-knowledge, and color information.
+world descriptor entities, and color information.
 
 The pipeline implements the following functionality:
 - Reading stored camera data from MongoDB
 - Image preprocessing
 - Static object detection with predefined parameters
 - Visualization of object hypotheses
-- Visualization of object knowledge
+- Visualization of world descriptor entities
 - Color analysis of detected objects
 
 .. note::
@@ -25,7 +25,7 @@ from robokudo.annotators.cluster_color import ClusterColorAnnotator
 from robokudo.annotators.collection_reader import CollectionReaderAnnotator
 from robokudo.annotators.image_preprocessor import ImagePreprocessorAnnotator
 from robokudo.annotators.object_hypothesis_visualizer import ObjectHypothesisVisualizer
-from robokudo.annotators.object_knowledge_visualizer import ObjectKnowledgeVisualizer
+from robokudo.annotators.world_visualizer import WorldVisualizer
 from robokudo.idioms import pipeline_init
 from robokudo.pipeline import Pipeline
 from robokudo.annotators.static_object_detector import StaticObjectDetectorAnnotator
@@ -33,18 +33,18 @@ from robokudo.descriptors import CrDescriptorFactory
 
 
 class AnalysisEngine(AnalysisEngineInterface):
-    """Analysis engine for object detection and knowledge visualization.
+    """Analysis engine for object detection and world descriptor visualization.
 
     This class implements a pipeline that combines static object detection with
     various visualization components. It processes stored camera data to detect
-    objects and visualize their properties and associated knowledge.
+    objects and visualize their properties and associated world descriptor entities.
 
     The pipeline includes:
     - Collection reader for accessing stored data
     - Image preprocessing
     - Static object detection with predefined parameters
     - Object hypothesis visualization
-    - Object knowledge visualization
+    - World descriptor visualization
     - Color analysis and visualization
 
     .. note::
@@ -58,14 +58,14 @@ class AnalysisEngine(AnalysisEngineInterface):
 
         :return: The name identifier of this analysis engine
         """
-        return "object_knowledge_from_storage"
+        return "world_descriptor_from_storage"
 
     def implementation(self) -> Pipeline:
-        """Create a pipeline for object detection and knowledge visualization.
+        """Create a pipeline for object detection and world descriptor visualization.
 
         This method constructs a processing pipeline that reads stored camera data,
         performs object detection with predefined parameters, and visualizes the
-        results including object hypotheses, knowledge, and color information.
+        results including object hypotheses, world descriptor entities, and color information.
 
         The static object detector is configured with specific parameters for a mug:
         - Bounding box: 397x126 pixels with size 49x106
@@ -100,7 +100,7 @@ class AnalysisEngine(AnalysisEngineInterface):
                 ImagePreprocessorAnnotator("ImagePreprocessor"),
                 StaticObjectDetectorAnnotator(descriptor=sod),
                 ObjectHypothesisVisualizer(),
-                ObjectKnowledgeVisualizer(),
+                WorldVisualizer(),
                 ClusterColorAnnotator(),
             ]
         )

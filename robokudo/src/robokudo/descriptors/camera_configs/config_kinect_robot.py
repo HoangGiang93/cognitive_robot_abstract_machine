@@ -6,7 +6,7 @@ from robokudo.descriptors.camera_configs.components import (
     RGBDComponent,
     TfComponent,
     StableViewpointComponent,
-    SemanticMapComponent,
+    WorldDescriptorComponent,
 )
 from robokudo.descriptors.camera_configs.base_camera_config import BaseCameraConfig
 
@@ -17,7 +17,7 @@ class KinectCameraConfig(
     RGBDComponent,
     TfComponent,
     StableViewpointComponent,
-    SemanticMapComponent,
+    WorldDescriptorComponent,
 ):
     """Configuration class for a Kinect camera setup in a robotic environment.
 

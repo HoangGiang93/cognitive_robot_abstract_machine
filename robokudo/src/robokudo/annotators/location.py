@@ -1,10 +1,10 @@
 """
 Location annotator for RoboKudo.
 
-This module provides an annotator for determining object locations relative to semantic regions.
+This module provides an annotator for determining object locations relative to world regions.
 It supports:
 
-* Semantic map integration
+* World descriptor integration
 * Region-based location analysis
 * Percentage-based containment checks
 * World frame transformations
@@ -21,22 +21,18 @@ The module is used for:
 from __future__ import annotations
 from timeit import default_timer
 
-import numpy
 import py_trees
 from typing_extensions import List, TYPE_CHECKING
 
 import robokudo.annotators.core
-import robokudo.semantic_map
 import robokudo.types
 import robokudo.types.annotation
 import robokudo.types.scene
 import robokudo.utils.annotator_helper
 import robokudo.utils.error_handling
-import robokudo.utils.transform
-from robokudo.utils.module_loader import ModuleLoader
-from robokudo.utils.semantic_map import (
-    get_obb_from_semantic_map_region_in_cam_coordinates,
-)
+import robokudo.utils.world_descriptor
+from robokudo.utils.region import region_obb_in_cam_coordinates
+from semantic_digital_twin.world_description.world_entity import Region
 
 if TYPE_CHECKING:
     import numpy.typing as npt
@@ -51,7 +47,7 @@ class LocationAnnotator(robokudo.annotators.core.ThreadedAnnotator):
 
     The annotator:
 
-    * Loads and manages semantic map data
+    * Loads and manages world descriptor data
     * Transforms regions between world and camera frames
     * Checks object containment in regions
     * Creates location annotations for contained objects
@@ -72,14 +68,14 @@ class LocationAnnotator(robokudo.annotators.core.ThreadedAnnotator):
                 self.world_frame_name: str = "map"
                 """Name of the world coordinate frame"""
 
-                self.semantic_map_ros_package: str = "robokudo"
-                """ROS package containing semantic map"""
+                self.world_descriptor_ros_package: str = "robokudo"
+                """ROS package containing world descriptor"""
 
-                self.semantic_map_name: str = "semantic_map_iai_kitchen"
-                """Name of semantic map descriptor. Should be in descriptors/semantic_maps/"""
+                self.world_descriptor_name: str = "world_iai_kitchen20"
+                """Name of world descriptor. Should be in descriptors/worlds/"""
 
                 self.desired_regions: List[str] = ["kitchen_island"]
-                """List of regions from semantic_maps list to consider. Leave empty to include all regions."""
+                """List of region names to consider. Leave empty to include all regions."""
 
         parameters = (
             Parameters()
@@ -96,29 +92,21 @@ class LocationAnnotator(robokudo.annotators.core.ThreadedAnnotator):
         :param descriptor: Configuration descriptor, defaults to Descriptor()
         """
         super().__init__(name=name, descriptor=descriptor)
-        self.load_semantic_map()
+        self.load_world_descriptor()
 
-        self.semantic_map = None
-        """The currently loaded semantic map instance."""
+        self.world_descriptor = None
+        """The currently loaded world descriptor instance."""
 
-    def load_semantic_map(self) -> None:
-        """Load a semantic map from the configured package and name.
-
-        Uses ModuleLoader to dynamically load the semantic map descriptor
-        from the configured ROS package.
-
-        :return: None
-        """
-        module_loader = ModuleLoader()
-        self.semantic_map = module_loader.load_semantic_map(
-            self.descriptor.parameters.semantic_map_ros_package,
-            self.descriptor.parameters.semantic_map_name,
+    def load_world_descriptor(self) -> None:
+        """Load a world descriptor from the configured package and name."""
+        self.world_descriptor = robokudo.utils.world_descriptor.load_world_descriptor(
+            self
         )
 
     def add_location_in_object_hypotheses(
         self,
         region_name: str,
-        region: robokudo.semantic_map.SemanticMapEntry,
+        region: Region,
         world_to_cam_transform_matrix: npt.NDArray,
         object_hypotheses: Iterable[robokudo.types.scene.ObjectHypothesis],
     ) -> None:
@@ -137,10 +125,8 @@ class LocationAnnotator(robokudo.annotators.core.ThreadedAnnotator):
         :param object_hypotheses: List of object hypotheses to check
         :return: None
         """
-        obb = get_obb_from_semantic_map_region_in_cam_coordinates(
-            region,
-            self.descriptor.parameters.world_frame_name,
-            world_to_cam_transform_matrix,
+        obb = region_obb_in_cam_coordinates(
+            self.world_descriptor.world, region, world_to_cam_transform_matrix
         )
         for object_hypothesis in object_hypotheses:
             # Extract the indices of an object that lies inside the region
@@ -166,7 +152,7 @@ class LocationAnnotator(robokudo.annotators.core.ThreadedAnnotator):
 
         The method:
 
-        * Loads and updates semantic map
+        * Loads and updates world descriptor
         * Gets camera to world transform
         * For each active region:
             * Checks if region is in desired list
@@ -176,10 +162,11 @@ class LocationAnnotator(robokudo.annotators.core.ThreadedAnnotator):
         :return: SUCCESS after processing
         """
         start_timer = default_timer()
-        self.load_semantic_map()
-        self.semantic_map.publish_visualization_markers()
-
-        active_regions = self.semantic_map.entries
+        self.load_world_descriptor()
+        regions = self.world_descriptor.world.get_kinematic_structure_entity_by_type(
+            Region
+        )
+        active_regions = {str(region.name): region for region in regions}
         # TODO Filter active regions by FRUSTUM CULLING
 
         world_to_cam_transform_matrix = (
@@ -202,7 +189,6 @@ class LocationAnnotator(robokudo.annotators.core.ThreadedAnnotator):
                 )
 
             elif region_name in self.descriptor.parameters.desired_regions:
-                assert isinstance(region, robokudo.semantic_map.SemanticMapEntry)
                 self.add_location_in_object_hypotheses(
                     region_name,
                     region,

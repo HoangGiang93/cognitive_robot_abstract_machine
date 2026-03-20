@@ -3,11 +3,11 @@ from dataclasses import dataclass
 from typing_extensions import ClassVar
 
 from robokudo.descriptors.camera_configs.base_camera_config import BaseCameraConfig
-from robokudo.descriptors.camera_configs.components import SemanticMapComponent
+from robokudo.descriptors.camera_configs.components import WorldDescriptorComponent
 
 
 @dataclass(slots=True)
-class MongoCameraConfig(BaseCameraConfig, SemanticMapComponent):
+class MongoCameraConfig(BaseCameraConfig, WorldDescriptorComponent):
     """Configuration class for MongoDB-based camera data playback.
 
     This class defines the configuration parameters for reading camera data from a

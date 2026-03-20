@@ -9,6 +9,10 @@ transformations to different coordinate frames. It supports:
 
 """
 
+raise RuntimeError(
+    "utils/semantic_map.py has been replaced by utils/region.py and world descriptors."
+)
+
 from __future__ import annotations
 
 import numpy as np

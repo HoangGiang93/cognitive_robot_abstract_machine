@@ -6,6 +6,10 @@ with the object knowledge base to display semantic information about objects
 and their parts.
 """
 
+raise RuntimeError(
+    "ObjectKnowledgeVisualizer has been replaced by WorldVisualizer."
+)
+
 import numpy as np
 import numpy.typing as npt
 import open3d as o3d

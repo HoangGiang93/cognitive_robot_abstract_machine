@@ -2,7 +2,7 @@
 
 This module provides an annotator for:
 
-* Filtering point clouds using regions from object/region knowledge
+* Filtering point clouds using regions from world descriptors
 * Creating region hypotheses with poses
 * Visualizing filtered regions and clouds
 
@@ -20,9 +20,8 @@ import robokudo.annotators.core
 import robokudo.types.scene
 import robokudo.utils.annotator_helper
 import robokudo.utils.error_handling
-import robokudo.utils.knowledge
+import robokudo.utils.world_descriptor
 from robokudo.cas import CASViews
-from robokudo.utils import module_loader
 from robokudo.utils.region import region_obb_in_cam_coordinates, region_pose_annotation
 from semantic_digital_twin.world_description.world_entity import Region
 
@@ -40,8 +39,8 @@ class RegionFilter(robokudo.annotators.core.ThreadedAnnotator):
         class Parameters:
             """Parameters for configuring region filtering.
             , defaults to "map"
-            :ivar object_knowledge_ros_package: , defaults to "robokudo"
-            :ivar object_knowledge_name: , defaults to "object_knowledge_iai_kitchen20"
+            :ivar world_descriptor_ros_package: , defaults to "robokudo"
+            :ivar world_descriptor_name: , defaults to "world_iai_kitchen20"
             :ivar active_region: , empty for all regions
             """
 
@@ -49,11 +48,11 @@ class RegionFilter(robokudo.annotators.core.ThreadedAnnotator):
                 self.world_frame_name: str = "map"
                 """Name of the world coordinate frame"""
 
-                self.object_knowledge_base_ros_package: str = "robokudo"
-                """If you use SDT object knowledge to generate the detection, provide the knowledge base package name here"""
+                self.world_descriptor_ros_package: str = "robokudo"
+                """ROS package containing world descriptor"""
 
-                self.object_knowledge_base_name: str = "object_knowledge_iai_kitchen20"
-                """If you use SDT object knowledge to generate the detection, provide the knowledge base name here"""
+                self.world_descriptor_name: str = "world_iai_kitchen20"
+                """Name of world descriptor module. Should be in descriptors/worlds/."""
 
                 self.active_region: str = ""
                 """Name of active region to filter. Does not define a specific region but can be used to check the active regions."""
@@ -76,18 +75,19 @@ class RegionFilter(robokudo.annotators.core.ThreadedAnnotator):
         self.world_frame_name: str = self.descriptor.parameters.world_frame_name
         """Name of the world coordinate frame read from parameters"""
 
-        self.object_knowledge_base = None
-        """The object/region knowledge base instance"""
+        self.world_descriptor = None
+        """The world descriptor instance"""
 
-        self.load_object_knowledge_base()
+        self.load_world_descriptor()
 
         self.active_region = self.descriptor.parameters.active_region
         """Name of the active region to filter read from parameters"""
 
-    def load_object_knowledge_base(self) -> None:
-        """Load object/region knowledge from configured package and module.
-        """
-        self.object_knowledge_base = robokudo.utils.knowledge.load_object_knowledge_base(self)
+    def load_world_descriptor(self) -> None:
+        """Load world descriptor from configured package and module."""
+        self.world_descriptor = robokudo.utils.world_descriptor.load_world_descriptor(
+            self
+        )
 
     @robokudo.utils.error_handling.catch_and_raise_to_blackboard
     def compute(self) -> py_trees.common.Status:
@@ -96,7 +96,7 @@ class RegionFilter(robokudo.annotators.core.ThreadedAnnotator):
         The method:
 
         * Loads point cloud and query from CAS
-        * Loads object/region knowledge and active regions
+        * Loads world descriptor and active regions
         * For each active region:
           * Transforms region to camera frame
           * Creates oriented bounding box
@@ -114,9 +114,9 @@ class RegionFilter(robokudo.annotators.core.ThreadedAnnotator):
         if self.get_cas().contains(CASViews.QUERY):
             query = self.get_cas().get(CASViews.QUERY)
 
-        self.load_object_knowledge_base()
+        self.load_world_descriptor()
 
-        regions = self.object_knowledge_base.world.get_kinematic_structure_entity_by_type(
+        regions = self.world_descriptor.world.get_kinematic_structure_entity_by_type(
             Region
         )
         all_regions = {str(region.name): region for region in regions}
@@ -134,8 +134,8 @@ class RegionFilter(robokudo.annotators.core.ThreadedAnnotator):
                     active_regions[queried_location] = all_regions[queried_location]
                 except KeyError:
                     raise Exception(
-                        f"Couldn't find requested location {queried_location} in object/region knowledge"
-                    )
+                    f"Couldn't find requested location {queried_location} in world descriptor"
+                )
 
         visualized_geometries = []
         filtered_indices = set()
@@ -160,7 +160,7 @@ class RegionFilter(robokudo.annotators.core.ThreadedAnnotator):
             region_hypothesis = robokudo.types.scene.RegionHypothesis()
 
             obb = region_obb_in_cam_coordinates(
-                self.object_knowledge_base.world, region, world_to_cam_transform
+                self.world_descriptor.world, region, world_to_cam_transform
             )
             region_hypothesis.annotations.append(region_pose_annotation(region))
 

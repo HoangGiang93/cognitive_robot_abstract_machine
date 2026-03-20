@@ -17,6 +17,10 @@ The knowledge base includes:
     openings and bottoms.
 """
 
+raise RuntimeError(
+    "Object knowledge descriptors are deprecated. Use descriptors/worlds instead."
+)
+
 from dataclasses import dataclass
 
 from robokudo.object_knowledge_base import BaseObjectKnowledgeBase, ObjectKnowledge
