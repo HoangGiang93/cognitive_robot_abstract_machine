@@ -858,11 +858,30 @@ class DataAccessObject(HasGeneric[T]):
         """
         Phase 2: Filling (Bottom-Up) to initialize domain objects.
 
+        This phase consists of two passes:
+        1. Populate all relationships and scalars to ensure all objects are linked.
+        2. Resolve alternative mappings in topological order to satisfy dependencies.
+
         :param state: The conversion state.
         :param discovery_order: The order in which DAOs were discovered.
         """
-        # Pass 2.1: Populate all relationships and scalars for all discovered instances.
-        # This ensures that all objects point to each other (even if not yet fully resolved).
+        self._populate_all_objects(state, discovery_order)
+        self._resolve_all_objects_topologically(state, discovery_order)
+
+    def _populate_all_objects(
+        self,
+        state: FromDataAccessObjectState,
+        discovery_order: List[FromDataAccessObjectWorkItem],
+    ) -> None:
+        """
+        Pass 2.1: Populate all relationships and scalars for all discovered instances.
+
+        This ensures that all objects point to each other, even if some (like
+        AlternativeMappings) are not yet fully resolved into their final domain objects.
+
+        :param state: The conversion state.
+        :param discovery_order: The order in which DAOs were discovered.
+        """
         state.resolution_mode = False
         for work_item in reversed(discovery_order):
             if not state.is_initialized(work_item.dao_instance):
@@ -870,7 +889,21 @@ class DataAccessObject(HasGeneric[T]):
                     work_item.domain_object, state
                 )
 
-        # Pass 2.2: Finalize resolution and resolve AlternativeMappings.
+    def _resolve_all_objects_topologically(
+        self,
+        state: FromDataAccessObjectState,
+        discovery_order: List[FromDataAccessObjectWorkItem],
+    ) -> None:
+        """
+        Pass 2.2: Finalize resolution of domain objects in topological order.
+
+        Uses a refcount-based topological sort to ensure that AlternativeMapping
+        instances are resolved only after all their dependent domain objects are
+        fully initialized.
+
+        :param state: The conversion state.
+        :param discovery_order: The order in which DAOs were discovered.
+        """
         state.resolution_mode = True
 
         id_to_work_item = {id(wi.dao_instance): wi for wi in discovery_order}
@@ -880,14 +913,17 @@ class DataAccessObject(HasGeneric[T]):
         dependants: Dict[int, Set[int]] = {dao_id: set() for dao_id in id_to_work_item}
         pending_dependency_counts = {dao_id: 0 for dao_id in id_to_work_item}
 
+        # Build the dependency graph for the current batch of objects.
         for dao_id, deps in state.dependencies.items():
             if dao_id not in id_to_work_item:
                 continue
             for dep_id in deps:
+                # We only care about dependencies within the current set of DAOs.
                 if dep_id in id_to_work_item and dep_id != dao_id:
                     dependants[dep_id].add(dao_id)
                     pending_dependency_counts[dao_id] += 1
 
+        # Find all objects that have no pending dependencies.
         unresolved_indices = set(range(len(discovery_order)))
         ready_indices = [
             i
@@ -897,11 +933,11 @@ class DataAccessObject(HasGeneric[T]):
 
         while unresolved_indices:
             if not ready_indices:
-                # Cycle detected
+                # Cycle detected: break it by picking the latest discovered item.
                 next_index = max(unresolved_indices)
                 ready_indices.append(next_index)
 
-            # Prioritize items discovered later
+            # Prioritize items discovered later (closer to the leaves in DFS).
             ready_indices.sort()
             current_index = ready_indices.pop()
 
@@ -915,6 +951,7 @@ class DataAccessObject(HasGeneric[T]):
                 work_item.dao_instance._resolve_from_dao(work_item.domain_object, state)
                 state.mark_initialized(work_item.dao_instance)
 
+            # Update dependants and add them to the ready queue if they become ready.
             for dependant_id in dependants[id(work_item.dao_instance)]:
                 pending_dependency_counts[dependant_id] -= 1
                 if pending_dependency_counts[dependant_id] == 0:
