@@ -39,7 +39,7 @@ from semantic_digital_twin.world import World
 from semantic_digital_twin.world_description.connections import FixedConnection
 from semantic_digital_twin.world_description.geometry import Color
 from semantic_digital_twin.world_description.world_entity import Body
-from semantic_digital_twin.robots.abstract_robot import Neck, Arm
+from semantic_digital_twin.robots.abstract_robot import Neck, Arm, KinematicChain
 from semantic_digital_twin.robots.robot_mixins import (
     HasNeck,
     HasArms,
@@ -124,6 +124,8 @@ class BodyButton(QPushButton):
         """
         self.application.interface.highlight_body(self.body)
         self.application.last_highlighted_body = self.body
+        if self.application.selection_mode:
+            self.application.handle_body_selection(self.body)
 
 
 class ProgressBarWithText(QProgressBar):
@@ -265,6 +267,16 @@ class NeckWidget(QGroupBox):
         tip_button.clicked.connect(self.application.assign_body_to_neck_tip)
         layout.addWidget(tip_button)
 
+        visualize_button = QPushButton("Visualize")
+        visualize_button.setEnabled(
+            self.application.neck.root is not None
+            and self.application.neck.tip is not None
+        )
+        visualize_button.clicked.connect(
+            lambda: self.application.visualize_chain(self.application.neck)
+        )
+        layout.addWidget(visualize_button)
+
         self.setLayout(layout)
 
 
@@ -304,6 +316,15 @@ class ArmWidget(QGroupBox):
         )
         layout.addWidget(tip_button)
 
+        visualize_button = QPushButton("Visualize")
+        visualize_button.setEnabled(
+            self.arm.root is not None and self.arm.tip is not None
+        )
+        visualize_button.clicked.connect(
+            lambda: self.application.visualize_chain(self.arm)
+        )
+        layout.addWidget(visualize_button)
+
         self.setLayout(layout)
 
 
@@ -333,9 +354,9 @@ class Application(QMainWindow):
     """
     Dictionary storing the state of chosen robot components.
     """
-    last_highlighted_body: Optional[Body] = None
+    selection_mode: Optional[str] = None
     """
-    The last highlighted body.
+    The current selection mode for body assignment.
     """
     neck: Optional[Neck] = None
     """
@@ -372,6 +393,9 @@ class Application(QMainWindow):
         self.scroll_area.setWidget(self.body_buttons_widget)
 
         left_layout = QVBoxLayout()
+        self.selection_label = QLabel("Select a body")
+        self.selection_label.setStyleSheet("font-weight: bold; color: blue;")
+        left_layout.addWidget(self.selection_label)
         left_layout.addLayout(self._create_urdf_box_layout())
         left_layout.addWidget(self.scroll_area)
 
@@ -435,10 +459,23 @@ class Application(QMainWindow):
                     add_neck_button.clicked.connect(self._add_neck_callback)
                     self.components_list_layout.addWidget(add_neck_button)
 
-                if component in ["HasArms", "SpecifiesLeftRightArm"]:
+                if component == "HasArms":
                     add_arm_button = QPushButton("Add Arm")
                     add_arm_button.clicked.connect(self._add_arm_callback)
                     self.components_list_layout.addWidget(add_arm_button)
+
+                if component == "SpecifiesLeftRightArm":
+                    add_left_arm_button = QPushButton("Add Left Arm")
+                    add_left_arm_button.clicked.connect(
+                        lambda: self._add_arm_callback("left_arm")
+                    )
+                    self.components_list_layout.addWidget(add_left_arm_button)
+
+                    add_right_arm_button = QPushButton("Add Right Arm")
+                    add_right_arm_button.clicked.connect(
+                        lambda: self._add_arm_callback("right_arm")
+                    )
+                    self.components_list_layout.addWidget(add_right_arm_button)
 
         if self.neck:
             self.components_list_layout.addWidget(NeckWidget(self))
@@ -453,11 +490,11 @@ class Application(QMainWindow):
         self.neck = Neck(name=PrefixedName("neck"))
         self._update_chosen_components_list()
 
-    def _add_arm_callback(self):
+    def _add_arm_callback(self, name: Optional[str] = None):
         """
         Callback for adding an arm.
         """
-        arm_name = f"arm_{len(self.arms)}"
+        arm_name = name if name else f"arm_{len(self.arms)}"
         arm = Arm(name=PrefixedName(arm_name))
         self.arms.append(arm)
         self._update_chosen_components_list()
@@ -478,51 +515,90 @@ class Application(QMainWindow):
 
     def assign_body_to_neck_pitch(self):
         """
-        Assigns the last highlighted body to the neck's pitch body.
+        Starts selection mode for neck pitch body.
         """
-        if self.neck and self.last_highlighted_body:
-            self.neck.pitch_body = self.last_highlighted_body
-            self._update_chosen_components_list()
+        self.selection_mode = "neck_pitch"
+        self.selection_label.setText("Select Pitch Body for Neck")
 
     def assign_body_to_neck_yaw(self):
         """
-        Assigns the last highlighted body to the neck's yaw body.
+        Starts selection mode for neck yaw body.
         """
-        if self.neck and self.last_highlighted_body:
-            self.neck.yaw_body = self.last_highlighted_body
-            self._update_chosen_components_list()
+        self.selection_mode = "neck_yaw"
+        self.selection_label.setText("Select Yaw Body for Neck")
 
     def assign_body_to_neck_root(self):
         """
-        Assigns the last highlighted body to the neck's root body.
+        Starts selection mode for neck root body.
         """
-        if self.neck and self.last_highlighted_body:
-            self.neck.root = self.last_highlighted_body
-            self._update_chosen_components_list()
+        self.selection_mode = "neck_root"
+        self.selection_label.setText("Select Root Body for Neck")
 
     def assign_body_to_neck_tip(self):
         """
-        Assigns the last highlighted body to the neck's tip body.
+        Starts selection mode for neck tip body.
         """
-        if self.neck and self.last_highlighted_body:
-            self.neck.tip = self.last_highlighted_body
-            self._update_chosen_components_list()
+        self.selection_mode = "neck_tip"
+        self.selection_label.setText("Select Tip Body for Neck")
 
     def assign_body_to_arm_root(self, arm: Arm):
         """
-        Assigns the last highlighted body to the arm's root body.
+        Starts selection mode for arm root body.
         """
-        if self.last_highlighted_body:
-            arm.root = self.last_highlighted_body
-            self._update_chosen_components_list()
+        self.selection_mode = f"arm_root_{arm.name.name}"
+        self.selection_label.setText(f"Select Root Body for {arm.name.name}")
 
     def assign_body_to_arm_tip(self, arm: Arm):
         """
-        Assigns the last highlighted body to the arm's tip body.
+        Starts selection mode for arm tip body.
         """
-        if self.last_highlighted_body:
-            arm.tip = self.last_highlighted_body
-            self._update_chosen_components_list()
+        self.selection_mode = f"arm_tip_{arm.name.name}"
+        self.selection_label.setText(f"Select Tip Body for {arm.name.name}")
+
+    def handle_body_selection(self, body: Body):
+        """
+        Handles body selection based on the current mode.
+        """
+        if not self.selection_mode:
+            return
+
+        if self.selection_mode == "neck_pitch" and self.neck:
+            self.neck.pitch_body = body
+        elif self.selection_mode == "neck_yaw" and self.neck:
+            self.neck.yaw_body = body
+        elif self.selection_mode == "neck_root" and self.neck:
+            self.neck.root = body
+        elif self.selection_mode == "neck_tip" and self.neck:
+            self.neck.tip = body
+        elif self.selection_mode.startswith("arm_root_"):
+            arm_name = self.selection_mode.replace("arm_root_", "")
+            arm = next((a for a in self.arms if a.name.name == arm_name), None)
+            if arm:
+                arm.root = body
+        elif self.selection_mode.startswith("arm_tip_"):
+            arm_name = self.selection_mode.replace("arm_tip_", "")
+            arm = next((a for a in self.arms if a.name.name == arm_name), None)
+            if arm:
+                arm.tip = body
+
+        self.selection_mode = None
+        self.selection_label.setText("Select a body")
+        self._update_chosen_components_list()
+
+    def visualize_chain(self, chain: KinematicChain):
+        """
+        Visualizes the kinematic chain.
+        """
+        self.interface.reset_body_colors()
+        highlight_color = Color(1.0, 0.0, 0.0, 1.0)
+        chain: List[Body] = (
+            self.interface.world.compute_chain_of_kinematic_structure_entities(
+                chain.root, chain.tip
+            )
+        )
+        with self.interface.world.modify_world():
+            for body in chain:
+                body.collision.dye_shapes(highlight_color)
 
     def _create_urdf_box_layout(self) -> QHBoxLayout:
         """
