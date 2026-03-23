@@ -183,6 +183,10 @@ class RotationMatrixMapping(AlternativeMapping[RotationMatrix]):
         result = RotationMatrix.from_quaternion(self.rotation)
         return result
 
+    @classmethod
+    def required_pre_build_alternative_mappings(cls) -> List[Type[AlternativeMapping]]:
+        return [QuaternionMapping]
+
 
 @dataclass
 class HomogeneousTransformationMatrixMapping(
@@ -214,6 +218,10 @@ class HomogeneousTransformationMatrixMapping(
             reference_frame=self.reference_frame,
             child_frame=self.child_frame,
         )
+
+    @classmethod
+    def required_pre_build_alternative_mappings(cls) -> List[Type[AlternativeMapping]]:
+        return [Vector3Mapping, QuaternionMapping]
 
 
 @dataclass
