@@ -10,6 +10,7 @@ from functools import lru_cache
 from typing import TYPE_CHECKING, get_origin, get_args
 import typing
 
+import rustworkx
 import sqlalchemy.inspection
 import sqlalchemy.orm
 from sqlalchemy import Column
@@ -936,32 +937,14 @@ class DataAccessObject(HasGeneric[T]):
         ]
         unresolved_indices = list(range(len(discovery_order)))
 
-        # Process objects in topological order.
-        retries: Dict[int, int] = {}
         while unresolved_indices:
             current_index = self._pick_next_ready_index(
-                ready_indices, unresolved_indices
+                ready_indices, unresolved_indices, discovery_order
             )
             work_item = discovery_order[current_index]
 
-            try:
-                self._finalize_work_item(work_item, state)
-                unresolved_indices.remove(current_index)
-            except Exception:  # put non working items to the back
-                print(
-                    "moving work item to the end as its not working yet",
-                    type(work_item.domain_object),
-                )
-                # If finalization fails, we retry it later.
-                # To prevent infinite loops, we cap the number of retries.
-                retries[current_index] = retries.get(current_index, 0) + 1
-
-                if retries[current_index] > len(discovery_order) or not ready_indices:
-                    raise
-                # Put it back to be processed later.
-                ready_indices.append(current_index)
-                unresolved_indices.append(current_index)
-                continue
+            self._finalize_work_item(work_item, state)
+            unresolved_indices.remove(current_index)
 
             # Update dependants and move newly ready ones to the queue.
             for dependant_id in dependants[id(work_item.dao_instance)]:
@@ -983,6 +966,7 @@ class DataAccessObject(HasGeneric[T]):
         :param id_to_work_item: Mapping of DAO IDs to their work items.
         :return: A tuple (dependants, pending_counts).
         """
+        dependency_graph = rustworkx.PyDiGraph(multigraph=True)
         dependants = {dao_id: set() for dao_id in id_to_work_item}
         pending_counts = {dao_id: 0 for dao_id in id_to_work_item}
 
@@ -997,7 +981,10 @@ class DataAccessObject(HasGeneric[T]):
         return dependants, pending_counts
 
     def _pick_next_ready_index(
-        self, ready_indices: List[int], unresolved_indices: List[int]
+        self,
+        ready_indices: List[int],
+        unresolved_indices: List[int],
+        discovery_order: List[FromDataAccessObjectWorkItem],
     ) -> int:
         """
         Pick the next object to resolve from the ready queue.
@@ -1007,6 +994,7 @@ class DataAccessObject(HasGeneric[T]):
 
         :param ready_indices: List of indices ready for resolution.
         :param unresolved_indices: Set of indices yet to be resolved.
+        :param discovery_order: The order in which DAOs were discovered.
         :return: The index of the next object to resolve.
         """
         if not ready_indices:
@@ -1015,7 +1003,15 @@ class DataAccessObject(HasGeneric[T]):
             ready_indices.append(next_index)
 
         # Prioritize items discovered later (closer to the leaves in DFS).
-        ready_indices.sort()
+        # We also want to process AlternativeMapping items last, as they
+        # depend on their attributes being fully resolved to domain objects.
+        def _is_alternative_mapping(idx: int) -> bool:
+            return issubclass(
+                discovery_order[idx].dao_instance.constructable_original_class(),
+                AlternativeMapping,
+            )
+
+        ready_indices.sort(key=lambda idx: (_is_alternative_mapping(idx), idx))
         return ready_indices.pop()
 
     def _finalize_work_item(

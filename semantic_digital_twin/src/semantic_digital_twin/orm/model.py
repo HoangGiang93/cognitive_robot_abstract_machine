@@ -54,6 +54,7 @@ class WorldMapping(HasSimulatorProperties, AlternativeMapping[World]):
 
         with result.modify_world():
             for entity in self.kinematic_structure_entities:
+                print(entity)
                 result.add_kinematic_structure_entity(entity)
 
             for dof in self.degrees_of_freedom:
