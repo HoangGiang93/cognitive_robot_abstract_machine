@@ -12,8 +12,9 @@ kernelspec:
 ---
 
 (adding-robots)=
-# Visualizing Worlds
-# Step 0 - Verification of the Data You want to Integrate
+# Adding a New Robot to the Semantic Digital Twin
+
+## Step 0 - Verification of the Data You want to Integrate
 
 > Safe yourself and your colleges and
 > 1. Verify assumptions we have about the URDF
@@ -25,13 +26,13 @@ kernelspec:
 > 
 > => If this is not the case, please consider re-requesting properly packaged data!
 
-# Step 1 - Clone the iai_robots Repository on the Ros-jazzy Branch
+## Step 1 - Clone the iai_robots Repository on the Ros-jazzy Branch
 
 ```bash
 git clone https://github.com/code-iai/iai_robots -b ros-jazzy
 ```
 
-# Step 2 - Edit the ROS2 Package to Our Naming Schema, and Add it to the iai_robots Repo
+## Step 2 - Edit the ROS2 Package to Our Naming Schema, and Add it to the iai_robots Repo
 
 1. Name the package `iai_{name_of_the_original_lab}_{robot_name}`.
 	1. For example for the Armar7 robot of the Karlsruhe Institute for Technology (KIT) it would be `iai_kit_armar7`
@@ -39,7 +40,7 @@ git clone https://github.com/code-iai/iai_robots -b ros-jazzy
 	1. To safe yourself some time here, use an editor that supports the `Find & Replace` operation, and swap out the old ros2 prefix for the new one
 		1. For example: swap `package://armar7/` with `package://iai_kit_armar7/`
 
-# Step 3 - Integration into CRAM
+## Step 3 - Integration into CRAM
 
 > Disclaimer: This section will be reworked in the future when the Robot Semantic Annotation implementation has been refactored, because then @LucaKro will write a tool to create Robot Semantic Annotations easier.
 
