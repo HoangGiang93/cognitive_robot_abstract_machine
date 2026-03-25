@@ -2470,6 +2470,10 @@ class MeshDAO(
         ForeignKey(ShapeDAO.database_id), primary_key=True, use_existing_column=True
     )
 
+    filename: Mapped[builtins.str] = mapped_column(
+        String(255), use_existing_column=True
+    )
+
     scale_id: Mapped[int] = mapped_column(
         ForeignKey("ScaleDAO.database_id", use_alter=True),
         nullable=True,
@@ -2483,26 +2487,6 @@ class MeshDAO(
     __mapper_args__ = {
         "polymorphic_identity": "MeshDAO",
         "inherit_condition": database_id == ShapeDAO.database_id,
-    }
-
-
-class FileMeshDAO(
-    MeshDAO, DataAccessObject[semantic_digital_twin.world_description.geometry.FileMesh]
-):
-
-    __tablename__ = "FileMeshDAO"
-
-    database_id: Mapped[builtins.int] = mapped_column(
-        ForeignKey(MeshDAO.database_id), primary_key=True, use_existing_column=True
-    )
-
-    filename: Mapped[builtins.str] = mapped_column(
-        String(255), use_existing_column=True
-    )
-
-    __mapper_args__ = {
-        "polymorphic_identity": "FileMeshDAO",
-        "inherit_condition": database_id == MeshDAO.database_id,
     }
 
 
@@ -2595,29 +2579,6 @@ class SphereDAO(
     __mapper_args__ = {
         "polymorphic_identity": "SphereDAO",
         "inherit_condition": database_id == ShapeDAO.database_id,
-    }
-
-
-class TriangleMeshDAO(
-    MeshDAO,
-    DataAccessObject[semantic_digital_twin.world_description.geometry.TriangleMesh],
-):
-
-    __tablename__ = "TriangleMeshDAO"
-
-    database_id: Mapped[builtins.int] = mapped_column(
-        ForeignKey(MeshDAO.database_id), primary_key=True, use_existing_column=True
-    )
-
-    mesh: Mapped[typing.Optional[trimesh.base.Trimesh]] = mapped_column(
-        semantic_digital_twin.orm.model.TrimeshType,
-        nullable=True,
-        use_existing_column=True,
-    )
-
-    __mapper_args__ = {
-        "polymorphic_identity": "TriangleMeshDAO",
-        "inherit_condition": database_id == MeshDAO.database_id,
     }
 
 

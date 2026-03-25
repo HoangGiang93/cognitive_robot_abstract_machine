@@ -37,7 +37,7 @@ from krrood.entity_query_language.predicate import Symbol
 from krrood.ormatic.utils import classproperty
 from krrood.symbolic_math.symbolic_math import Matrix
 from krrood.utils import get_full_class_name
-from semantic_digital_twin.world_description.geometry import TriangleMesh
+from semantic_digital_twin.world_description.geometry import Mesh
 from semantic_digital_twin.world_description.inertial_properties import Inertial
 from semantic_digital_twin.world_description.shape_collection import (
     ShapeCollection,
@@ -381,13 +381,12 @@ class KinematicStructureEntity(WorldEntityWithSimulatorProperties, ABC):
 
         :param name: Prefixed name for the region.
         :param points_3d: List of 3D points.
-        :param reference_frame: Optional reference frame.
         :param minimum_thickness: Minimum thickness to add if points are near-planar.
         :param sv_ratio_tol: Tolerance for determining planarity based on singular value ratio.
 
         :return: Region object.
         """
-        area_mesh = TriangleMesh.from_3d_points(
+        area_mesh = Mesh.from_3d_points(
             points_3d,
             minimum_thickness=minimum_thickness,
             sv_ratio_tol=sv_ratio_tol,

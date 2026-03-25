@@ -15,7 +15,7 @@ from semantic_digital_twin.spatial_types import (
 )
 from semantic_digital_twin.world import World
 from semantic_digital_twin.world_description.connections import FixedConnection
-from semantic_digital_twin.world_description.geometry import TriangleMesh
+from semantic_digital_twin.world_description.geometry import Mesh
 from semantic_digital_twin.world_description.shape_collection import ShapeCollection
 from semantic_digital_twin.world_description.world_entity import Body
 
@@ -172,7 +172,7 @@ class FBXParser(MeshParser):
                                 / 100
                             )
 
-                            t_mesh = TriangleMesh(
+                            t_mesh = Mesh(
                                 origin=HomogeneousTransformationMatrix(),
                                 mesh=trimesh.Trimesh(
                                     vertices=transformed_vertices, faces=o.faces

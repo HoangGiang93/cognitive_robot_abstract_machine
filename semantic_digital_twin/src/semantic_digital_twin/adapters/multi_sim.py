@@ -48,8 +48,6 @@ from semantic_digital_twin.world_description.geometry import (
     Cylinder,
     Sphere,
     Shape,
-    FileMesh,
-    TriangleMesh,
     Mesh,
     Color,
 )
@@ -450,15 +448,7 @@ class MeshConverter(ShapeConverter, ABC):
     Converts a Mesh object to a dictionary of mesh properties for Multiverse simulator.
     """
 
-    entity_type: ClassVar[Type[FileMesh]] = FileMesh
-
-
-class TriangleMeshConverter(ShapeConverter, ABC):
-    """
-    Converts a Mesh object to a dictionary of mesh properties for Multiverse simulator.
-    """
-
-    entity_type: ClassVar[Type[TriangleMesh]] = TriangleMesh
+    entity_type: ClassVar[Type[Mesh]] = Mesh
 
 
 class ConnectionConverter(EntityConverter, ABC):
