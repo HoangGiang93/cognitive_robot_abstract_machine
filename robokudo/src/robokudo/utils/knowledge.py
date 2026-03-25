@@ -26,8 +26,8 @@ from . import transform
 
 if TYPE_CHECKING:
     import numpy.typing as npt
-    from ..world_descriptor import ObjectKnowledge, BaseWorldDescriptor
-    from ..annotators.core import BaseAnnotator
+    from robokudo.world_descriptor import ObjectKnowledge, BaseWorldDescriptor
+    from robokudo.annotators.core import BaseAnnotator
 
 
 def get_quaternion_from_rotation_information(
