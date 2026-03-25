@@ -44,6 +44,7 @@ from semantic_digital_twin.world_description.world_state import WorldStateTrajec
 from semantic_digital_twin.world_description.world_state_trajectory_plotter import (
     WorldStateTrajectoryPlotter,
 )
+from semantic_digital_twin.orm.ormatic_interface import *
 
 
 def test_set_state(world_setup):
@@ -457,6 +458,7 @@ def test_merge_with_connection(world_setup, pr2_world_copy):
     origin = HomogeneousTransformationMatrix(pose)
 
     connection = pr2_world_copy.get_connection_by_name("l_gripper_l_finger_joint")
+    connection_dof_id = connection.dof.id
     pr2_world_copy.state[connection.dof.id].position = 0.55
     pr2_world_copy.notify_state_change()
     expected_fk = pr2_world_copy.compute_forward_kinematics(
@@ -475,7 +477,7 @@ def test_merge_with_connection(world_setup, pr2_world_copy):
     assert new_connection in world.connections
     assert torso_lift_link in world.bodies
     assert r_shoulder_pan_joint in world.connections
-    assert world.state[connection.dof.id].position == 0.55
+    assert world.state[connection_dof_id].position == 0.55
     assert world.compute_forward_kinematics_np(world.root, base_link)[
         0, 3
     ] == pytest.approx(1.0, abs=1e-6)

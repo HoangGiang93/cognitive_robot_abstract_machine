@@ -1,5 +1,6 @@
 import unittest
 
+from krrood.adapters.json_serializer import from_json
 from semantic_digital_twin.adapters.world_entity_kwargs_tracker import (
     WorldEntityWithIDKwargsTracker,
 )

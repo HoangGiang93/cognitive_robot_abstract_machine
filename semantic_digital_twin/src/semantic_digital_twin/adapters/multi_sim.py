@@ -2207,7 +2207,7 @@ class MultiSimSynchronizer(ModelChangeCallback, ABC):
                 modification,
                 (AddKinematicStructureEntityModification, AddActuatorModification),
             ):
-                entity = modification.to_domain_object(self._world)
+                entity = modification.object_json_to_domain_object(self._world)
                 entity = self._world.get_world_entity_with_id_by_id(entity.id)
                 self.entity_spawner.spawn(simulator=self.simulator, entity=entity)
 

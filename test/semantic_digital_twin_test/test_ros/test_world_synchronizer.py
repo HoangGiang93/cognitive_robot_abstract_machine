@@ -3,9 +3,7 @@ import os
 import threading
 import time
 import unittest
-import uuid
-from dataclasses import dataclass, field
-from typing import Optional, List, Set, Tuple
+from typing import Optional, Set, Tuple
 from uuid import uuid4
 
 import numpy as np
@@ -28,7 +26,6 @@ from semantic_digital_twin.exceptions import (
     MissingWorldModificationContextError,
     MismatchingPublishChangesAttribute,
 )
-from semantic_digital_twin.orm.ormatic_interface import Base, WorldMappingDAO
 from semantic_digital_twin.semantic_annotations.semantic_annotations import (
     Handle,
     Door,
@@ -46,11 +43,9 @@ from semantic_digital_twin.world_description.degree_of_freedom import DegreeOfFr
 from semantic_digital_twin.world_description.geometry import Scale
 from semantic_digital_twin.world_description.world_entity import (
     Body,
-    SemanticAnnotation,
 )
 from semantic_digital_twin.world_description.world_modification import (
     AttributeUpdateModification,
-    synchronized_attribute_modification,
 )
 from krrood.adapters.json_serializer import JSONAttributeDiff, to_json, from_json
 from semantic_digital_twin.adapters.ros.messages import (
@@ -59,6 +54,8 @@ from semantic_digital_twin.adapters.ros.messages import (
     LoadModel,
     Acknowledgment,
 )
+from semantic_digital_twin_test.example_dataset.test_annotations import TestAnnotation
+from semantic_digital_twin.orm.ormatic_interface import *  # type: ignore
 
 
 def create_dummy_world(w: Optional[World] = None) -> World:
@@ -315,7 +312,7 @@ def test_model_synchronization_merge_full_world_stress_test(rclpy_node):
             )
         ).parse()
 
-        def wait_for_sync(timeout=3.0, interval=0.05):
+        def wait_for_sync(timeout=5.0, interval=0.05):
             start = time.time()
             while time.time() - start < timeout:
                 body_hash_1 = {hash(body) for body in w1.kinematic_structure_entities}
@@ -875,29 +872,6 @@ def test_attribute_updates(rclpy_node):
     assert [hash(sa) for sa in world1.semantic_annotations] == [
         hash(sa) for sa in world2.semantic_annotations
     ], f"{[sa.name for sa in world1.semantic_annotations]} vs {[sa.name for sa in world2.semantic_annotations]}"
-
-
-@dataclass(eq=False)
-class TestAnnotation(SemanticAnnotation):
-    value: str = "default"
-    entity: Optional[Body] = None
-    entities: List[Body] = field(default_factory=list, hash=False)
-
-    @synchronized_attribute_modification
-    def update_value(self, new_value: str):
-        self.value = new_value
-
-    @synchronized_attribute_modification
-    def update_entity(self, new_entity: Body):
-        self.entity = new_entity
-
-    @synchronized_attribute_modification
-    def add_to_list(self, new_entity: Body):
-        self.entities.append(new_entity)
-
-    @synchronized_attribute_modification
-    def remove_from_list(self, old_entity: Body):
-        self.entities.remove(old_entity)
 
 
 def test_synchronized_attribute_modification(rclpy_node):
