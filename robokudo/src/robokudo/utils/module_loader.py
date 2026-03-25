@@ -38,7 +38,6 @@ from robokudo.descriptors.camera_configs.base_camera_config import BaseCameraCon
 if TYPE_CHECKING:
     from types import ModuleType
     from robokudo.analysis_engine import AnalysisEngineInterface
-    from robokudo.object_knowledge_base import BaseObjectKnowledgeBase
     from robokudo.semantic_map import BaseSemanticMap
     from robokudo.world_descriptor import BaseWorldDescriptor
 
