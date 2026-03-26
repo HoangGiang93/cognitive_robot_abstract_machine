@@ -57,10 +57,6 @@ class UnitreeG1(AbstractRobot, SpecifiesLeftRightArm, HasNeck):
         )
 
     def _setup_collision_rules(self):
-        """
-        Loads the SRDF file for the PR2 robot, if it exists.
-        """
-        raise
         srdf_path = os.path.join(
             Path(files("semantic_digital_twin")).parent.parent,
             "resources",
