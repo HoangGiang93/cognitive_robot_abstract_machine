@@ -5,20 +5,15 @@ from dataclasses import dataclass
 from datetime import timedelta
 
 from typing_extensions import Optional, Type, Any
-from semantic_digital_twin.spatial_types.spatial_types import Pose
-from semantic_digital_twin.world_description.world_entity import SemanticAnnotation
-from typing_extensions import Union, Optional, Type, Any, Iterable
 
 from pycram.datastructures.enums import DetectionTechnique
-from pycram.datastructures.partial_designator import PartialDesignator
-from pycram.datastructures.pose import PoseStamped
-from pycram.designators.location_designator import CostmapLocation
 from pycram.failures import PerceptionObjectNotFound
 from pycram.locations.locations import CostmapLocation
 from pycram.plans.factories import sequential, execute_single, try_in_order
 from pycram.robot_plans.actions.base import ActionDescription
 from pycram.robot_plans.actions.core.misc import DetectAction
 from pycram.robot_plans.actions.core.navigation import NavigateAction, LookAtAction
+from semantic_digital_twin.spatial_types.spatial_types import Pose
 from semantic_digital_twin.world_description.world_entity import SemanticAnnotation
 
 
@@ -52,17 +47,13 @@ class SearchAction(ActionDescription):
         ).perform()
 
         # define searching cone
-        target_base = Pose.from_spatial_type(
-            self.world.transform(
-                self.target_location.to_spatial_type(), self.world.root
-            )
-        )
+        target_base = self.world.transform(self.target_location, self.world.root)
 
         target_base_left = deepcopy(target_base)
-        target_base_left.pose.position.y -= 0.5
+        target_base_left.y -= 0.5
 
         target_base_right = deepcopy(target_base)
-        target_base_right.pose.position.y += 0.5
+        target_base_right.y += 0.5
 
         self.add_subplan(
             searching := try_in_order(

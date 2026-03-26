@@ -7,7 +7,7 @@ from pycram.datastructures.enums import (
     TaskStatus,
 )
 from pycram.datastructures.grasp import GraspDescription
-from pycram.datastructures.pose import PoseStamped
+
 from pycram.language import SequentialNode
 from pycram.motion_executor import simulated_robot
 from pycram.plans.factories import sequential, execute_single

@@ -3,27 +3,14 @@ from copy import deepcopy
 import numpy as np
 import pytest
 
-from pycram.datastructures.pose import PoseStamped
-
-
-from random_events.product_algebra import Event, SimpleEvent
-from random_events.variable import Continuous
-
-from pycram.costmaps import (
+from pycram.locations.costmaps import (
     OccupancyCostmap,
     GaussianCostmap,
     OrientationGenerator,
 )
-from random_events.interval import *
-
-from pycram.probabilistic_costmap import ProbabilisticCostmap
-from pycram.units import centimeter
-from semantic_digital_twin.spatial_types import HomogeneousTransformationMatrix, Vector3
-from semantic_digital_twin.spatial_types.spatial_types import Pose, Point3
-
-from random_events.product_algebra import Event, SimpleEvent
-from random_events.variable import Continuous
 from semantic_digital_twin.spatial_types import HomogeneousTransformationMatrix
+from semantic_digital_twin.spatial_types import Vector3
+from semantic_digital_twin.spatial_types.spatial_types import Pose, Point3
 
 
 # ---- Occupancy locations tests ----

@@ -6,20 +6,14 @@ from datetime import timedelta
 import numpy as np
 from typing_extensions import Optional, Any
 
-from semantic_digital_twin.spatial_types import (
-    HomogeneousTransformationMatrix,
-    Quaternion,
-)
-from semantic_digital_twin.spatial_types.spatial_types import Pose
-from pycram.robot_plans.actions.core.navigation import (
-    LookAtActionDescription,
-    NavigateActionDescription,
-)
 from pycram.config.action_conf import ActionConfig
 from pycram.plans.factories import sequential
 from pycram.robot_plans.actions.base import ActionDescription
 from pycram.robot_plans.actions.core.navigation import NavigateAction, LookAtAction
-from pycram.tf_transformations import quaternion_from_euler
+from semantic_digital_twin.spatial_types import (
+    Quaternion,
+)
+from semantic_digital_twin.spatial_types.spatial_types import Pose
 
 
 @dataclass

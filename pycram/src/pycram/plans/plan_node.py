@@ -14,7 +14,6 @@ from giskardpy.motion_statechart.graph_node import Task
 from krrood.entity_query_language.query.match import Match
 
 from pycram.datastructures.enums import TaskStatus
-from pycram.datastructures.pose import PoseStamped
 from pycram.failures import PlanFailure
 from pycram.motion_executor import MotionExecutor
 from pycram.plans.designator import Designator
@@ -23,7 +22,6 @@ from pycram.plans.plan_entity import PlanEntity
 from pycram.datastructures.execution_data import ExecutionData
 
 if TYPE_CHECKING:
-    from pycram.plans.plan import Plan
     from pycram.robot_plans import ActionDescription, BaseMotion
 
 logger = logging.getLogger(__name__)
@@ -398,7 +396,7 @@ class ActionNode(DesignatorNode):
         """
         Create the ExecutionData and logs additional information about the execution of this node.
         """
-        robot_pose = PoseStamped.from_spatial_type(self.plan.robot.root.global_pose)
+        robot_pose = self.plan.robot.root.global_pose
         exec_data = ExecutionData(robot_pose, self.plan.world.state.data)
         self.execution_data = exec_data
         self._last_world_modification_block_pre_perform_index = len(
@@ -409,9 +407,8 @@ class ActionNode(DesignatorNode):
         """
         Update the ExecutionData with additional information to the ExecutionData object after performing this node.
         """
-        self.execution_data.execution_end_pose = PoseStamped.from_spatial_type(
-            self.plan.robot.root.global_pose
-        )
+        self.execution_data.execution_end_pose = self.plan.robot.root.global_pose
+
         self.execution_data.execution_end_world_state = self.plan.world.state.data
         self.execution_data.added_world_modifications = (
             self.plan.world._model_manager.model_modification_blocks[

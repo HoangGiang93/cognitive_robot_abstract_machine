@@ -16,11 +16,7 @@ from pycram.datastructures.enums import (
     VerticalAlignment,
 )
 from pycram.datastructures.grasp import GraspDescription
-from pycram.datastructures.partial_designator import PartialDesignator
-from pycram.failures import ObjectNotPlacedAtTargetLocation, ObjectStillInContact
-from pycram.language import SequentialPlan
-from pycram.view_manager import ViewManager
-from pycram.datastructures.pose import PoseStamped
+
 
 from pycram.plans.factories import sequential, execute_single
 from pycram.robot_plans.actions.base import ActionDescription

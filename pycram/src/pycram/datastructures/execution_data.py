@@ -5,8 +5,7 @@ from typing import Optional, List
 
 import numpy as np
 
-from pycram.datastructures.pose import PoseStamped
-from semantic_digital_twin.world_description.world_entity import Body
+from semantic_digital_twin.spatial_types.spatial_types import Pose
 from semantic_digital_twin.world_description.world_modification import WorldModelModificationBlock
 
 
@@ -17,7 +16,7 @@ class ExecutionData:
     execution. An execution is a Robot with a virtual mobile base that can be used to move the robot in the environment.
     """
 
-    execution_start_pose: PoseStamped
+    execution_start_pose: Pose
     """
     Start of the robot at the start of execution of an action designator
     """
@@ -27,7 +26,7 @@ class ExecutionData:
     The world state at the start of execution of an action designator
     """
 
-    execution_end_pose: Optional[PoseStamped] = None
+    execution_end_pose: Optional[Pose] = None
     """
     The pose of the robot at the end of executing an action designator
     """

@@ -136,7 +136,9 @@ def test_reachability_pose_costmap_location(immutable_multiple_robot_simple_apar
     with simulated_robot:
         plan.perform()
     underspecified_costmap_location = underspecified(CostmapLocation)(
-        target=Pose.from_xyz_quaternion(pos_x=-2.7, pos_y=0, pos_z=1, 0, 0, 0, 1, reference_frame=world.root),
+        target=Pose.from_xyz_quaternion(
+            -2.7, 0, 1, 0, 0, 0, 1, reference_frame=world.root
+        ),
         reachable=True,
         context=context,
         reachable_arm=...,

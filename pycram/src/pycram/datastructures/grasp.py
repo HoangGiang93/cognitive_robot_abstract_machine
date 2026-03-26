@@ -394,34 +394,24 @@ class PreferredGraspAlignment:
     Indicates if the gripper should be rotated by 90° around X.
     """
 
-@dataclass(eq=False, init=False)
-class GraspPose(Pose):
+@dataclass(eq=False)
+class GraspPose:
     """
     A pose from which a grasp can be performed along with the respective arm and grasp description.
+    """
+
+    pose: Pose
+    """
+    The pose from which a grasp can be performed.
     """
 
     arm: Arms = None
     """
     Arm corresponding to the grasp pose.
     """
+
     grasp_description: GraspDescription = None
     """
     Grasp description corresponding to the grasp pose.
     """
 
-    def __init__(
-            self,
-            position: Optional[Point3] = None,
-            orientation: Optional[Quaternion] = None,
-            reference_frame: Optional[KinematicStructureEntity] = None,
-            arm: Arms = None,
-            grasp_description: GraspDescription = None,
-        ):
-        super().__init__(position, orientation, reference_frame)
-        self.arm = arm
-        self.grasp_description = grasp_description
-
-    @classmethod
-    def from_pose(cls, pose: Pose, arm: Arms, grasp_description: GraspDescription):
-        return cls(position=pose.to_position(), orientation=pose.to_quaternion(), reference_frame=pose.reference_frame,
-                   arm=arm, grasp_description=grasp_description)

@@ -9,16 +9,6 @@ from krrood.ormatic.data_access_objects.alternative_mappings import (
 from sqlalchemy import TypeDecorator, types
 from typing_extensions import Optional
 
-from pycram.datastructures.dataclasses import ExecutionData
-from pycram.datastructures.enums import TaskStatus
-from pycram.designator import DesignatorDescription
-from pycram.failures import PlanFailure
-from pycram.plan import (
-    ActionDescriptionNode,
-    MotionNode,
-    PlanNode,
-    ActionNode,
-    DesignatorNode,)
 from pycram.datastructures.dataclasses import Context
 from pycram.plans.plan import (
     Plan,

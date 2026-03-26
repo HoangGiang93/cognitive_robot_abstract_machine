@@ -246,8 +246,8 @@ def test_reach_action_multi(immutable_multiple_robot_apartment):
             ParkArmsAction(Arms.BOTH),
             ReachAction(
                 target_pose=Pose(
-                Point3.from_iterable([1, -2, 0.8]), reference_frame=world.root
-            ),
+                    Point3.from_iterable([1, -2, 0.8]), reference_frame=world.root
+                ),
                 object_designator=milk_body,
                 arm=Arms.LEFT,
                 grasp_description=grasp_description,
@@ -463,17 +463,14 @@ def test_place_multi(mutable_multiple_robot_apartment):
 
 def test_look_at(immutable_multiple_robot_apartment):
     world, robot_view, context = immutable_multiple_robot_apartment
-    description = LookAtActionDescription(
-        [Pose(Point3.from_iterable([3, 0, 1]), reference_frame=world.root)]
+    description = LookAtAction(
+        Pose(Point3.from_iterable([3, 0, 1]), reference_frame=world.root)
     )
     assert np.allclose(
-        description.resolve().target.to_np(),
+        description.target.to_np(),
         Pose(Point3.from_iterable([3, 0, 1]), reference_frame=world.root).to_np(),
         atol=1e-3,
     )
-    world, robot, context = immutable_multiple_robot_apartment
-    description = LookAtAction(PoseStamped.from_list([3, 0, 1], frame=world.root))
-    assert description.target == PoseStamped.from_list([3, 0, 1], frame=world.root)
 
     plan = execute_single(description, context)
     with simulated_robot:
@@ -514,9 +511,10 @@ def test_open(immutable_multiple_robot_apartment):
             ParkArmsAction(Arms.BOTH),
             NavigateAction(
                 Pose(
-                Point3.from_iterable([1.6, 1.9, 0]),
-                Quaternion.from_iterable([0, 0, 0.3, 1]),
-                reference_frame=world.root,)
+                    Point3.from_iterable([1.6, 1.9, 0]),
+                    Quaternion.from_iterable([0, 0, 0.3, 1]),
+                    reference_frame=world.root,
+                )
             ),
             OpenAction(world.get_body_by_name("handle_cab10_m"), Arms.LEFT),
         ],
@@ -540,7 +538,11 @@ def test_close(immutable_multiple_robot_apartment):
             MoveTorsoAction(TorsoState.HIGH),
             ParkArmsAction(Arms.BOTH),
             NavigateAction(
-                PoseStamped.from_list([1.65, 2.0, 0], [0, 0, 0.4, 1], world.root)
+                Pose(
+                    Point3.from_iterable([1.65, 2.0, 0]),
+                    Quaternion.from_iterable([0, 0, 0.4, 1]),
+                    reference_frame=world.root,
+                )
             ),
             CloseAction(world.get_body_by_name("handle_cab10_m"), Arms.LEFT),
         ],
@@ -574,8 +576,10 @@ def test_transport(mutable_multiple_robot_apartment):
 
     description = TransportAction(
         object_designator=world.get_body_by_name("milk.stl"),
-        target_location=PoseStamped.from_list(
-            [3.1, 2.2, 0.95], [0.0, 0.0, 1.0, 0.0], world.root
+        target_location=Pose(
+            Point3.from_iterable([3.1, 2.2, 0.95]),
+            Quaternion.from_iterable([0.0, 0.0, 1.0, 0.0]),
+            reference_frame=world.root,
         ),
         arm=Arms.RIGHT,
     )

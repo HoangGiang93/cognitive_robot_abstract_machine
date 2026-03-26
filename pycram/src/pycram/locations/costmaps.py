@@ -13,20 +13,6 @@ from matplotlib import colors
 from skimage.measure import label
 from typing_extensions import Tuple, List, Optional, Iterator, Callable
 
-import random_events
-from probabilistic_model.probabilistic_circuit.rx.helper import uniform_measure_of_event
-from probabilistic_model.probabilistic_circuit.rx.probabilistic_circuit import (
-    ProbabilisticCircuit,
-)
-from pycram.datastructures.pose import PoseStamped
-from pycram.datastructures.pose import TransformStamped
-from pycram.tf_transformations import quaternion_from_euler, quaternion_multiply
-from random_events.interval import Interval, reals, closed_open, closed
-from random_events.product_algebra import Event, SimpleEvent
-from random_events.variable import Continuous
-from skimage.measure import label
-from typing_extensions import Tuple, List, Optional, Iterator, Callable
-
 from semantic_digital_twin.robots.abstract_robot import AbstractRobot
 from semantic_digital_twin.spatial_computations.raytracer import RayTracer
 from semantic_digital_twin.spatial_types import (
@@ -36,7 +22,6 @@ from semantic_digital_twin.spatial_types import (
 )
 from semantic_digital_twin.spatial_types.spatial_types import Pose, Point3, Vector3
 from semantic_digital_twin.world import World
-from semantic_digital_twin.world_description.geometry import Color
 from semantic_digital_twin.world_description.world_entity import Body
 
 logger = logging.getLogger(__name__)
@@ -139,11 +124,11 @@ class Costmap:
     """
     The distance in metre in the real-world which is represented by a single entry in the locations. 
     """
-    height: int
+    height: Optional[int] = field(kw_only=True, default=None)
     """
     Height of the locations.
     """
-    width: int
+    width: Optional[int] = field(kw_only=True, default=None)
     """
     Width of the locations.
     """
@@ -763,48 +748,42 @@ class VisibilityCostmap(Costmap):
         self.map = map
 
 
+@dataclass
 class GaussianCostmap(Costmap):
     """
     Gaussian Costmaps are 2D gaussian distributions around the origin with the given mean and sigma
     """
 
-    def __init__(
-        self,
-        mean: int,
-        sigma: float,
-        world: World,
-        resolution: Optional[float] = 0.02,
-        origin: Optional[Pose] = None,
-    ):
-        """
-        This Costmap creates a 2D gaussian distribution around the origin with
-        the specified size.
+    mean: int
+    """
+    The mean input for the gaussian distribution, this also specifies 
+    the length of the side of the resulting locations. The locations is Created
+    as a square.
+    """
 
-        :param mean: The mean input for the gaussian distribution, this also specifies
-            the length of the side of the resulting locations. The locations is Created
-            as a square.
-        :param sigma: The sigma input for the gaussian distribution.
-        :param resolution: The resolution of the locations, this specifies how much
-            meter a pixel represents.
-        :param origin: The origin of the locations around which it will be created.
-        """
-        self.gau: np.ndarray = self._gaussian_window(mean, sigma)
+    sigma: float
+    """
+    The sigma input for the gaussian distribution.
+    """
+
+    world: World
+    """
+    The world to use.
+    """
+
+    def __post_init__(self):
+        self.gau: np.ndarray = self._gaussian_window(self.mean, self.sigma)
         self.map: np.ndarray = np.outer(self.gau, self.gau)
-        cut_dist = int(0.05 * mean)
-        center = int(mean / 2)
+        cut_dist = int(0.05 * self.mean)
+        center = int(self.mean / 2)
         # Cuts out the middle 5% of the gaussian to avoid the robot being too close to the target since this is usually
         # bad for reaching the target with a manipulator. 15% is a magic number that might need some tuning in the future
         self.map[
             center - cut_dist : center + cut_dist, center - cut_dist : center + cut_dist
         ] = 0
-        self.size: float = mean
+        self.size: float = self.mean
         self.width = int(self.size)
         self.height = int(self.size)
-        self.resolution: float = resolution
-        self.world = world
-        self.origin: Pose = (
-            Pose(reference_frame=self.world.root) if not origin else origin
-        )
 
     def _gaussian_window(self, mean: int, std: float) -> np.ndarray:
         """

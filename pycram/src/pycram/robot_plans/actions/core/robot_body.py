@@ -8,8 +8,7 @@ from typing import Tuple, List
 from typing_extensions import Optional, Dict, Any
 
 from pycram.datastructures.enums import AxisIdentifier, Arms
-from pycram.datastructures.partial_designator import PartialDesignator
-from pycram.datastructures.pose import Vector3Stamped
+
 from pycram.datastructures.trajectory import PoseTrajectory
 from pycram.plans.factories import execute_single, sequential
 from pycram.robot_plans.actions.base import ActionDescription
@@ -197,17 +196,18 @@ class CarryAction(ActionDescription):
         tip_normal = self.axis_to_vector3_stamped(self.tip_axis, link=self.tip_link)
         root_normal = self.axis_to_vector3_stamped(self.root_axis, link=self.root_link)
 
-        SequentialPlan(
-            self.context,
-            MoveJointsMotion(
-                names=list(joint_poses.keys()),
-                positions=list(joint_poses.values()),
-                align=self.align,
-                tip_link=self.tip_link,
-                tip_normal=tip_normal,
-                root_link=self.root_link,
-                root_normal=root_normal,
-            ),
+        self.add_subplan(
+            execute_single(
+                MoveJointsMotion(
+                    names=list(joint_poses.keys()),
+                    positions=list(joint_poses.values()),
+                    align=self.align,
+                    tip_link=self.tip_link,
+                    tip_normal=tip_normal,
+                    root_link=self.root_link,
+                    root_normal=root_normal,
+                )
+            )
         ).perform()
 
     def get_joint_poses(self) -> Dict[str, float]:

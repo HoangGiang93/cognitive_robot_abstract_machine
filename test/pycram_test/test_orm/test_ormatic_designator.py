@@ -6,7 +6,6 @@ import pycram.alternative_motion_mappings.stretch_motion_mapping  # type: ignore
 import pycram.alternative_motion_mappings.tiago_motion_mapping  # type: ignore
 from krrood.ormatic.data_access_objects.helper import to_dao
 from pycram.datastructures.enums import Arms
-from pycram.datastructures.pose import PoseStamped
 from pycram.motion_executor import simulated_robot
 from pycram.orm.ormatic_interface import *  # type: ignore
 from pycram.plans.factories import sequential, execute_single
