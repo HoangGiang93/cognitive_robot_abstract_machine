@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import itertools
+import logging
 import os
 import tempfile
 import weakref
@@ -37,6 +38,8 @@ if TYPE_CHECKING:
     from semantic_digital_twin.world import World
 
 id_generator = IDGenerator()
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -342,9 +345,6 @@ class Mesh(Shape):
     Filename of the mesh.
     """
 
-    # def __post_init__(self):
-    #     self.mesh.apply_scale(self.scale.to_np())
-
     @property
     def local_frame_bounding_box(self) -> BoundingBox:
         """
@@ -518,7 +518,7 @@ class Mesh(Shape):
             tmp_path,
             os.path.join(dirname, f"{os.path.basename(tmp_path)}.mtl"),
         ]:
-            print(f"Cleaning up temporary file: {path}")
+            logger.debug(f"Cleaning up temporary file: {path}")
             try:
                 if os.path.exists(path):
                     os.remove(path)

@@ -6974,10 +6974,10 @@ class AddConnectionModificationDAO(
         use_existing_column=True,
     )
 
-    child_id: Mapped[typing.Optional[uuid.UUID]] = mapped_column(
+    original_child_id: Mapped[typing.Optional[uuid.UUID]] = mapped_column(
         sqlalchemy.sql.sqltypes.UUID, nullable=True, use_existing_column=True
     )
-    parent_id: Mapped[typing.Optional[uuid.UUID]] = mapped_column(
+    original_parent_id: Mapped[typing.Optional[uuid.UUID]] = mapped_column(
         sqlalchemy.sql.sqltypes.UUID, nullable=True, use_existing_column=True
     )
 
@@ -7012,18 +7012,21 @@ class AddDegreeOfFreedomModificationDAO(
         use_existing_column=True,
     )
 
-    original_dof_id: Mapped[typing.Optional[uuid.UUID]] = mapped_column(
+    original_degree_of_freedom_id: Mapped[typing.Optional[uuid.UUID]] = mapped_column(
         sqlalchemy.sql.sqltypes.UUID, nullable=True, use_existing_column=True
     )
 
-    dof_id: Mapped[int] = mapped_column(
+    degree_of_freedom_id: Mapped[int] = mapped_column(
         ForeignKey("DegreeOfFreedomDAO.database_id", use_alter=True),
         nullable=True,
         use_existing_column=True,
     )
 
-    dof: Mapped[DegreeOfFreedomDAO] = relationship(
-        "DegreeOfFreedomDAO", uselist=False, foreign_keys=[dof_id], post_update=True
+    degree_of_freedom: Mapped[DegreeOfFreedomDAO] = relationship(
+        "DegreeOfFreedomDAO",
+        uselist=False,
+        foreign_keys=[degree_of_freedom_id],
+        post_update=True,
     )
 
     __mapper_args__ = {

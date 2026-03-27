@@ -13,7 +13,10 @@ from krrood.adapters.json_serializer import (
     JSONAttributeDiff,
     list_like_classes,
 )
-from semantic_digital_twin.exceptions import MissingWorldModificationContextError
+from semantic_digital_twin.exceptions import (
+    MissingWorldModificationContextError,
+    MismatchingIDsInWorldModification,
+)
 from semantic_digital_twin.world_description.world_entity import (
     WorldEntityWithID,
     SemanticAnnotation,
@@ -100,8 +103,10 @@ class AddKinematicStructureEntityModification(WorldModification):
             not self.original_kinematic_structure_entity_id
             == self.kinematic_structure_entity.id
         ):
-            raise ValueError(
-                f"The ID of the KinematicStructureEntity sent to the server does not match the ID of the KinematicStructureEntity that was originally added. This is a bug in the server. The KinematicStructureEntity sent to the server has ID {self.kinematic_structure_entity.id} but the KinematicStructureEntity that was originally added has ID {self.original_kinematic_structure_entity_id}"
+            raise MismatchingIDsInWorldModification(
+                self.__class__,
+                [self.original_kinematic_structure_entity_id],
+                [self.kinematic_structure_entity.id],
             )
         world.add_kinematic_structure_entity(self.kinematic_structure_entity)
 
@@ -138,12 +143,12 @@ class AddConnectionModification(WorldModification):
     The connection that was added.
     """
 
-    child_id: Optional[UUID] = field(default=None)
-    parent_id: Optional[UUID] = field(default=None)
+    original_child_id: Optional[UUID] = field(default=None)
+    original_parent_id: Optional[UUID] = field(default=None)
 
     def __post_init__(self):
-        self.child_id = self.connection.child.id
-        self.parent_id = self.connection.parent.id
+        self.original_child_id = self.connection.child.id
+        self.original_parent_id = self.connection.parent.id
 
     @classmethod
     def from_kwargs(cls, kwargs: Dict[str, Any]):
@@ -151,11 +156,13 @@ class AddConnectionModification(WorldModification):
 
     def apply(self, world: World):
         if (
-            self.connection.parent.id != self.parent_id
-            or self.connection.child.id != self.child_id
+            self.connection.parent.id != self.original_parent_id
+            or self.connection.child.id != self.original_child_id
         ):
-            raise ValueError(
-                f"The parent and child IDs of the Connection sent to the server do not match the parent and child IDs of the Connection that was originally added. This is a bug in the server. The Connection sent to the server has parent ID {self.connection.parent.id} and child ID {self.connection.child.id} but the Connection that was originally added has parent ID {self.parent_id} and child ID {self.child_id}"
+            raise MismatchingIDsInWorldModification(
+                self.__class__,
+                [self.original_child_id, self.original_parent_id],
+                [self.connection.child.id, self.connection.parent.id],
             )
         world.add_connection(self.connection.copy_for_world(world))
 
@@ -192,26 +199,28 @@ class AddDegreeOfFreedomModification(WorldModification):
     Addition of a degree of freedom to the world.
     """
 
-    dof: DegreeOfFreedom
+    degree_of_freedom: DegreeOfFreedom
     """
     The degree of freedom that was added.
     """
 
-    original_dof_id: Optional[UUID] = field(default=None)
+    original_degree_of_freedom_id: Optional[UUID] = field(default=None)
 
     def __post_init__(self):
-        self.original_dof_id = self.dof.id
+        self.original_degree_of_freedom_id = self.degree_of_freedom.id
 
     @classmethod
     def from_kwargs(cls, kwargs: Dict[str, Any]):
-        return cls(dof=kwargs["dof"])
+        return cls(degree_of_freedom=kwargs["dof"])
 
     def apply(self, world: World):
-        if not self.original_dof_id == self.dof.id:
-            raise ValueError(
-                f"The ID of the DegreeOfFreedom sent to the server does not match the ID of the DegreeOfFreedom that was originally added. This is a bug in the server. The DegreeOfFreedom sent to the server has ID {self.dof.id} but the DegreeOfFreedom that was originally added has ID {self.original_dof_id}"
+        if not self.original_degree_of_freedom_id == self.degree_of_freedom.id:
+            raise MismatchingIDsInWorldModification(
+                self.__class__,
+                [self.original_degree_of_freedom_id],
+                [self.degree_of_freedom.id],
             )
-        world.add_degree_of_freedom(self.dof)
+        world.add_degree_of_freedom(self.degree_of_freedom)
 
 
 @dataclass
@@ -287,9 +296,12 @@ class AddActuatorModification(WorldModification):
 
     def apply(self, world: World):
         if not self.original_actuator_id == self.actuator.id:
-            raise ValueError(
-                f"The ID of the Actuator sent to the server does not match the ID of the Actuator that was originally added. This is a bug in the server. The Actuator sent to the server has ID {self.actuator.id} but the Actuator that was originally added has ID {self.original_actuator_id}"
+            raise MismatchingIDsInWorldModification(
+                self.__class__,
+                [self.original_actuator_id],
+                [self.actuator.id],
             )
+
         world.add_actuator(self.actuator)
 
 

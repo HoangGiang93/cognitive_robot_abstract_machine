@@ -1144,10 +1144,14 @@ class World(HasSimulatorProperties):
         :param pose: world_root_T_other_root, the pose of the other world's root with respect to the current world's root
         """
         with self.modify_world():
+            other_root_id = other.root.id
             root_connection = Connection6DoF.create_with_dofs(
                 parent=self.root, child=other.root, world=self
             )
             self.merge_world(other, root_connection)
+        root_connection = self.get_kinematic_structure_entity_by_id(
+            other_root_id
+        ).parent_connection
         root_connection.origin = pose
 
     def merge_world(
@@ -1174,23 +1178,10 @@ class World(HasSimulatorProperties):
             for modification in other._model_manager.model_modification_blocks:
                 modification.apply(self)
 
-            # Transfer the state entries using DOF UUIDs (WorldState iterates over UUIDs)
-            for dof_id in other_state:
-                self_state_dof = self.state[dof_id]
-                other_state_dof = other_state[dof_id]
-                self_state_dof.position = other_state_dof.position
-                self_state_dof.velocity = other_state_dof.velocity
-                self_state_dof.acceleration = other_state_dof.acceleration
-                self_state_dof.jerk = other_state_dof.jerk
+            self.state.merge_state(other_state)
 
             if root_connection is not None:
-                child_id = root_connection.child.id
-                child = self.get_kinematic_structure_entity_by_id(child_id)
-                parent_id = root_connection.parent.id
-                parent = self.get_kinematic_structure_entity_by_id(parent_id)
-                root_connection.parent = parent
-                root_connection.child = child
-                root_connection.parent_T_connection_expression.reference_frame = parent
+                root_connection = root_connection.copy_for_world(self)
 
             if not root_connection and self_root:
                 other_root = self.get_kinematic_structure_entity_by_id(other_root_id)
