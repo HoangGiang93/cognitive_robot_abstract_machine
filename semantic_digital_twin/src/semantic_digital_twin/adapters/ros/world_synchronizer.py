@@ -10,7 +10,7 @@ from uuid import UUID
 import numpy as np
 import rclpy  # type: ignore
 import std_msgs.msg
-from krrood.ormatic.dao import to_dao
+from krrood.ormatic.data_access_objects.helper import to_dao
 from krrood.adapters.json_serializer import from_json, to_json
 from rclpy.node import Node as RosNode
 from rclpy.publisher import Publisher
