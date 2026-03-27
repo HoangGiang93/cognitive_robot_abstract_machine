@@ -153,6 +153,9 @@ class CollectionReaderAnnotator(robokudo.annotators.core.BaseAnnotator):
 
             # Create a fresh CAS for the pipeline
             pipeline.create_new_cas()
+            self.rk_logger.debug(
+                f"{self.__class__.__name__}.update(): New CAS id={pipeline.cas.cas_id}"
+            )
 
             # Create a fresh world
             robokudo.world.clear_world()
