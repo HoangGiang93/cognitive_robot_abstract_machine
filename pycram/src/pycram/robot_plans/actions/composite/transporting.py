@@ -31,10 +31,9 @@ from typing_extensions import Union, Optional, Type, Any, Iterable
 
 from pycram.config.action_conf import ActionConfig
 from pycram.datastructures.enums import Arms, Grasp, VerticalAlignment
-from pycram.datastructures.grasp import GraspDescription
+from pycram.datastructures.grasp import GraspDescription, GraspPose
 
-
-from pycram.failures import ConfigurationNotReached
+from pycram.failures import ConfigurationNotReached, BodyUnfetchable
 from pycram.robot_plans.actions.base import ActionDescription
 
 
@@ -103,9 +102,7 @@ class TransportAction(ActionDescription):
         pickup_pose = pickup_loc.ground()
 
         if not pickup_pose:
-            raise ObjectUnfetchable(
-                f"Found no pose for the robot to grasp the object: {self.object_designator} with arm: {self.arm}"
-            )
+            raise BodyUnfetchable(self.object_designator, self.arm)
 
         self.add_subplan(
             sequential(
@@ -125,20 +122,11 @@ class TransportAction(ActionDescription):
             )
         ).perform()
 
-        self.add_subplan(
-            sequential(
-                [
-                    PlaceAction(
-                        self.object_designator, self.target_location, pickup_pose.arm
-                    ),
-                    ParkArmsAction(Arms.BOTH),
-                ]
-            )
-        ).perform()
+        self.add_subplan(self._make_place_plan(pickup_pose)).perform()
 
     def _make_place_plan(self, pickup_pose: GraspPose):
 
-        return underspecified(sequential)(
+        return sequential(
             children=[
                 self._make_navigate_action_for_placing(pickup_pose.grasp_description),
                 PlaceAction(

@@ -5,7 +5,8 @@ from dataclasses import dataclass
 from typing_extensions import TYPE_CHECKING
 
 from krrood.utils import DataclassException
-
+from pycram.datastructures.enums import Arms
+from semantic_digital_twin.world_description.world_entity import Body
 
 if TYPE_CHECKING:
     from pycram.datastructures.pose import PoseStamped
@@ -86,3 +87,23 @@ class NavigationGoalNotReachedError(PlanFailure):
 
     def __post_init__(self):
         self.message = f"Navigation goal not reached. Current pose: {self.current_pose}, goal pose: {self.goal_pose}"
+
+
+@dataclass
+class BodyUnfetchable(PlanFailure):
+    """
+    Raised when a body cannot be fetched from an arm.
+    """
+
+    body: Body
+    """
+    The body that cannot be fetched.
+    """
+
+    arm: Arms
+    """
+    The arm from which the body cannot be fetched.
+    """
+
+    def __post_init__(self):
+        self.message = f"Body {self.body} not fetchable from arm {self.arm}"

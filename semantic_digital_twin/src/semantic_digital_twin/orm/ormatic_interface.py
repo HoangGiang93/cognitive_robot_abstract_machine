@@ -57,6 +57,7 @@ import semantic_digital_twin.robots.stretch
 import semantic_digital_twin.robots.tiago
 import semantic_digital_twin.robots.tracy
 import semantic_digital_twin.robots.turtlebot
+import semantic_digital_twin.robots.unitree_g1
 import semantic_digital_twin.robots.ur5
 import semantic_digital_twin.robots.ur5e_controlled
 import semantic_digital_twin.semantic_annotations.mixins
@@ -1102,6 +1103,19 @@ class UR5ControlledDAO_arms_association(Base, AssociationDataAccessObject):
     database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     source_ur5controlleddao_id: Mapped[int] = mapped_column(
         ForeignKey("UR5ControlledDAO.database_id")
+    )
+    target_armdao_id: Mapped[int] = mapped_column(ForeignKey("ArmDAO.database_id"))
+
+    target: Mapped[ArmDAO] = relationship("ArmDAO", foreign_keys=[target_armdao_id])
+
+
+class UnitreeG1DAO_arms_association(Base, AssociationDataAccessObject):
+
+    __tablename__ = "_40071923731265936325691406219028504139085995168256482252910029"
+
+    database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    source_unitreeg1dao_id: Mapped[int] = mapped_column(
+        ForeignKey("UnitreeG1DAO.database_id")
     )
     target_armdao_id: Mapped[int] = mapped_column(ForeignKey("ArmDAO.database_id"))
 
@@ -8669,6 +8683,41 @@ class UR5ControlledDAO(
 
     __mapper_args__ = {
         "polymorphic_identity": "UR5ControlledDAO",
+        "inherit_condition": database_id == AbstractRobotDAO.database_id,
+    }
+
+
+class UnitreeG1DAO(
+    AbstractRobotDAO,
+    DataAccessObject[semantic_digital_twin.robots.unitree_g1.UnitreeG1],
+):
+
+    __tablename__ = "UnitreeG1DAO"
+
+    database_id: Mapped[builtins.int] = mapped_column(
+        ForeignKey(AbstractRobotDAO.database_id),
+        primary_key=True,
+        use_existing_column=True,
+    )
+
+    neck_id: Mapped[int] = mapped_column(
+        ForeignKey("NeckDAO.database_id", use_alter=True),
+        nullable=True,
+        use_existing_column=True,
+    )
+
+    neck: Mapped[NeckDAO] = relationship(
+        "NeckDAO", uselist=False, foreign_keys=[neck_id], post_update=True
+    )
+    arms: Mapped[builtins.list[UnitreeG1DAO_arms_association]] = relationship(
+        "UnitreeG1DAO_arms_association",
+        collection_class=builtins.list,
+        cascade="all, delete-orphan",
+        foreign_keys="[UnitreeG1DAO_arms_association.source_unitreeg1dao_id]",
+    )
+
+    __mapper_args__ = {
+        "polymorphic_identity": "UnitreeG1DAO",
         "inherit_condition": database_id == AbstractRobotDAO.database_id,
     }
 
