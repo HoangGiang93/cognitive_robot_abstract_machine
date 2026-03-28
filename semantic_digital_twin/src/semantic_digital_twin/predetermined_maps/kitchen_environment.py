@@ -69,6 +69,22 @@ class KitchenEnvironment:
             x=0.33, y=0.28, yaw=0.10707963267
         )
 
+        north_west_wall = Cylinder(width=1.53, height=3.00)
+        shape_geometry = ShapeCollection([north_west_wall])
+        north_west_wall_body = Body(
+            name=PrefixedName("north_west_wall_body"),
+            collision=shape_geometry,
+            visual=shape_geometry,
+        )
+
+        root_C_north_west_wall = FixedConnection(
+            parent=root,
+            child=north_west_wall_body,
+            parent_T_connection_expression=root_transformation @ HomogeneousTransformationMatrix.from_xyz_rpy(
+                x=4.924, y=6.295, z=1.50
+            ),
+        )
+
         with world.modify_world():
             south_wall1 = Wall.create_with_new_body_in_world(
                 world=world,
@@ -169,23 +185,6 @@ class KitchenEnvironment:
                 scale=Scale(0.05, 8.04, 3.00),
             )
 
-        north_west_wall = Cylinder(width=1.53, height=3.00)
-        shape_geometry = ShapeCollection([north_west_wall])
-        north_west_wall_body = Body(
-            name=PrefixedName("north_west_wall_body"),
-            collision=shape_geometry,
-            visual=shape_geometry,
-        )
-
-        root_C_north_west_wall = FixedConnection(
-            parent=root,
-            child=north_west_wall_body,
-            parent_T_connection_expression=root_transformation @ HomogeneousTransformationMatrix.from_xyz_rpy(
-                x=4.924, y=6.295, z=1.50
-            ),
-        )
-
-        with world.modify_world():
             world.add_connection(root_C_north_west_wall)
             return world
 
@@ -229,7 +228,7 @@ class KitchenEnvironment:
                 scale=cupboard_scale,
                 wall_thickness=0.02,
             )
-            # Connect the cupboard tp 'root' , to ensure that the coordinates are relative to the room
+            # Connect the cupboard to 'root', to ensure that the coordinates are relative to the room
             cupboard_connection = cupboard.root.parent_connection
             world.remove_connection(cupboard_connection)
             cupboard_connection.parent = root
