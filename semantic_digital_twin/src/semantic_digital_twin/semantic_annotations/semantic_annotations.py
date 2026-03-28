@@ -779,7 +779,7 @@ class Vegetable(Produce):
 
 
 @dataclass(eq=False)
-class Tomato(Vegetable):
+class Tomato(Fruit):
     """
     A tomato.
     """
