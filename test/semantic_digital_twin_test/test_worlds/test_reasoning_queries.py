@@ -1,7 +1,7 @@
-from semantic_digital_twin.predetermined_maps.kitchen_environment import KitchenEnvironment, Publisher
+from semantic_digital_twin.predetermined_maps.kitchen_environment import KitchenEnvironment
 from semantic_digital_twin.reasoning.queries import query_semantic_annotations_on_surfaces, \
     query_get_next_object_euclidean_x_y, query_surface_of_most_similar_obj, query_annotations_by_color, \
-    query_class_by_label, query_sort_by_size
+    query_class_by_label, query_sort_by_volume
 from semantic_digital_twin.semantic_annotations.semantic_annotations import *
 from semantic_digital_twin.world import World
 from semantic_digital_twin.world_description.geometry import Color
@@ -12,8 +12,6 @@ def test_load_environment_returns_world():
     Tests that loading the environment returns a World object with the correct root name.
     """
     world = KitchenEnvironment().get_world()
-    publisher = Publisher("semantic_digital_twin")
-    publisher.publish(world)
     assert isinstance(world, World)
     assert world.root.name == PrefixedName("root")
 
@@ -130,9 +128,9 @@ def test_query_class_by_label():
     assert query_class_by_label("unknown_object") is None
 
 
-def test_query_sort_by_size(kitchen_environment_fixture):
+def test_query_sort_by_volume(kitchen_environment_fixture):
     """
-    Tests the query_sort_by_size function by verifying the order of the returned annotations.
+    Tests the query_sort_by_volume function by verifying the order of the returned annotations.
     """
     table1 = kitchen_environment_fixture.get_semantic_annotation_by_name("fruit_table")
     table2 = kitchen_environment_fixture.get_semantic_annotation_by_name("vegetable_table")
@@ -141,8 +139,8 @@ def test_query_sort_by_size(kitchen_environment_fixture):
     carrot = kitchen_environment_fixture.get_semantic_annotation_by_name("carrot")
     lettuce = kitchen_environment_fixture.get_semantic_annotation_by_name("lettuce")
 
-    assert query_sort_by_size([]) ==[]
-    assert query_sort_by_size([apple, carrot]) == [apple, carrot]
-    assert query_sort_by_size([table1, lettuce, apple]) == [table1, lettuce, apple]
-    assert query_sort_by_size([table1, lettuce, apple], False) == [apple, lettuce, table1]
-    assert query_sort_by_size(query_semantic_annotations_on_surfaces([table2], kitchen_environment_fixture).tolist()) == [lettuce, carrot]
+    assert query_sort_by_volume([]) ==[]
+    assert query_sort_by_volume([apple, carrot]) == [apple, carrot]
+    assert query_sort_by_volume([table1, lettuce, apple]) == [table1, lettuce, apple]
+    assert query_sort_by_volume([table1, lettuce, apple], False) == [apple, lettuce, table1]
+    assert query_sort_by_volume(query_semantic_annotations_on_surfaces([table2], kitchen_environment_fixture).tolist()) == [lettuce, carrot]

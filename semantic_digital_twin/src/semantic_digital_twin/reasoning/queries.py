@@ -179,7 +179,7 @@ def query_class_by_label(label: str) -> Optional[type]:
     return None if matching_class.tolist() == [] else matching_class.first()
 
 
-def query_sort_by_size(annotations: List[HasRootBody], order: Optional[bool]=True) -> List[SemanticAnnotation]:
+def query_sort_by_volume(annotations: List[HasRootBody], order: Optional[bool]=True) -> List[HasRootBody]:
     """
     Sorts a list of SemanticAnnotations by volume in descending order (largest to smallest).
     Volume is calculated by multiplying the scale dimensions (x * y * z) of the object's shape.

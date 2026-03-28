@@ -380,7 +380,7 @@ class Table(Furniture, HasSupportingSurface):
 
 
 @dataclass(eq=False)
-class Counter_Top(Furniture, HasSupportingSurface):
+class CounterTop(Furniture, HasSupportingSurface):
     """
     A semantic annotation that represents a counter top.
     """
@@ -653,7 +653,7 @@ class Bowl(HasSupportingSurface, IsPerceivable):
 
 # Food Items
 @dataclass(eq=False)
-class Food(HasRootBody): ...
+class Food(HasRootBody, IsPerceivable): ...
 
 
 @dataclass(eq=False)
@@ -707,7 +707,7 @@ class TomatoSoup(Food):
 
 
 @dataclass(eq=False)
-class Candy(Food, IsPerceivable):
+class Candy(Food):
     """
     A candy.
     """
@@ -716,7 +716,7 @@ class Candy(Food, IsPerceivable):
 
 
 @dataclass(eq=False)
-class Noodles(Food, IsPerceivable):
+class Noodles(Food):
     """
     A container of noodles.
     """
@@ -725,7 +725,7 @@ class Noodles(Food, IsPerceivable):
 
 
 @dataclass(eq=False)
-class Cereal(Food, IsPerceivable):
+class Cereal(Food):
     """
     A container of cereal.
     """
@@ -734,7 +734,7 @@ class Cereal(Food, IsPerceivable):
 
 
 @dataclass(eq=False)
-class Milk(Food, IsPerceivable):
+class Milk(Food):
     """
     A container of milk.
     """
@@ -743,7 +743,7 @@ class Milk(Food, IsPerceivable):
 
 
 @dataclass(eq=False)
-class SaltContainer(HasRootBody, IsPerceivable):
+class SaltContainer(HasRootBody):
     """
     A container of salt.
     """
@@ -814,14 +814,14 @@ class Banana(Fruit):
 
 
 @dataclass(eq=False)
-class Orange(Fruit, IsPerceivable):
+class Orange(Fruit):
     """
     An orange.
     """
 
 
 @dataclass(eq=False)
-class Salt(Food, IsPerceivable):
+class Salt(Food):
     """
     A pack or container of salt (e.g., salt shaker or salt can).
     """

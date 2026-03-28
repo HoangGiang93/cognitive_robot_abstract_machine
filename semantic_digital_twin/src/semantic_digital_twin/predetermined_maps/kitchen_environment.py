@@ -5,7 +5,7 @@ from semantic_digital_twin.semantic_annotations.semantic_annotations import (
     Table,
     Sofa,
     TrashCan,
-    Fridge, Counter_Top, Wall, Cabinet,
+    Fridge, CounterTop, Wall, Cabinet,
     Cupboard,
     Door,
     Desk,
@@ -445,7 +445,7 @@ class KitchenEnvironment:
                 scale=Scale(x=0.60, y=0.658, z=1.49),
             )
 
-            counterTop = Counter_Top.create_with_new_body_in_world(
+            counterTop = CounterTop.create_with_new_body_in_world(
                 world=world,
                 name=PrefixedName("counterTop"),
                 world_root_T_self= root_transformation @ HomogeneousTransformationMatrix.from_xyz_rpy(x=1.859, y=-2.181, z=0.2725),
