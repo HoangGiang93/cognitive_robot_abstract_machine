@@ -71,14 +71,14 @@ class GLTFLoader(Step):
         self, parent_node: str, child_node: str
     ) -> HomogeneousTransformationMatrix:
         """Determine the transformation from a parent node to its child."""
-        parent_transform, _ = self.scene.graph.get(parent_node)
-        child_transform, _ = self.scene.graph.get(child_node)
+        world_T_parent, _ = self.scene.graph.get(parent_node)
+        world_T_child, _ = self.scene.graph.get(child_node)
 
-        # Compute relative transform: parent_inv @ child
-        parent_inv = np.linalg.inv(parent_transform)
-        relative = parent_inv @ child_transform
+        # Compute relative transform: parent_T_child = parent_T_world @ world_T_child
+        parent_T_world = np.linalg.inv(world_T_parent)
+        parent_T_child = parent_T_world @ world_T_child
 
-        return HomogeneousTransformationMatrix(relative)
+        return HomogeneousTransformationMatrix(parent_T_child)
 
     def _trimesh_to_body(self, mesh: trimesh.Trimesh, name: str) -> Body:
         """Create a Body representation from a trimesh object."""
