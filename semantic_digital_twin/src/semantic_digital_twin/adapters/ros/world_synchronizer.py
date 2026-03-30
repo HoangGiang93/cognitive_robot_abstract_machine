@@ -10,7 +10,7 @@ from uuid import UUID
 import numpy as np
 import rclpy  # type: ignore
 import std_msgs.msg
-from krrood.ormatic.dao import to_dao
+from krrood.ormatic.data_access_objects.helper import to_dao
 from krrood.adapters.json_serializer import from_json, to_json
 from rclpy.node import Node as RosNode
 from rclpy.publisher import Publisher
@@ -26,13 +26,18 @@ from semantic_digital_twin.adapters.ros.messages import (
     LoadModel,
     Acknowledgment,
 )
-from semantic_digital_twin.adapters.world_entity_kwargs_tracker import WorldEntityWithIDKwargsTracker
-from semantic_digital_twin.callbacks.callback import Callback, StateChangeCallback, ModelChangeCallback
+from semantic_digital_twin.adapters.world_entity_kwargs_tracker import (
+    WorldEntityWithIDKwargsTracker,
+)
+from semantic_digital_twin.callbacks.callback import (
+    Callback,
+    StateChangeCallback,
+    ModelChangeCallback,
+)
 from semantic_digital_twin.exceptions import MissingPublishChangesKWARG
 from semantic_digital_twin.orm.ormatic_interface import *
 from semantic_digital_twin.world import World
 from semantic_digital_twin.world_description.world_entity import (
-    WorldEntityWithClassBasedID,
     WorldEntityWithID,
 )
 
