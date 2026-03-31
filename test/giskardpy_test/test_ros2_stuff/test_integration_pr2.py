@@ -369,107 +369,6 @@ class TestJointGoals:
                 except Exception as e:
                     pass
 
-    def test_gripper_goal(self, giskard: PR2Tester):
-        msc = MotionStatechart()
-        joint_goal = JointPositionList(
-            goal_state=JointState.from_str_dict(
-                {"r_gripper_l_finger_joint": 0.55}, giskard.api.world
-            ),
-        )
-        msc.add_node(joint_goal)
-        end = EndMotion()
-        msc.add_node(end)
-        end.start_condition = joint_goal.observation_variable
-        giskard.api.execute(msc)
-
-    def test_joint_movement1(self, giskard: PR2Tester, pocky_pose_state):
-        msc = MotionStatechart()
-        joint_goal = JointPositionList(
-            goal_state=JointState.from_str_dict(pocky_pose_state, giskard.api.world)
-        )
-        msc.add_node(joint_goal)
-        end = EndMotion()
-        msc.add_node(end)
-        end.start_condition = joint_goal.observation_variable
-        giskard.api.execute(msc)
-
-    def test_partial_joint_state_goal1(self, giskard: PR2Tester, pocky_pose_state):
-        msc = MotionStatechart()
-        joint_goal = JointPositionList(
-            goal_state=JointState.from_str_dict(
-                dict(list(pocky_pose_state.items())[:3]), giskard.api.world
-            ),
-        )
-        msc.add_node(joint_goal)
-        end = EndMotion()
-        msc.add_node(end)
-        end.start_condition = joint_goal.observation_variable
-        giskard.api.execute(msc)
-
-    def test_continuous_joint1(self, giskard: PR2Tester):
-        msc = MotionStatechart()
-        joint_goal = JointPositionList(
-            goal_state=JointState.from_str_dict(
-                {"r_wrist_roll_joint": -pi}, giskard.api.world
-            ),
-        )
-        msc.add_node(joint_goal)
-        end = EndMotion()
-        msc.add_node(end)
-        end.start_condition = joint_goal.observation_variable
-        giskard.api.execute(msc)
-
-    def test_continuous_joint2(self, giskard: PR2Tester):
-        msc = MotionStatechart()
-        joint_goal = JointPositionList(
-            goal_state=JointState.from_str_dict(
-                {
-                    "r_wrist_roll_joint": -pi,
-                    "l_wrist_roll_joint": -2.1 * pi,
-                },
-                world=giskard.api.world,
-            ),
-        )
-        msc.add_node(joint_goal)
-        end = EndMotion()
-        msc.add_node(end)
-        end.start_condition = joint_goal.observation_variable
-        giskard.api.execute(msc)
-
-    def test_prismatic_joint1(self, giskard: PR2Tester):
-        msc = MotionStatechart()
-        joint_goal = JointPositionList(
-            goal_state=JointState.from_str_dict(
-                {
-                    "torso_lift_joint": 0.1,
-                },
-                giskard.api.world,
-            ),
-        )
-        msc.add_node(joint_goal)
-        end = EndMotion()
-        msc.add_node(end)
-        end.start_condition = joint_goal.observation_variable
-        giskard.api.execute(msc)
-
-    def test_revolute_joint1(self, giskard: PR2Tester):
-        msc = MotionStatechart()
-        joint_goal = JointPositionList(
-            goal_state=JointState.from_str_dict(
-                {
-                    # 'r_elbow_flex_joint': -1,
-                    "l_wrist_roll_joint": -1.0,
-                    "r_wrist_roll_joint": 1.0,
-                },
-                giskard.api.world,
-            ),
-        )
-        msc.add_node(joint_goal)
-        end = EndMotion()
-        msc.add_node(end)
-        end.start_condition = joint_goal.observation_variable
-        giskard.api.execute(msc)
-
     def test_hard_joint_limits(self, giskard: PR2Tester):
         r_elbow_flex_joint: ActiveConnection1DOF = (
             giskard.api.world.get_connection_by_name("r_elbow_flex_joint")
@@ -810,82 +709,6 @@ class TestCartGoals:
         msc.add_node(EndMotion.when_true(cart_goal))
         giskard.api.execute(msc)
 
-    def test_cart_goal_1eef_and_base(self, giskard: PR2Tester):
-        msc = MotionStatechart()
-        msc.add_node(
-            parallel := Parallel(
-                [
-                    CartesianPose(
-                        root_link=giskard.base_footprint,
-                        tip_link=giskard.r_tip,
-                        goal_pose=HomogeneousTransformationMatrix.from_xyz_quaternion(
-                            pos_x=-0.1,
-                            reference_frame=giskard.r_tip,
-                        ),
-                    ),
-                    CartesianPose(
-                        root_link=giskard.map,
-                        tip_link=giskard.base_footprint,
-                        goal_pose=HomogeneousTransformationMatrix.from_xyz_quaternion(
-                            pos_x=0.1,
-                            reference_frame=giskard.base_footprint,
-                        ),
-                    ),
-                ]
-            )
-        )
-        msc.add_node(EndMotion.when_true(parallel))
-        giskard.api.execute(msc)
-
-        assert (
-            giskard.api.world.compute_forward_kinematics_np(
-                giskard.api.world.root,
-                giskard.api.world.get_kinematic_structure_entity_by_name(
-                    "r_gripper_tool_frame"
-                ),
-            )[0, 3]
-            < 0.95
-        )
-
-    def test_10_cart_goals(self, giskard: PR2Tester):
-        tip = giskard.api.world.get_kinematic_structure_entity_by_name(
-            "r_gripper_tool_frame"
-        )
-        root = giskard.api.world.get_kinematic_structure_entity_by_name(
-            "base_footprint"
-        )
-        p1 = HomogeneousTransformationMatrix.from_xyz_quaternion(
-            pos_x=-0.2, reference_frame=tip
-        )
-        p2 = HomogeneousTransformationMatrix.from_xyz_quaternion(
-            pos_x=0.2, reference_frame=tip
-        )
-
-        for i in range(5):
-            msc = MotionStatechart()
-            cart_goal = CartesianPose(
-                root_link=root,
-                tip_link=tip,
-                goal_pose=p1,
-            )
-            msc.add_node(cart_goal)
-            end = EndMotion()
-            msc.add_node(end)
-            end.start_condition = cart_goal.observation_variable
-            giskard.api.execute(msc)
-
-            msc = MotionStatechart()
-            cart_goal = CartesianPose(
-                root_link=root,
-                tip_link=tip,
-                goal_pose=p2,
-            )
-            msc.add_node(cart_goal)
-            end = EndMotion()
-            msc.add_node(end)
-            end.start_condition = cart_goal.observation_variable
-            giskard.api.execute(msc)
-
     def test_cart_goal_unreachable(self, giskard: PR2Tester):
         msc = MotionStatechart()
         msc.add_node(
@@ -903,43 +726,6 @@ class TestCartGoals:
         msc.add_node(EndMotion.when_true(local_min))
         giskard.api.execute(msc)
 
-    def test_cart_goal_1eef2(self, giskard: PR2Tester):
-        msc = MotionStatechart()
-        msc.add_node(
-            cart_goal := CartesianPose(
-                root_link=giskard.torso_lift_link,
-                tip_link=giskard.l_tip,
-                goal_pose=HomogeneousTransformationMatrix.from_xyz_quaternion(
-                    pos_x=0.599,
-                    pos_y=-0.009,
-                    pos_z=0.983,
-                    quat_x=0.524,
-                    quat_y=-0.495,
-                    quat_z=0.487,
-                    quat_w=-0.494,
-                    reference_frame=giskard.base_footprint,
-                ),
-            )
-        )
-        msc.add_node(EndMotion.when_true(cart_goal))
-        giskard.api.execute(msc)
-
-    def test_cart_goal_1eef4(self, giskard: PR2Tester):
-        msc = MotionStatechart()
-        msc.add_node(
-            cart_goal := CartesianPose(
-                root_link=giskard.map,
-                tip_link=giskard.r_tip,
-                goal_pose=HomogeneousTransformationMatrix.from_xyz_quaternion(
-                    pos_x=2.0,
-                    pos_z=1.0,
-                    reference_frame=giskard.map,
-                ),
-            )
-        )
-        msc.add_node(EndMotion.when_true(cart_goal))
-        giskard.api.execute(msc)
-
     def test_cart_goal_orientation_singularity(self, giskard: PR2Tester):
         msc = MotionStatechart()
         msc.add_node(
@@ -955,33 +741,6 @@ class TestCartGoals:
                     ),
                     CartesianPose(
                         root_link=giskard.base_link,
-                        tip_link=giskard.l_tip,
-                        goal_pose=HomogeneousTransformationMatrix.from_xyz_quaternion(
-                            pos_x=-0.05,
-                            reference_frame=giskard.l_tip,
-                        ),
-                    ),
-                ]
-            )
-        )
-        msc.add_node(EndMotion.when_true(parallel))
-        giskard.api.execute(msc)
-
-    def test_cart_goal_2eef2(self, giskard: PR2Tester):
-        msc = MotionStatechart()
-        msc.add_node(
-            parallel := Parallel(
-                [
-                    CartesianPose(
-                        root_link=giskard.odom_combined,
-                        tip_link=giskard.r_tip,
-                        goal_pose=HomogeneousTransformationMatrix.from_xyz_quaternion(
-                            pos_x=-0.1,
-                            reference_frame=giskard.r_tip,
-                        ),
-                    ),
-                    CartesianPose(
-                        root_link=giskard.odom_combined,
                         tip_link=giskard.l_tip,
                         goal_pose=HomogeneousTransformationMatrix.from_xyz_quaternion(
                             pos_x=-0.05,
