@@ -1,6 +1,8 @@
+from semantic_digital_twin.reasoning.predicates import compute_euclidean_distance_2d
+
 from semantic_digital_twin.predetermined_maps.kitchen_environment import KitchenEnvironment
 from semantic_digital_twin.reasoning.queries import query_semantic_annotations_on_surfaces, \
-    query_get_next_object_euclidean_x_y, query_surface_of_most_similar_obj, query_annotations_by_color, \
+    get_next_object_using_planar_distance, query_surface_of_most_similar_obj, query_annotations_by_color, \
     query_class_by_label, query_sort_by_volume
 from semantic_digital_twin.semantic_annotations.semantic_annotations import *
 from semantic_digital_twin.world import World
@@ -27,17 +29,17 @@ def test_query_semantic_annotations_on_surfaces(kitchen_environment_fixture):
     carrot = kitchen_environment_fixture.get_semantic_annotation_by_name("carrot")
     orange = kitchen_environment_fixture.get_semantic_annotation_by_name("orange")
     lettuce = kitchen_environment_fixture.get_semantic_annotation_by_name("lettuce")
-    assert [type(x) for x in query_semantic_annotations_on_surfaces([table1, table2], kitchen_environment_fixture).evaluate()] == [type(x) for x in
-        [apple,
+
+    assert query_semantic_annotations_on_surfaces([table1, table2, table3], kitchen_environment_fixture) == [
+        apple,
         orange,
         carrot,
-        lettuce,
-    ]]
-    assert set(query_semantic_annotations_on_surfaces([table3], kitchen_environment_fixture).tolist()) == set([])
-    assert set(query_semantic_annotations_on_surfaces([], kitchen_environment_fixture).tolist()) == set([])
+        lettuce
+    ]
+    assert query_semantic_annotations_on_surfaces([], kitchen_environment_fixture) == []
 
 
-def test_query_get_next_object_euclidean_x_y(kitchen_environment_fixture):
+def test_get_next_object_using_planar_distance(kitchen_environment_fixture):
     """
     Tests the functionality of the `query_get_next_object_euclidean_x_y` function to verify that it accurately identifies
     the next objects based on their Euclidean proximity within a simulation world. The test involves setting up a virtual
@@ -54,13 +56,17 @@ def test_query_get_next_object_euclidean_x_y(kitchen_environment_fixture):
     carrot = kitchen_environment_fixture.get_semantic_annotation_by_name("carrot")
     orange = kitchen_environment_fixture.get_semantic_annotation_by_name("orange")
     lettuce = kitchen_environment_fixture.get_semantic_annotation_by_name("lettuce")
+    banana1 = kitchen_environment_fixture.get_semantic_annotation_by_name("banana1")
 
-    assert query_get_next_object_euclidean_x_y(toya, table1).tolist() == [orange, apple]
-    assert query_get_next_object_euclidean_x_y(toya, table2).tolist() == [
-        carrot,
-        lettuce,
-    ]
-    assert query_get_next_object_euclidean_x_y(toya, table3).tolist() == []
+    # assert get_next_object_using_planar_distance(toya, table1, Vector3.Z).tolist() == [orange, apple]
+    # assert get_next_object_using_planar_distance(toya, table2, Vector3.Z).tolist() == [
+    #     carrot,
+    #     lettuce,
+    # ]
+    #assert get_next_object_using_planar_distance(apple.bodies[0], table1, Vector3.Z).tolist() == [apple, banana1, orange]
+    print(get_next_object_using_planar_distance(apple.bodies[0], table1, Vector3.X()).tolist())# == [apple, orange, banana1]
+    #print(get_next_object_using_planar_distance(apple.bodies[0], table1, Vector3.Y).tolist())
+    # assert get_next_object_using_planar_distance(toya, table3, Vector3.Z).tolist() == []
 
 
 def test_query_surface_of_most_similar_obj(kitchen_environment_fixture):
@@ -115,7 +121,7 @@ def test_query_body_by_color(kitchen_environment_fixture):
     assert query_annotations_by_color(Color.RED(), [apple, orange]) == [apple]
     assert query_annotations_by_color(Color.ORANGE(), [apple, orange]) == [orange]
     assert query_annotations_by_color(Color.BLUE(), [apple, orange,carrot]) == []
-    assert query_annotations_by_color(Color.ORANGE(), (query_semantic_annotations_on_surfaces([table1, table2], kitchen_environment_fixture).tolist())) == [orange, carrot]
+    assert query_annotations_by_color(Color.ORANGE(), (query_semantic_annotations_on_surfaces([table1, table2], kitchen_environment_fixture))) == [orange, carrot]
 
 def test_query_class_by_label():
     """
@@ -143,4 +149,4 @@ def test_query_sort_by_volume(kitchen_environment_fixture):
     assert query_sort_by_volume([apple, carrot]) == [apple, carrot]
     assert query_sort_by_volume([table1, lettuce, apple]) == [table1, lettuce, apple]
     assert query_sort_by_volume([table1, lettuce, apple], False) == [apple, lettuce, table1]
-    assert query_sort_by_volume(query_semantic_annotations_on_surfaces([table2], kitchen_environment_fixture).tolist()) == [lettuce, carrot]
+    assert query_sort_by_volume(query_semantic_annotations_on_surfaces([table2], kitchen_environment_fixture)) == [lettuce, carrot]

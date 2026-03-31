@@ -793,6 +793,15 @@ def kitchen_environment_fixture():
         for color in orange.bodies[0].visual.shapes:
             color.color = Color.ORANGE()
 
+        banana1 = Banana.create_with_new_body_in_world(
+            world=world,
+            name=PrefixedName("banana1"),
+            world_root_T_self=HomogeneousTransformationMatrix.from_xyz_rpy(x=1, y=0.6, z=0.75),
+            scale=Scale(0.10, 0.10, 0.60),
+        )
+        for color in banana1.bodies[0].visual.shapes:
+            color.color = Color.YELLOW()
+
         carrot = Carrot.create_with_new_body_in_world(
             world=world,
             name=PrefixedName("carrot"),

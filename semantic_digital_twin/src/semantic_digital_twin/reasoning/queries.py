@@ -12,6 +12,7 @@ from semantic_digital_twin.reasoning.predicates import (
     is_supporting,
 )
 from semantic_digital_twin.semantic_annotations.mixins import HasSupportingSurface, IsPerceivable, HasRootBody
+from semantic_digital_twin.spatial_types import Vector3
 from semantic_digital_twin.world import World
 from semantic_digital_twin.world_description.geometry import Color
 
@@ -23,29 +24,26 @@ from semantic_digital_twin.world_description.world_entity import (
 
 
 def query_semantic_annotations_on_surfaces(
-    supporting_surfaces: List[HasRootBody], world: World
-) -> Union[Entity[SemanticAnnotation], SemanticAnnotation]:
+    supporting_surfaces: List[HasSupportingSurface], world: World
+) -> List[HasRootBody]:
     """
     Queries a list of Semantic annotations that are on top of a given list of other annotations (ex. Tables).
     param: supporting_surfaces: List of SemanticAnnotations that are supporting other annotations.
     :param world: World object that contains the supporting_surfaces.
     return: List of SemanticAnnotations that are supported by the given supporting_surfaces.
     """
-    supporting_surfaces_var = variable_from(supporting_surfaces)
-    bodies = variable_from(world.bodies_with_collision)
-    body = entity(bodies).where(
-        is_supported_by(
-            supported_body=bodies,
-            supporting_body=supporting_surfaces_var.root,
-        )
-    )
-    return entity(
-            semantic_annotation := variable(HasRootBody, domain=world.semantic_annotations)
-        ).where(semantic_annotation.root == body)
+    objects = []
+    with world.modify_world():
+        for surface in supporting_surfaces:
+            surface.infer_objects_on_surface()
+            objects.extend(surface.objects)
 
-def query_get_next_object_euclidean_x_y(
+    return objects
+
+def get_next_object_using_planar_distance(
     main_body: Body,
     supporting_surface,
+    ignore_dimension,
 ) -> Entity[SemanticAnnotation]:
     """
     Queries the next object based on Euclidean distance in x and y coordinates
@@ -59,13 +57,16 @@ def query_get_next_object_euclidean_x_y(
     :return: A `QueryObjectDescriptor` containing semantic annotations ordered
         by Euclidean distance to the main body.
     """
-    supported_semantic_annotations = query_semantic_annotations_on_surfaces(
+    # if supporting_surface is None:
+    #     return []
+    supported_semantic_annotations = variable_from(query_semantic_annotations_on_surfaces(
         [supporting_surface], main_body._world
-    )
-    return supported_semantic_annotations.ordered_by(
+    ))
+    return entity(supported_semantic_annotations).ordered_by(
         compute_euclidean_distance_2d(
-            body1=supported_semantic_annotations.selected_variable.bodies[0],
+            body1=supported_semantic_annotations.bodies[0],
             body2=main_body,
+            ignore_dimension=ignore_dimension,
         )
     )
 
@@ -101,7 +102,7 @@ def query_surface_of_most_similar_obj(
     # Query annotations on the surfaces of the tables
     objects = query_semantic_annotations_on_surfaces(
         supporting_surfaces, object_of_interest._world
-    ).tolist()
+    )
 
     best_distance = math.inf
     most_similar = None
@@ -158,12 +159,6 @@ def query_annotations_by_color(color: Color, objects: list[SemanticAnnotation]) 
     return filtered_annotations
 
 
-@symbolic_function
-def class_name_in_label(cls: type, label: str) -> bool:
-    """Check if the class name is contained in the label."""
-    return cls.__name__.lower() in label.lower()
-
-
 def query_class_by_label(label: str) -> Optional[type]:
     """
     Finds the class whose name is contained within the given label.
@@ -173,9 +168,7 @@ def query_class_by_label(label: str) -> Optional[type]:
     :return: The matching class (e.g., Bowl) or None if no match is found.
     """
     semantic_class = variable_from(recursive_subclasses(IsPerceivable))
-    matching_class = entity(semantic_class).where(
-        class_name_in_label(semantic_class, label)
-    )
+    matching_class = an(entity(semantic_class).where(contains(label.lower(), semantic_class.__name__.lower())))
     return None if matching_class.tolist() == [] else matching_class.first()
 
 
