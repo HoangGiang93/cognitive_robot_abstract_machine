@@ -17,7 +17,10 @@ from semantic_digital_twin.spatial_types import Vector3, HomogeneousTransformati
 from semantic_digital_twin.world import World
 from semantic_digital_twin.world_description.connections import (
     RevoluteConnection,
+    FixedConnection,
 )
+from semantic_digital_twin.world_description.geometry import Box, Scale
+from semantic_digital_twin.world_description.shape_collection import ShapeCollection
 from semantic_digital_twin.world_description.world_entity import (
     Body,
 )
@@ -46,6 +49,25 @@ def better_pr2_pose():
         "head_pan_joint": 0,
         "head_tilt_joint": 0,
     }
+
+
+@pytest.fixture(scope="function")
+def pr2_with_box(pr2_world_copy) -> World:
+    with pr2_world_copy.modify_world():
+        box = Body(
+            name=PrefixedName("box"),
+            visual=ShapeCollection(shapes=[Box(scale=Scale(1, 1, 1))]),
+            collision=ShapeCollection(shapes=[Box(scale=Scale(1, 1, 1))]),
+        )
+        root_C_box = FixedConnection(
+            parent=pr2_world_copy.root,
+            child=box,
+            parent_T_connection_expression=HomogeneousTransformationMatrix.from_xyz_rpy(
+                x=1.2, z=0.3, reference_frame=pr2_world_copy.root
+            ),
+        )
+        pr2_world_copy.add_connection(root_C_box)
+    return pr2_world_copy
 
 
 @pytest.fixture()
