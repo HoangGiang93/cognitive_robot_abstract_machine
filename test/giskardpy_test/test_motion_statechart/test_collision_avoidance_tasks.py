@@ -23,6 +23,7 @@ from giskardpy.motion_statechart.graph_node import (
 from giskardpy.motion_statechart.monitors.monitors import LocalMinimumReached
 from giskardpy.motion_statechart.monitors.overwrite_state_monitors import (
     SetSeedConfiguration,
+    SetOdometry,
 )
 from giskardpy.motion_statechart.monitors.payload_monitors import (
     CountControlCycles,
@@ -34,7 +35,11 @@ from giskardpy.motion_statechart.tasks.cartesian_tasks import (
     CartesianPose,
 )
 from giskardpy.motion_statechart.tasks.joint_tasks import JointState
+from giskardpy.qp.exceptions import HardConstraintsViolatedException
 from giskardpy.qp.qp_controller_config import QPControllerConfig
+from semantic_digital_twin.adapters.ros.visualization.viz_marker import (
+    VizMarkerPublisher,
+)
 from semantic_digital_twin.adapters.world_entity_kwargs_tracker import (
     WorldEntityWithIDKwargsTracker,
 )
@@ -519,8 +524,8 @@ def test_self_collision_avoidance(self_collision_bot_world: World):
     kin_sim = Executor(MotionStatechartContext(world=self_collision_bot_world))
     kin_sim.compile(motion_statechart=msc_copy)
 
-    # 4 because of the base nodes + 20 that are added by self collision avoidance
-    assert len(msc_copy.nodes) == 4 + 20
+    # 4 because of the base nodes + 20 that are added by self collision avoidance + 1 for CancelMotion
+    assert len(msc_copy.nodes) == 4 + 20 + 1
 
     kin_sim.tick_until_end(500)
     collisions = kin_sim.context.world.collision_manager.compute_collisions()
@@ -686,6 +691,114 @@ def test_avoid_self_collision_with_l_arm(pr2_with_box):
     )
     kin_sim.compile(motion_statechart=msc)
 
-    assert len(msc.nodes) == 75
+    assert len(msc.nodes) == 76
 
     kin_sim.tick_until_end(500)
+
+
+def test_hard_constraints_violated(cylinder_bot_world: World, rclpy_node):
+    VizMarkerPublisher(_world=cylinder_bot_world, node=rclpy_node).with_tf_publisher()
+    root = cylinder_bot_world.root
+    with cylinder_bot_world.modify_world():
+        env2 = Body(
+            name=PrefixedName("environment2"),
+            collision=ShapeCollection(shapes=[Cylinder(width=0.5, height=0.1)]),
+        )
+        env_connection = FixedConnection(
+            parent=root,
+            child=env2,
+            parent_T_connection_expression=HomogeneousTransformationMatrix.from_xyz_rpy(
+                0.75
+            ),
+        )
+        cylinder_bot_world.add_connection(env_connection)
+
+        env3 = Body(
+            name=PrefixedName("environment3"),
+            collision=ShapeCollection(shapes=[Cylinder(width=0.5, height=0.1)]),
+        )
+        env_connection = FixedConnection(
+            parent=root,
+            child=env3,
+            parent_T_connection_expression=HomogeneousTransformationMatrix.from_xyz_rpy(
+                1.25
+            ),
+        )
+        cylinder_bot_world.add_connection(env_connection)
+        env4 = Body(
+            name=PrefixedName("environment4"),
+            collision=ShapeCollection(shapes=[Cylinder(width=0.5, height=0.1)]),
+        )
+        env_connection = FixedConnection(
+            parent=root,
+            child=env4,
+            parent_T_connection_expression=HomogeneousTransformationMatrix.from_xyz_rpy(
+                x=1, y=-0.25
+            ),
+        )
+        cylinder_bot_world.add_connection(env_connection)
+        env5 = Body(
+            name=PrefixedName("environment5"),
+            collision=ShapeCollection(shapes=[Cylinder(width=0.5, height=0.1)]),
+        )
+        env_connection = FixedConnection(
+            parent=root,
+            child=env5,
+            parent_T_connection_expression=HomogeneousTransformationMatrix.from_xyz_rpy(
+                x=1, y=0.25
+            ),
+        )
+        cylinder_bot_world.add_connection(env_connection)
+
+    tip = cylinder_bot_world.get_kinematic_structure_entity_by_name("bot")
+
+    msc = MotionStatechart()
+    msc.add_node(
+        Sequence(
+            [
+                UpdateTemporaryCollisionRules(
+                    temporary_rules=[
+                        AvoidAllCollisions(
+                            buffer_zone_distance=0.05,
+                            violated_distance=0.0,
+                        )
+                    ]
+                ),
+                SetOdometry(
+                    base_pose=HomogeneousTransformationMatrix.from_xyz_rpy(
+                        x=1, reference_frame=cylinder_bot_world.root
+                    )
+                ),
+                Parallel(
+                    [
+                        CartesianPose(
+                            root_link=cylinder_bot_world.root,
+                            tip_link=tip,
+                            goal_pose=HomogeneousTransformationMatrix.from_xyz_rpy(
+                                x=1, reference_frame=cylinder_bot_world.root
+                            ),
+                        ),
+                        ExternalCollisionAvoidance(),
+                    ]
+                ),
+            ]
+        )
+    )
+    msc.add_node(local_min := LocalMinimumReached())
+    msc.add_node(EndMotion.when_true(local_min))
+
+    json_data = msc.to_json()
+    json_str = json.dumps(json_data)
+    new_json_data = json.loads(json_str)
+
+    tracker = WorldEntityWithIDKwargsTracker.from_world(cylinder_bot_world)
+    kwargs = tracker.create_kwargs()
+    msc_copy = MotionStatechart.from_json(new_json_data, **kwargs)
+
+    kin_sim = Executor(
+        context=MotionStatechartContext(world=cylinder_bot_world),
+    )
+    kin_sim.compile(motion_statechart=msc_copy)
+
+    with pytest.raises(HardConstraintsViolatedException):
+        kin_sim.tick_until_end()

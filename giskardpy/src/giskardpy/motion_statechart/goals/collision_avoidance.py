@@ -2,6 +2,17 @@ from dataclasses import field, dataclass
 from itertools import combinations
 
 import krrood.symbolic_math.symbolic_math as sm
+from giskardpy.motion_statechart.context import MotionStatechartContext
+from giskardpy.motion_statechart.data_types import DefaultWeights
+from giskardpy.motion_statechart.exceptions import NodeInitializationError
+from giskardpy.motion_statechart.graph_node import (
+    Goal,
+    MotionStatechartNode,
+    NodeArtifacts,
+    CancelMotion,
+)
+from giskardpy.motion_statechart.graph_node import Task
+from giskardpy.qp.exceptions import HardConstraintsViolatedException
 from krrood.symbolic_math.symbolic_math import Scalar, FloatVariable
 from semantic_digital_twin.collision_checking.collision_groups import CollisionGroup
 from semantic_digital_twin.collision_checking.collision_matrix import (
@@ -22,16 +33,6 @@ from semantic_digital_twin.world_description.world_entity import (
     KinematicStructureEntity,
     Body,
 )
-from giskardpy.motion_statechart.context import MotionStatechartContext
-from giskardpy.motion_statechart.data_types import DefaultWeights
-from giskardpy.motion_statechart.exceptions import NodeInitializationError
-from giskardpy.motion_statechart.graph_node import (
-    Goal,
-    MotionStatechartNode,
-    NodeArtifacts,
-)
-from giskardpy.motion_statechart.graph_node import Task
-from giskardpy.qp.qp_controller_config import QPControllerConfig
 
 
 @dataclass(eq=False, repr=False)
@@ -156,6 +157,17 @@ class _ExternalCollisionAvoidanceTask(_ExternalCollisionAvoidanceNode):
         ).safe_division(sm.min(number_of_external_collisions, max_avoided_bodies))
         return weight
 
+    def is_any_collision_violated(self, context: MotionStatechartContext) -> Scalar:
+        max_avoided_bodies = self.collision_group.get_max_avoided_bodies(
+            context.collision_manager
+        )
+        return sm.logic_any(
+            [
+                self.contact_distance < self.violated_distance
+                for index in range(max_avoided_bodies)
+            ]
+        )
+
     def build(self, context: MotionStatechartContext) -> NodeArtifacts:
         artifacts = NodeArtifacts()
 
@@ -177,6 +189,8 @@ class _ExternalCollisionAvoidanceTask(_ExternalCollisionAvoidanceNode):
             quadratic_weight=DefaultWeights.WEIGHT_COLLISION_AVOIDANCE,
             task_expression=a_projected_on_normal,
         )
+
+        artifacts.observation = self.is_any_collision_violated(context)
 
         return artifacts
 
@@ -286,6 +300,8 @@ class ExternalCollisionAvoidance(Goal):
 
         robot_bodies = self.robot.bodies
 
+        tasks = []
+
         for group in self.external_collision_manager.registered_groups:
             if group.root not in robot_bodies:
                 continue
@@ -308,6 +324,16 @@ class ExternalCollisionAvoidance(Goal):
                 )
                 self.add_node(task)
                 task.pause_condition = distance_monitor.observation_variable
+                tasks.append(task)
+
+        self.add_node(
+            CancelMotion.when_any_true(
+                tasks,
+                exception=HardConstraintsViolatedException(
+                    "External Collision Violated"
+                ),
+            )
+        )
 
 
 @dataclass(eq=False, repr=False)
@@ -439,6 +465,9 @@ class _SelfCollisionAvoidanceTask(_SelfCollisionAvoidanceNode):
     The maximum velocity for the collision avoidance task.
     """
 
+    def is_collision_violated(self) -> Scalar:
+        return self.contact_distance < self.violated_distance
+
     def build(self, context: MotionStatechartContext) -> NodeArtifacts:
         artifacts = NodeArtifacts()
 
@@ -466,6 +495,7 @@ class _SelfCollisionAvoidanceTask(_SelfCollisionAvoidanceNode):
             task_expression=a_projected_on_normal,
         )
 
+        artifacts.observation = self.is_collision_violated()
         return artifacts
 
 
@@ -519,6 +549,8 @@ class SelfCollisionAvoidance(Goal):
 
         kinematic_structure_entities = self.robot.kinematic_structure_entities
 
+        tasks = []
+
         for group_a, group_b in combinations(
             self.self_collision_manager.collision_groups, 2
         ):
@@ -557,6 +589,14 @@ class SelfCollisionAvoidance(Goal):
             )
             self.add_node(task)
             task.pause_condition = distance_monitor.observation_variable
+            tasks.append(task)
+
+        self.add_node(
+            CancelMotion.when_any_true(
+                tasks,
+                exception=HardConstraintsViolatedException("Self Collision Violated"),
+            )
+        )
 
 
 @dataclass(eq=False, repr=False)

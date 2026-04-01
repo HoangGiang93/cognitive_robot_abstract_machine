@@ -1049,9 +1049,8 @@ class TestSelfCollisionAvoidance:
             ]
         )
         msc.add_node(EndMotion.when_true(local_min))
-        giskard.api.execute(msc)
-
-        giskard.check_cpi_geq(giskard.get_l_gripper_links(), 0.048)
+        with pytest.raises(ExecutionAbortedException):
+            giskard.api.execute(msc)
 
 
 class TestCollisionAvoidanceGoals:
