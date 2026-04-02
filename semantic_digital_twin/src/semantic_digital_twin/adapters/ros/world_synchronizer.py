@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from functools import cached_property
 import threading
+from time import sleep
 from typing import ClassVar, Optional, Set, Type, List, Dict
 from uuid import UUID
 
@@ -127,23 +128,24 @@ class Synchronizer(WorldEntityWithID):
     """
 
     def __post_init__(self):
-        self.publisher = self.node.create_publisher(
-            std_msgs.msg.String, topic=self.topic_name, qos_profile=10
-        )
         self.subscriber = self.node.create_subscription(
             std_msgs.msg.String,
             topic=self.topic_name,
             callback=self.subscription_callback,
             qos_profile=10,
         )
-        self.acknowledge_publisher = self.node.create_publisher(
-            std_msgs.msg.String, topic=self.acknowledge_topic_name, qos_profile=10
-        )
         self.acknowledge_subscriber = self.node.create_subscription(
             std_msgs.msg.String,
             topic=self.acknowledge_topic_name,
             callback=self.acknowledge_callback,
             qos_profile=10,
+        )
+        sleep(3)
+        self.publisher = self.node.create_publisher(
+            std_msgs.msg.String, topic=self.topic_name, qos_profile=10
+        )
+        self.acknowledge_publisher = self.node.create_publisher(
+            std_msgs.msg.String, topic=self.acknowledge_topic_name, qos_profile=10
         )
 
     @cached_property
@@ -187,14 +189,28 @@ class Synchronizer(WorldEntityWithID):
 
         :param msg: The incoming ROS string message containing a serialized acknowledgment.
         """
+        is_model = isinstance(self, ModelSynchronizer)
+        if is_model:
+            print("acknowledged")
+            print(msg)
         acknowledgment = from_json(json.loads(msg.data))
 
         with self._acknowledge_condition_variable:
+            if is_model:
+                print("in with block")
             if (
                 self._expected_acknowledgment_count == 0
                 or self._current_publication_event_id is None
             ):
                 # Not waiting for any acknowledgments at the moment
+                if is_model:
+                    print("return 1")
+                    print(
+                        f"self._expected_acknowledgment_count: {self._expected_acknowledgment_count}"
+                    )
+                    print(
+                        f"self._current_publication_event_id: {self._current_publication_event_id}"
+                    )
                 return
 
             if (
@@ -202,6 +218,8 @@ class Synchronizer(WorldEntityWithID):
                 != self._current_publication_event_id
             ):
                 # This acknowledgment is not about the event we want to have acknowledged
+                if is_model:
+                    print("return 2")
                 return
 
             self._received_acknowledgments.add(acknowledgment.node_meta_data)
@@ -210,7 +228,11 @@ class Synchronizer(WorldEntityWithID):
                 len(self._received_acknowledgments)
                 >= self._expected_acknowledgment_count
             ):
+                if is_model:
+                    print("return 3")
                 self._acknowledge_condition_variable.notify_all()
+            if is_model:
+                print("no return")
 
     def _snapshot_subscribers(self) -> int:
         """
@@ -245,8 +267,11 @@ class Synchronizer(WorldEntityWithID):
         if synchronous:
             with self._acknowledge_condition_variable:
                 self._expected_acknowledgment_count = self._snapshot_subscribers()
+                if isinstance(self, ModelSynchronizer):
+                    print(
+                        f"publish self._expected_acknowledgment_count: {self._expected_acknowledgment_count}"
+                    )
                 self._received_acknowledgments = set()
-
                 self.publisher.publish(
                     std_msgs.msg.String(data=json.dumps(to_json(msg)))
                 )
