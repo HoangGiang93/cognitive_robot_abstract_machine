@@ -1,8 +1,13 @@
+import os
+import time
+
 import numpy as np
 
 from semantic_digital_twin.adapters.ros.visualization.viz_marker import (
     VizMarkerPublisher,
 )
+from semantic_digital_twin.adapters.multi_sim import MujocoSim
+from physics_simulators.base_simulator import SimulatorState
 from semantic_digital_twin.adapters.sage_10k_dataset.loader import Sage10kDatasetLoader
 from semantic_digital_twin.adapters.sage_10k_dataset.schema import Sage10kScene
 from semantic_digital_twin.world import World
@@ -41,3 +46,30 @@ def test_loader(rclpy_node):
     )
     pub.with_tf_publisher()
     verify_scene(world, scene)
+
+def stop_multisim_if_running(multi_sim: MujocoSim) -> None:
+    simulator = getattr(multi_sim, "simulator", None)
+    if simulator is None:
+        return
+    if getattr(simulator, "state", None) is SimulatorState.STOPPED:
+        return
+    multi_sim.stop_simulation()
+
+def test_empty_multi_sim_in_5s():
+    loader = Sage10kDatasetLoader()
+
+    scene = loader.create_scene(scene_url=Sage10kDatasetLoader.available_scenes()[0])
+
+    world = scene.create_world()
+    headless = os.environ.get("CI", "false").lower() == "true"
+    multi_sim = MujocoSim(world=world, headless=headless)
+
+    try:
+        multi_sim.start_simulation()
+        start_time = time.time()
+        time.sleep(5.0)
+        multi_sim.stop_simulation()
+
+        assert time.time() - start_time >= 5.0
+    finally:
+        stop_multisim_if_running(multi_sim)

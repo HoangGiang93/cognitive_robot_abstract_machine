@@ -562,7 +562,7 @@ class Connection1DOFConverter(ConnectionConverter, ABC):
                 self.damping_str: entity.dynamics.damping,
             }
         )
-        if dof.name.name != joint_props["name"]:
+        if dof.name.name != joint_props["name"] and dof.name.name != "dof":
             joint_props["equality_joint"] = {
                 "joint": dof.name.name,
                 "data": [entity.offset, entity.multiplier, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -1182,9 +1182,14 @@ class MujocoMeshConverter(MujocoGeomConverter, MeshConverter):
         if isinstance(entity.mesh.visual, TextureVisuals) and isinstance(
             entity.mesh.visual.material.name, str
         ):
-            shape_props["texture_file_path"] = (
-                entity.mesh.visual.material.image.filename
-            )
+            texture_file_path = entity.mesh.visual.material.name
+            if not os.path.isfile(texture_file_path):
+                texture_file_path = entity.mesh.visual.material.image.filename
+            if not os.path.isfile(texture_file_path):
+                texture_file_path = entity.mesh.visual.material.image.info.get("file_path", "")
+            if not os.path.isfile(texture_file_path):
+                raise FileNotFoundError(f"Texture file not found for mesh. Checked paths: '{entity.mesh.visual.material.name}', '{entity.mesh.visual.material.image.filename}', '{entity.mesh.visual.material.image.info.get('file_path', '')}'")
+            shape_props["texture_file_path"] = texture_file_path
         return shape_props
 
 
@@ -1360,13 +1365,13 @@ class MultiSimBuilder(ABC):
 
         self._start_build(file_path=file_path)
 
-        for body in world.bodies:
+        for body in world.bodies_topologically_sorted:
             self.build_body(body=body)
 
         for region in world.regions:
             self.build_region(region=region)
 
-        for connection in world.connections:
+        for connection in world.connections_topologically_sorted:
             self._build_connection(connection=connection)
 
         for actuator in world.actuators:
