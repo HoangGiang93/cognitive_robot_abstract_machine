@@ -125,7 +125,7 @@ class TSDFAnnotator(BaseAnnotator):
         for oh in ohs:
             poses = cas.filter_by_type(PoseAnnotation, oh.annotations)
             if len(poses) > 0:
-                roi: Tuple[int, int, int, int] = oh.roi.roi.xyxy()
+                roi: Tuple[int, int, int, int] = oh.roi.roi.get_corner_points()
                 roi = (
                     int(roi[0] * color2depth_ratio[0]),
                     int(roi[1] * color2depth_ratio[1]),

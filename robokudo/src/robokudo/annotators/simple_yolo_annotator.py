@@ -53,7 +53,7 @@ class SimpleYoloAnnotator(BaseAnnotator):
         result_np = result_tensor.boxes.cpu().numpy()
         object_hypotheses = []
         for obj_id, result in enumerate(result_np):
-            bbox = result.xyxy[0]
+            bbox = result.get_corner_points[0]
 
             cls = result.cls[0]
             name = self.id2name[cls]

@@ -13,12 +13,12 @@ The types support integration with:
 """
 
 from __future__ import annotations
+
 from dataclasses import dataclass, field
 
 import numpy as np
-from numpy import typing as npt
-from typing_extensions import TYPE_CHECKING, Tuple
 import open3d as o3d
+from typing_extensions import TYPE_CHECKING, Tuple
 
 from robokudo.types.core import Type, Annotation
 from robokudo.types.tf import Pose
@@ -80,11 +80,11 @@ class Rect(Type):
     Rectangle height in pixels
     """
 
-    def xyxy(self) -> Tuple[int, int, int, int]:
+    def get_corner_points(self) -> Tuple[int, int, int, int]:
         """Get the rectangle as a tuple of (x1, y1, x2, y2)."""
         return self.pos.x, self.pos.y, self.pos.x + self.width, self.pos.y + self.height
 
-    def xywh(self) -> Tuple[int, int, int, int]:
+    def as_tuple(self) -> Tuple[int, int, int, int]:
         """Get the rectangle as a tuple of (x, y, w, h)."""
         return self.pos.x, self.pos.y, self.width, self.height
 
