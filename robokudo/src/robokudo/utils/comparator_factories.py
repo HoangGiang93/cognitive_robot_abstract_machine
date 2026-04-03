@@ -6,10 +6,15 @@ from robokudo.types.annotation import (
     ColorHistogram,
     SemanticColor,
     PositionAnnotation,
+    StampedPositionAnnotation,
 )
 from robokudo.types.core import Annotation
 from robokudo.types.core import Type as RkType
 from robokudo.types.cv import ImageROI, Rect
+from robokudo.types.tf import (
+    Position,
+    StampedPosition,
+)
 from robokudo.utils.comparators import (
     FeatureComparator,
     BboxComparator,
@@ -32,12 +37,19 @@ class FeatureComparatorFactory:
         SemanticColor: SemanticColorComparator,
         ImageROI: ImageROIComparator,
         PositionAnnotation: TranslationComparator,
+        StampedPositionAnnotation: TranslationComparator,
     }
     """Mapping of annotation types to feature comparators."""
 
     type_comparators: Dict[Type[RkType], Type[FeatureComparator]] = {
-        Rect: RoiComparator
+        Rect: RoiComparator,
+        Position: TranslationComparator,
+        StampedPosition: TranslationComparator,
+        # Pose: OrientationComparator,
+        # StampedPose: OrientationComparator,
+        # StampedTransform: OrientationComparator,
     }
+    """Mapping of robokudo types to feature comparators."""
 
     @classmethod
     def for_annotation(

@@ -23,6 +23,7 @@ from robokudo.utils.comparators import (
     MaskComparator,
     ClassificationComparator,
     ImageROIComparator,
+    OrientationComparator,
 )
 
 if TYPE_CHECKING:
@@ -476,6 +477,26 @@ class TestUtilsComparators(object):
     )
     def test_image_roi_comparator(self, query_value, obj_value, expected_similarity):
         comparator = ImageROIComparator(weight=1.0)
+
+        similarity = comparator.compute_similarity(query_value, obj_value)
+
+        assert isinstance(similarity, float)
+        assert similarity == pytest.approx(expected_similarity)
+
+    @pytest.mark.parametrize(
+        ["query_value", "obj_value", "expected_similarity"],
+        [
+            (np.array([0.0, 0.0, 0.0, 1.0]), np.array([0.0, 0.0, 0.0, 1.0]), 1.0),
+            (np.array([0.0, 0.0, 0.0, -1.0]), np.array([0.0, 0.0, 0.0, 1.0]), 0.0),
+            (
+                np.array([0.7071068, 0.0, 0.7071068, 0.0]),
+                np.array([0.0, 0.0, 0.0, 1.0]),
+                0.5,
+            ),
+        ],
+    )
+    def test_orientation_comparator(self, query_value, obj_value, expected_similarity):
+        comparator = OrientationComparator(weight=1.0)
 
         similarity = comparator.compute_similarity(query_value, obj_value)
 

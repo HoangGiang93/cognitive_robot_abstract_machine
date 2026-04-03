@@ -3,7 +3,7 @@ from __future__ import annotations
 import cv2
 import numpy as np
 from scipy.spatial.distance import euclidean
-from typing_extensions import TYPE_CHECKING, List, Any, Tuple, Union
+from typing_extensions import TYPE_CHECKING, List, Any, Tuple, Union, Iterable
 
 from robokudo.types.annotation import PositionAnnotation
 from robokudo.utils.non_maxima_suppression import _iou
@@ -39,7 +39,7 @@ class FeatureComparator:
 class TranslationComparator(FeatureComparator):
     """Extended FeatureComparator that computes similarity based on translation distance between query and object values."""
 
-    def __init__(self, weight: float, max_distance: float):
+    def __init__(self, weight: float, max_distance: float = 1.0):
         super().__init__(weight)
 
         self.max_distance = max_distance
@@ -68,6 +68,29 @@ class TranslationComparator(FeatureComparator):
 
         distance = euclidean(query_translation, obj_translation)
         return max(min(1.0 - (distance / self.max_distance), 1.0), 0.0)
+
+
+class OrientationComparator(FeatureComparator):
+    """Extended `FeatureComparator` that computes orientation similarity by dot product."""
+
+    def compute_similarity(
+        self,
+        query_value: Union[Iterable[float], npt.NDArray[np.float64]],
+        obj_value: Union[Iterable[float], npt.NDArray[np.float64]],
+    ) -> float:
+        """Computes similarity of both orientation quaternions by dot product.
+
+        :param query_value: The quaternion to use as a baseline for comparison.
+        :param obj_value: The quaternion to compare against `query_value`.
+        :returns: A similarity score between 0.0 (angle=180d) and 1.0 (angle=0d).
+        """
+        q1 = query_value / np.linalg.norm(query_value)
+        q2 = obj_value / np.linalg.norm(obj_value)
+
+        dot = np.dot(q1, q2)
+        dot = np.clip(dot, -1.0, 1.0)
+        similarity = (1.0 + dot) / 2.0
+        return similarity
 
 
 class BboxComparator(FeatureComparator):
