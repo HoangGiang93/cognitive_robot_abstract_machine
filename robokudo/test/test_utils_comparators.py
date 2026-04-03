@@ -9,8 +9,9 @@ from robokudo.types.annotation import (
     Classification,
     ColorHistogram,
     SemanticColor,
+    PositionAnnotation,
 )
-from robokudo.types.cv import Rect
+from robokudo.types.cv import Rect, ImageROI, Point2D
 from robokudo.utils.comparators import (
     TranslationComparator,
     BboxComparator,
@@ -21,6 +22,7 @@ from robokudo.utils.comparators import (
     RoiComparator,
     MaskComparator,
     ClassificationComparator,
+    ImageROIComparator,
 )
 
 if TYPE_CHECKING:
@@ -28,6 +30,7 @@ if TYPE_CHECKING:
 
 
 class TestUtilsComparators(object):
+
     @pytest.mark.parametrize(
         ["query_value", "obj_value", "expected_similarity"],
         [
@@ -47,6 +50,51 @@ class TestUtilsComparators(object):
                 (0.0, 0.0, 0.0),
                 0.5,
             ),  # 50% the same (max_distance / 2 == distance)
+            (
+                PositionAnnotation(translation=[0.0, 0.0, 0.0]),
+                PositionAnnotation(translation=[0.0, 0.0, 0.0]),
+                1.0,
+            ),  # Compare PositionAnnotations (100% similarity)
+            (
+                PositionAnnotation(translation=[0.0, 0.0, 0.0]),
+                (0.0, 0.0, 0.0),
+                1.0,
+            ),  # Compare PositionAnnotation with simple translation (100% similarity)
+            (
+                (0.0, 0.0, 0.0),
+                PositionAnnotation(translation=[0.0, 0.0, 0.0]),
+                1.0,
+            ),  # Compare simple translation with PositionAnnotation (100% similarity)
+            (
+                PositionAnnotation(translation=[1.0, 0.0, 0.0]),
+                PositionAnnotation(translation=[0.0, 0.0, 0.0]),
+                0.0,
+            ),  # Compare PositionAnnotations (0% similarity)
+            (
+                PositionAnnotation(translation=[1.0, 0.0, 0.0]),
+                (0.0, 0.0, 0.0),
+                0.0,
+            ),  # Compare PositionAnnotation with simple translation (0% similarity)
+            (
+                (1.0, 0.0, 0.0),
+                PositionAnnotation(translation=[0.0, 0.0, 0.0]),
+                0.0,
+            ),  # Compare simple translation with PositionAnnotation (0% similarity)
+            (
+                PositionAnnotation(translation=[0.5, 0.0, 0.0]),
+                PositionAnnotation(translation=[0.0, 0.0, 0.0]),
+                0.5,
+            ),  # Compare PositionAnnotations (50% similarity)
+            (
+                PositionAnnotation(translation=[0.5, 0.0, 0.0]),
+                (0.0, 0.0, 0.0),
+                0.5,
+            ),  # Compare PositionAnnotation with simple translation (50% similarity)
+            (
+                (0.5, 0.0, 0.0),
+                PositionAnnotation(translation=[0.0, 0.0, 0.0]),
+                0.5,
+            ),  # Compare simple translation with PositionAnnotation (50% similarity)
         ],
     )
     def test_translation_comparator(
@@ -348,6 +396,86 @@ class TestUtilsComparators(object):
         self, query_value, obj_value, expected_similarity
     ):
         comparator = ClassificationComparator(weight=1.0)
+
+        similarity = comparator.compute_similarity(query_value, obj_value)
+
+        assert isinstance(similarity, float)
+        assert similarity == pytest.approx(expected_similarity)
+
+    @pytest.mark.parametrize(
+        ["query_value", "obj_value", "expected_similarity"],
+        [
+            (
+                ImageROI(
+                    roi=Rect(pos=Point2D(x=0, y=0), width=2, height=2),
+                    mask=np.array([[1.0, 0.0], [0.0, 0.0]]),
+                ),
+                ImageROI(
+                    roi=Rect(pos=Point2D(x=0, y=0), width=2, height=2),
+                    mask=np.array([[1.0, 0.0], [0.0, 0.0]]),
+                ),
+                1.0,
+            ),  # Positions and masks are identical
+            (
+                ImageROI(
+                    roi=Rect(pos=Point2D(x=0, y=0), width=2, height=2),
+                    mask=np.array([[1.0, 0.0], [0.0, 0.0]]),
+                ),
+                ImageROI(
+                    roi=Rect(pos=Point2D(x=3, y=3), width=2, height=2),
+                    mask=np.array([[0.0, 1.0], [0.0, 0.0]]),
+                ),
+                0.0,
+            ),  # Roi and mask have no similarity
+            (
+                ImageROI(
+                    roi=Rect(pos=Point2D(x=0, y=0), width=2, height=2),
+                    mask=np.array([[1.0, 0.0], [0.0, 0.0]]),
+                ),
+                ImageROI(
+                    roi=Rect(pos=Point2D(x=3, y=3), width=2, height=2),
+                    mask=np.array([[1.0, 0.0], [0.0, 0.0]]),
+                ),
+                0.5,
+            ),  # Masks are identical, position is not
+            (
+                ImageROI(
+                    roi=Rect(pos=Point2D(x=0, y=0), width=2, height=2),
+                    mask=np.array([[1.0, 0.0], [0.0, 0.0]]),
+                ),
+                ImageROI(
+                    roi=Rect(pos=Point2D(x=0, y=0), width=2, height=2),
+                    mask=np.array([[0.0, 1.0], [0.0, 0.0]]),
+                ),
+                0.5,
+            ),  # Positions are identical, masks are not
+            # Tests for full image masks
+            (
+                ImageROI(
+                    roi=Rect(pos=Point2D(x=0, y=0), width=1, height=1),
+                    mask=np.array([[1.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]]),
+                ),
+                ImageROI(
+                    roi=Rect(pos=Point2D(x=0, y=0), width=1, height=1),
+                    mask=np.array([[1.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]]),
+                ),
+                1.0,
+            ),  # Positions and masks are identical
+            (
+                ImageROI(
+                    roi=Rect(pos=Point2D(x=0, y=0), width=1, height=1),
+                    mask=np.array([[1.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]]),
+                ),
+                ImageROI(
+                    roi=Rect(pos=Point2D(x=2, y=2), width=1, height=1),
+                    mask=np.array([[0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 1.0]]),
+                ),
+                0.5,
+            ),  # Positions are not identical, but roi masks are
+        ],
+    )
+    def test_image_roi_comparator(self, query_value, obj_value, expected_similarity):
+        comparator = ImageROIComparator(weight=1.0)
 
         similarity = comparator.compute_similarity(query_value, obj_value)
 

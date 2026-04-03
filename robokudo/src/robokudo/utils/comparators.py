@@ -3,8 +3,9 @@ from __future__ import annotations
 import cv2
 import numpy as np
 from scipy.spatial.distance import euclidean
-from typing_extensions import TYPE_CHECKING, List, Any, Tuple
+from typing_extensions import TYPE_CHECKING, List, Any, Tuple, Union
 
+from robokudo.types.annotation import PositionAnnotation
 from robokudo.utils.non_maxima_suppression import _iou
 
 if TYPE_CHECKING:
@@ -46,8 +47,8 @@ class TranslationComparator(FeatureComparator):
 
     def compute_similarity(
         self,
-        query_value: Tuple[float, float, float],
-        obj_value: Tuple[float, float, float],
+        query_value: Union[Tuple[float, float, float], PositionAnnotation],
+        obj_value: Union[Tuple[float, float, float], PositionAnnotation],
     ) -> float:
         """Computes similarity based on translation distance between query and object values.
 
@@ -55,7 +56,17 @@ class TranslationComparator(FeatureComparator):
         :param obj_value: The translation to compare against `query_value`.
         :returns: A similarity score between 0.0 (distance equal to or larger than `self.max_distance`) and 1.0 (completely identical).
         """
-        distance = euclidean(query_value, obj_value)
+        if isinstance(query_value, PositionAnnotation):
+            query_translation = query_value.translation
+        else:
+            query_translation = query_value
+
+        if isinstance(obj_value, PositionAnnotation):
+            obj_translation = obj_value.translation
+        else:
+            obj_translation = obj_value
+
+        distance = euclidean(query_translation, obj_translation)
         return max(min(1.0 - (distance / self.max_distance), 1.0), 0.0)
 
 
@@ -233,8 +244,21 @@ class ImageROIComparator(FeatureComparator):
         :param obj_value: The ImageROI to compare against `query_value`.
         :returns: A similarity score between 0.0 (no overlap) and 1.0 (100% overlap).
         """
-        roi_sim = self.roi_comparator.compute_similarity(query_value.roi, obj_value.roi)
-        mask_sim = self.mask_comparator.compute_similarity(
-            query_value.mask, obj_value.mask
-        )
+        query_roi = query_value.roi
+        obj_roi = obj_value.roi
+
+        roi_sim = self.roi_comparator.compute_similarity(query_roi, obj_roi)
+
+        query_mask = query_value.mask
+        obj_mask = obj_value.mask
+
+        # Crop masks to roi if needed
+        if query_mask.shape[:2] != (query_roi.height, query_roi.width):
+            xyxy = query_roi.get_corner_points()
+            query_mask = query_mask[xyxy[1] : xyxy[3], xyxy[0] : xyxy[2]]
+        if obj_mask.shape[:2] != (query_roi.height, query_roi.width):
+            xyxy = obj_roi.get_corner_points()
+            obj_mask = obj_mask[xyxy[1] : xyxy[3], xyxy[0] : xyxy[2]]
+
+        mask_sim = self.mask_comparator.compute_similarity(query_mask, obj_mask)
         return (roi_sim + mask_sim) / 2.0
