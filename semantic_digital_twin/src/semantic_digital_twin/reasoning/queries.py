@@ -71,7 +71,7 @@ def get_next_object_using_planar_distance(
     )
 
 
-def query_surface_of_most_similar_obj(
+def query_goal_surface_of_object(
     object_of_interest: SemanticAnnotation,
     supporting_surfaces: List[HasSupportingSurface],
     threshold: int = 1,
