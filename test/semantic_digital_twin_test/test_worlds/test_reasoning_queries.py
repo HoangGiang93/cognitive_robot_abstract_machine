@@ -2,7 +2,7 @@ from semantic_digital_twin.reasoning.predicates import compute_euclidean_distanc
 
 from semantic_digital_twin.predetermined_maps.kitchen_environment import KitchenEnvironment
 from semantic_digital_twin.reasoning.queries import query_semantic_annotations_on_surfaces, \
-    get_next_object_using_planar_distance, query_surface_of_most_similar_obj, query_annotations_by_color, \
+    get_next_object_using_planar_distance, query_goal_surface_of_object, query_annotations_by_color, \
     query_class_by_label, query_sort_by_volume
 from semantic_digital_twin.semantic_annotations.semantic_annotations import *
 from semantic_digital_twin.world import World
@@ -71,9 +71,9 @@ def test_get_next_object_using_planar_distance(kitchen_environment_fixture):
     assert get_next_object_using_planar_distance(toya, table3, Vector3.Z()).tolist() == []
 
 
-def test_query_surface_of_most_similar_obj(kitchen_environment_fixture):
+def test_query_goal_surface_of_object(kitchen_environment_fixture):
     """
-    Tests the `query_surface_of_most_similar_obj` function for determining the surface of the most suitable
+    Tests the `query_goal_surface_of_object` function for determining the surface of the most suitable
     semantic annotation object from a set of candidates based on similarity and
     other constraints. The function is evaluated under multiple scenarios to verify
     its logic in choosing the correct table, handling empty tables, and cases with
@@ -91,19 +91,19 @@ def test_query_surface_of_most_similar_obj(kitchen_environment_fixture):
     lettuce = kitchen_environment_fixture.get_semantic_annotation_by_name("lettuce")
 
     # choosing the correct table
-    assert query_surface_of_most_similar_obj(banana, [table1, table2, table3]) == table1
-    assert query_surface_of_most_similar_obj(carrot, [table1, table2, table3]) == table2
+    assert query_goal_surface_of_object(banana, [table1, table2, table3]) == table1
+    assert query_goal_surface_of_object(carrot, [table1, table2, table3]) == table2
     # choosing the empty table
-    assert query_surface_of_most_similar_obj(lettuce, [table1, table3]) == table3
-    assert query_surface_of_most_similar_obj(table1, [table1, table2, table3]) == table3
+    assert query_goal_surface_of_object(lettuce, [table1, table3]) == table3
+    assert query_goal_surface_of_object(table1, [table1, table2, table3]) == table3
     # trying with a new threshold
-    assert query_surface_of_most_similar_obj(orange, [table2, table3], 2) == table2
+    assert query_goal_surface_of_object(orange, [table2, table3], 2) == table2
     # returning None if there is no empty table or no tables
-    assert query_surface_of_most_similar_obj(apple, [table2]) == None
-    assert query_surface_of_most_similar_obj(orange, []) == None
+    assert query_goal_surface_of_object(apple, [table2]) == None
+    assert query_goal_surface_of_object(orange, []) == None
     # trying with 2 empty tables
-    assert query_surface_of_most_similar_obj(apple, [table2, table3, table4]) == table3
-    assert query_surface_of_most_similar_obj(apple, [table2, table4, table3]) == table4
+    assert query_goal_surface_of_object(apple, [table2, table3, table4]) == table3
+    assert query_goal_surface_of_object(apple, [table2, table4, table3]) == table4
 
 def test_query_body_by_color(kitchen_environment_fixture):
     """
