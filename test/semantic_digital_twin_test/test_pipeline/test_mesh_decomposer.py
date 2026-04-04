@@ -3,6 +3,14 @@ import os
 import pytest
 
 from semantic_digital_twin.adapters.mesh import STLParser
+from semantic_digital_twin.adapters.ros.visualization.viz_marker import (
+    VizMarkerPublisher,
+    ShapeSource,
+)
+from semantic_digital_twin.datastructures.prefixed_name import PrefixedName
+from semantic_digital_twin.pipeline.mesh_decomposition.box_decomposer import (
+    BoxDecomposer,
+)
 from semantic_digital_twin.pipeline.mesh_decomposition.vhacd import VHACDMeshDecomposer
 from semantic_digital_twin.pipeline.mesh_decomposition.coacd import COACDMeshDecomposer
 from semantic_digital_twin.pipeline.pipeline import Pipeline
@@ -20,6 +28,7 @@ def jeroen_cup_world_fixture():
         "stl",
     )
     world = STLParser(os.path.join(stl_dir, "jeroen_cup.stl")).parse()
+    world.root.name = PrefixedName("root")
     return world
 
 
@@ -41,3 +50,20 @@ def test_vhacd(jeroen_cup_world_fixture):
     pipeline.apply(jeroen_cup_world_fixture)
 
     assert len(cup.collision.shapes) > old_collision_length
+
+
+def test_box_decomposer(jeroen_cup_world_fixture, rclpy_node):
+    [cup] = jeroen_cup_world_fixture.bodies
+    old_collision_length = len(cup.collision.shapes)
+
+    pipeline = Pipeline([BoxDecomposer()])
+    pipeline.apply(jeroen_cup_world_fixture)
+
+    assert len(cup.collision.shapes) > old_collision_length
+
+    pub = VizMarkerPublisher(
+        _world=jeroen_cup_world_fixture,
+        node=rclpy_node,
+        shape_source=ShapeSource.COLLISION_ONLY,
+    )
+    pub.with_tf_publisher()

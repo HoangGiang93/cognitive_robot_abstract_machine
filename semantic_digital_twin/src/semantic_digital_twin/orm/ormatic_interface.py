@@ -2,10 +2,16 @@
 
 from __future__ import annotations
 from sqlalchemy import (
+    Column,
     ForeignKey,
     Integer,
     String,
+    Float,
+    Boolean,
+    DateTime,
+    Enum,
     JSON,
+    Table,
 )
 from sqlalchemy.orm import relationship, Mapped, mapped_column, DeclarativeBase
 
@@ -31,6 +37,9 @@ import semantic_digital_twin.orm.exceptions
 import semantic_digital_twin.orm.model
 import semantic_digital_twin.pipeline.gltf_loader
 import semantic_digital_twin.pipeline.mesh_decomposition.base
+import semantic_digital_twin.pipeline.mesh_decomposition.box_decomposer
+import semantic_digital_twin.pipeline.mesh_decomposition.coacd
+import semantic_digital_twin.pipeline.mesh_decomposition.vhacd
 import semantic_digital_twin.pipeline.pipeline
 import semantic_digital_twin.reasoning.predicates
 import semantic_digital_twin.reasoning.reasoner
@@ -75,6 +84,7 @@ import semantic_digital_twin.world_description.world_state_trajectory_plotter
 import sqlalchemy.sql.sqltypes
 import trimesh.base
 import typing
+import typing_extensions
 import uuid
 
 
@@ -83,7 +93,6 @@ from krrood.ormatic.data_access_objects.dao import (
     AssociationDataAccessObject,
 )
 from krrood.ormatic.custom_types import TypeType
-from semantic_digital_twin.pipeline.mesh_decomposition import coacd, vhacd
 
 
 class Base(DeclarativeBase):
@@ -2304,6 +2313,27 @@ class FieldOfViewDAO(
     horizontal_angle: Mapped[builtins.float] = mapped_column(use_existing_column=True)
 
 
+class GiangBoxDAO(
+    Base,
+    DataAccessObject[
+        semantic_digital_twin.pipeline.mesh_decomposition.box_decomposer.GiangBox
+    ],
+):
+
+    __tablename__ = "GiangBoxDAO"
+
+    database_id: Mapped[builtins.int] = mapped_column(
+        Integer, primary_key=True, use_existing_column=True
+    )
+
+    position: Mapped[typing.List[builtins.float]] = mapped_column(
+        JSON, nullable=False, use_existing_column=True
+    )
+    size: Mapped[typing.List[builtins.float]] = mapped_column(
+        JSON, nullable=False, use_existing_column=True
+    )
+
+
 class HasArmsDAO(
     Base, DataAccessObject[semantic_digital_twin.robots.robot_mixins.HasArms]
 ):
@@ -2410,6 +2440,27 @@ class IncorrectWorldStateValueShapeErrorDAO(
     dof_id: Mapped[uuid.UUID] = mapped_column(
         sqlalchemy.sql.sqltypes.UUID, nullable=False, use_existing_column=True
     )
+
+
+class IndexBoxDAO(
+    Base,
+    DataAccessObject[
+        semantic_digital_twin.pipeline.mesh_decomposition.box_decomposer.IndexBox
+    ],
+):
+
+    __tablename__ = "IndexBoxDAO"
+
+    database_id: Mapped[builtins.int] = mapped_column(
+        Integer, primary_key=True, use_existing_column=True
+    )
+
+    x0: Mapped[builtins.int] = mapped_column(use_existing_column=True)
+    x1: Mapped[builtins.int] = mapped_column(use_existing_column=True)
+    y0: Mapped[builtins.int] = mapped_column(use_existing_column=True)
+    y1: Mapped[builtins.int] = mapped_column(use_existing_column=True)
+    z0: Mapped[builtins.int] = mapped_column(use_existing_column=True)
+    z1: Mapped[builtins.int] = mapped_column(use_existing_column=True)
 
 
 class InertialDAO(
@@ -3953,7 +4004,7 @@ class GLTFLoaderDAO(
 class MeshDecomposerDAO(
     StepDAO,
     DataAccessObject[
-        semantic_digital_twin.pipeline.mesh_decomposition.mesh_decomposer.MeshDecomposer
+        semantic_digital_twin.pipeline.mesh_decomposition.base.MeshDecomposer
     ],
 ):
 
@@ -3969,9 +4020,40 @@ class MeshDecomposerDAO(
     }
 
 
+class BoxDecomposerDAO(
+    MeshDecomposerDAO,
+    DataAccessObject[
+        semantic_digital_twin.pipeline.mesh_decomposition.box_decomposer.BoxDecomposer
+    ],
+):
+
+    __tablename__ = "BoxDecomposerDAO"
+
+    database_id: Mapped[builtins.int] = mapped_column(
+        ForeignKey(MeshDecomposerDAO.database_id),
+        primary_key=True,
+        use_existing_column=True,
+    )
+
+    voxel_size: Mapped[builtins.float] = mapped_column(use_existing_column=True)
+    fill: Mapped[builtins.bool] = mapped_column(use_existing_column=True)
+    fill_thin_holes: Mapped[builtins.bool] = mapped_column(use_existing_column=True)
+    max_board_thickness: Mapped[builtins.int] = mapped_column(use_existing_column=True)
+    min_span_voxel: Mapped[builtins.int] = mapped_column(use_existing_column=True)
+    min_fill_ratio: Mapped[builtins.float] = mapped_column(use_existing_column=True)
+    overlap_threshold: Mapped[builtins.float] = mapped_column(use_existing_column=True)
+
+    __mapper_args__ = {
+        "polymorphic_identity": "BoxDecomposerDAO",
+        "inherit_condition": database_id == MeshDecomposerDAO.database_id,
+    }
+
+
 class COACDMeshDecomposerDAO(
     MeshDecomposerDAO,
-    DataAccessObject[coacd.COACDMeshDecomposer],
+    DataAccessObject[
+        semantic_digital_twin.pipeline.mesh_decomposition.coacd.COACDMeshDecomposer
+    ],
 ):
 
     __tablename__ = "COACDMeshDecomposerDAO"
@@ -4003,12 +4085,16 @@ class COACDMeshDecomposerDAO(
     )
     seed: Mapped[builtins.int] = mapped_column(use_existing_column=True)
 
-    preprocess_mode: Mapped[coacd.PreprocessingMode] = mapped_column(
+    preprocess_mode: Mapped[
+        semantic_digital_twin.pipeline.mesh_decomposition.coacd.PreprocessingMode
+    ] = mapped_column(
         krrood.ormatic.custom_types.PolymorphicEnumType,
         nullable=False,
         use_existing_column=True,
     )
-    approximation_mode: Mapped[coacd.ApproximationMode] = mapped_column(
+    approximation_mode: Mapped[
+        semantic_digital_twin.pipeline.mesh_decomposition.coacd.ApproximationMode
+    ] = mapped_column(
         krrood.ormatic.custom_types.PolymorphicEnumType,
         nullable=False,
         use_existing_column=True,
@@ -4543,7 +4629,9 @@ class ReferenceFrameMismatchErrorDAO(
 
 class VHACDMeshDecomposerDAO(
     MeshDecomposerDAO,
-    DataAccessObject[vhacd.VHACDMeshDecomposer],
+    DataAccessObject[
+        semantic_digital_twin.pipeline.mesh_decomposition.vhacd.VHACDMeshDecomposer
+    ],
 ):
 
     __tablename__ = "VHACDMeshDecomposerDAO"
@@ -4568,7 +4656,9 @@ class VHACDMeshDecomposerDAO(
     min_edge_length: Mapped[builtins.int] = mapped_column(use_existing_column=True)
     find_best_plane: Mapped[builtins.bool] = mapped_column(use_existing_column=True)
 
-    fill_mode: Mapped[vhacd.FillMode] = mapped_column(
+    fill_mode: Mapped[
+        semantic_digital_twin.pipeline.mesh_decomposition.vhacd.FillMode
+    ] = mapped_column(
         krrood.ormatic.custom_types.PolymorphicEnumType,
         nullable=False,
         use_existing_column=True,

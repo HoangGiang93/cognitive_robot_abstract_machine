@@ -21,7 +21,7 @@ class MeshDecomposer(Step, ABC):
     """
 
     @abstractmethod
-    def apply_to_mesh(self, mesh: Mesh) -> List[Mesh]:
+    def apply_to_mesh(self, mesh: Mesh) -> List[Shape]:
         """
         Apply the mesh decomposition to a given mesh.
         Returns a list of TriangleMesh objects representing the decomposed convex parts.
