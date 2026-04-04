@@ -1,8 +1,8 @@
 from __future__ import annotations
+from robokudo.annotators.core import ThreadedAnnotator
 
 import copy
 from enum import Enum
-
 import cv2
 import numpy as np
 import open3d as o3d
@@ -14,7 +14,6 @@ from robokudo.cas import CASViews
 from robokudo.types.annotation import PoseAnnotation
 from robokudo.types.cv import TSDFAnnotation
 from robokudo.types.scene import ObjectHypothesis
-from robokudo.utils.annotator_helper import get_cam_to_world_transform_matrix
 from robokudo.utils.comparators import TranslationComparator
 from robokudo.utils.cv_helper import get_scaled_color_image_for_depth_image
 from robokudo.utils.o3d_helper import scale_o3d_cam_intrinsics
@@ -33,7 +32,7 @@ class TSDFAnnotatorVisualizationModes(Enum):
     VOXEL_POINTCLOUD = "voxel_pointcloud"
 
 
-class TSDFAnnotator(BaseAnnotator):
+class TSDFAnnotator(ThreadedAnnotator):
     """Annotator for per-object TSDF volume integration.
 
     .. note::
@@ -103,7 +102,7 @@ class TSDFAnnotator(BaseAnnotator):
                 best_sim = sim
         return best_object if best_sim > threshold else None
 
-    def update(self) -> Status:
+    def compute(self) -> Status:
         """Generate a TSDF volume for each object hypothesis or integrate into existing volumes.
 
         :return: Whether the TSDF integration was successful or not.
@@ -148,9 +147,6 @@ class TSDFAnnotator(BaseAnnotator):
         depth_image: npt.NDArray[np.float32] = copy.deepcopy(
             self.get_cas().get(CASViews.DEPTH_IMAGE)
         )
-
-        cam_t_world = get_cam_to_world_transform_matrix(cas)
-        world_t_cam = np.linalg.inv(cam_t_world)
 
         geometries: List[o3d.geometry.Geometry] = []
         masks: List[npt.NDArray[np.uint8]] = []
@@ -197,18 +193,12 @@ class TSDFAnnotator(BaseAnnotator):
                 )
             )
 
-            # Get camera to object transform in world
-            # This is needed to express movement of the object and camera individually
-            # If either camera or object are static, the object pose in camera space would be sufficient
-            # If both camera and object are able to move we need their relation to each other in world space
-            obj_pose_mat = get_transform_matrix_from_q(pose.rotation, pose.translation)
-            obj_t_world = np.matmul(cam_t_world, obj_pose_mat)
-            cam_t_obj = world_t_cam @ obj_t_world
+            pose_in_cam = get_transform_matrix_from_q(pose.rotation, pose.translation)
 
             tracked_object = self.find_tracked_object(pose)
             if tracked_object is not None:
-                tracked_object["pose"] = pose
                 volume = tracked_object["volume"]
+                tracked_object["pose"] = pose
             else:
                 volume = o3d.pipelines.integration.ScalableTSDFVolume(
                     voxel_length=self.descriptor.parameters.voxel_length,
@@ -222,15 +212,16 @@ class TSDFAnnotator(BaseAnnotator):
                     }
                 )
 
+            # Integrate with pose in cam
             volume.integrate(
                 rgbd_masked,
                 intrinsic=cam_intrinsic,
-                extrinsic=cam_t_obj,
+                extrinsic=pose_in_cam,
             )
 
             volume_an = TSDFAnnotation(source=self.name)
             volume_an.volume = volume
-            volume_an.transform = cam_t_obj
+            volume_an.transform = pose_in_cam
             oh.annotations.append(volume_an)
 
             vis_mode = self.descriptor.parameters.geometry_visualization_mode
