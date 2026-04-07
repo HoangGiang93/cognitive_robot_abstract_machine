@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List, Dict, Any, Self
 
+import numpy as np
 from typing_extensions import Optional, Tuple, assert_never
 
 from krrood.adapters.exceptions import JSON_TYPE_NAME
@@ -22,6 +23,7 @@ from semantic_digital_twin.spatial_types import HomogeneousTransformationMatrix,
 from semantic_digital_twin.world import World
 from semantic_digital_twin.world_description.connections import (
     Connection6DoF,
+    FixedConnection,
 )
 from semantic_digital_twin.world_description.geometry import Mesh, Scale, Box
 from semantic_digital_twin.world_description.shape_collection import ShapeCollection
@@ -36,10 +38,16 @@ from semantic_digital_twin.world_description.world_entity import (
 class Sage10kBase(SubclassJSONSerializer):
     """
     Base class for all classes of the Sage 10k dataset.
+
     These objects are serialized with JSON in a layout*.json and behave a bit different than the SubClassJSONSerializer
     of KRROOD asserts. The data of Sage10k does not support polymorphism and hence does not give any column that
     specifies their type. The JSON interface therefore just hard codes the type the referenced data should have.
     Use with care.
+
+    .. important::
+
+        All subclasses of Sage10kBase are only to load the data from the Sage 10k dataset.
+        Do not use them for anything else.
     """
 
 
@@ -293,11 +301,21 @@ class Sage10kWall(Sage10kWithID):
 
         body = annotation.root
 
+        wall_mesh = body.collision.combined_mesh
+
+        wall_mesh = Mesh.project_texture_coordinates(
+            mesh=wall_mesh,
+            projection_axis=np.array([1, 0, 0]),
+            scale=np.array([self.thickness, wall_length, self.height]),
+        )
+
+        wall_length, _ = self.wall_length_and_yaw
+
         geometry_with_texture = ShapeCollection(
             [
                 Mesh.from_trimesh(
                     origin=HomogeneousTransformationMatrix(reference_frame=body),
-                    mesh=body.collision.combined_mesh,
+                    mesh=wall_mesh,
                     texture_file_path=str(
                         directory / "materials" / f"{self.material}.png"
                     ),
@@ -328,7 +346,14 @@ class Sage10kObject(Sage10kWithID):
     """
 
     description: str
+    """
+    A textual description of the object.
+    """
+
     source: str
+    """
+    Always generation
+    """
 
     source_id: str
     """
@@ -336,7 +361,14 @@ class Sage10kObject(Sage10kWithID):
     """
 
     place_id: str
+    """
+    Either the id of the room, wall or floor.
+    """
+
     place_guidance: str
+    """
+    A textual description of the place where the object is located.
+    """
 
     mass: float
     """
@@ -345,7 +377,7 @@ class Sage10kObject(Sage10kWithID):
 
     position: Sage10kPosition
     """
-    The position of the object (relative to the room?)
+    The global position of the object
     """
 
     rotation: Sage10kRotation
@@ -395,8 +427,13 @@ class Sage10kObject(Sage10kWithID):
         body.visual = visual
         body.collision = collision
 
+        if self.place_id in ["floor", "wall"]:
+            connection_type = FixedConnection
+        else:
+            connection_type = Connection6DoF
+
         with world.modify_world():
-            root_C_body = Connection6DoF.create_with_dofs(
+            root_C_body = connection_type.create_with_dofs(
                 world=world,
                 parent=parent,
                 child=body,
@@ -427,6 +464,12 @@ class Sage10kObject(Sage10kWithID):
 
     @classmethod
     def _from_json(cls, data: Dict[str, Any], **kwargs) -> Sage10kObject:
+        place_guidance = data["place_guidance"]
+        if isinstance(place_guidance, dict):
+            import json
+
+            place_guidance = json.dumps(place_guidance)
+
         return cls(
             id=data["id"],
             room_id=data["room_id"],
@@ -435,7 +478,7 @@ class Sage10kObject(Sage10kWithID):
             source=data["source"],
             source_id=data["source_id"],
             place_id=data["place_id"],
-            place_guidance=data["place_guidance"],
+            place_guidance=place_guidance,
             mass=data["mass"],
             position=Sage10kPosition._from_json(data["position"], **kwargs),
             rotation=Sage10kRotation._from_json(data["rotation"], **kwargs),
@@ -557,12 +600,19 @@ class Sage10kDoor(Sage10kWithID):
             )
 
         body = annotation.root
+        door_mesh = body.collision.combined_mesh
+
+        door_mesh = Mesh.project_texture_coordinates(
+            mesh=door_mesh,
+            projection_axis=np.array([1, 0, 0]),
+            scale=np.array([sage_10k_wall.thickness, self.width, self.height]),
+        )
 
         geometry_with_texture = ShapeCollection(
             [
                 Mesh.from_trimesh(
                     origin=HomogeneousTransformationMatrix(reference_frame=body),
-                    mesh=body.collision.combined_mesh,
+                    mesh=door_mesh,
                     texture_file_path=str(
                         directory / "materials" / f"{self.door_material}_texture.png"
                     ),
@@ -684,6 +734,12 @@ class Sage10kRoom(Sage10kWithID):
             scale=Scale(x=self.dimensions.x, y=self.dimensions.y, z=0.01)
         ).mesh
 
+        floor_mesh = Mesh.project_texture_coordinates(
+            mesh=floor_mesh,
+            projection_axis=np.array([0, 0, 1]),
+            scale=np.array([self.dimensions.x, self.dimensions.y, 0.01]),
+        )
+
         # convert position from lower left to center point
         x_center = self.position.x + (self.dimensions.x / 2)
         y_center = self.position.y + (self.dimensions.y / 2)
@@ -740,6 +796,32 @@ class Sage10kRoom(Sage10kWithID):
                     world, directory, wall_annotation.root, wall, wall_annotation
                 )
 
+            # After all doors are added and the mesh is modified, re-project UVs and set texture
+            wall_length, _ = wall.wall_length_and_yaw
+            body = wall_annotation.root
+            wall_mesh = body.collision.combined_mesh
+
+            wall_mesh = Mesh.project_texture_coordinates(
+                mesh=wall_mesh,
+                projection_axis=np.array([1, 0, 0]),
+                scale=np.array([wall.thickness, wall_length, wall.height]),
+            )
+
+            geometry_with_texture = ShapeCollection(
+                [
+                    Mesh.from_trimesh(
+                        origin=HomogeneousTransformationMatrix(reference_frame=body),
+                        mesh=wall_mesh,
+                        texture_file_path=str(
+                            directory / "materials" / f"{wall.material}.png"
+                        ),
+                    )
+                ],
+                reference_frame=body,
+            )
+            body.collision = geometry_with_texture
+            body.visual = geometry_with_texture
+
         # create the objects
         for sage_object in self.objects:
             sage_object.create_in_world(world, directory, parent=parent)
@@ -791,7 +873,8 @@ class Sage10kScene(Sage10kWithID):
 
     created_from_text: str
     """
-    No idea.
+    I think this is the entire prompt that was used to generate the scene.
+    Usually contains just the descriptiom + 'Complete layout with doors/windows:'
     """
 
     total_area: float
