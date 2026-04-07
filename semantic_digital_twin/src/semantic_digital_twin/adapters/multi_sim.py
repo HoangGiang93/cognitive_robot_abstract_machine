@@ -1,7 +1,6 @@
 import logging
 import inspect
 import os
-import shutil
 import trimesh
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
@@ -22,22 +21,22 @@ from krrood.utils import recursive_subclasses
 from scipy.spatial.transform import Rotation
 from trimesh.visual import TextureVisuals
 
-from ..callbacks.callback import ModelChangeCallback
-from ..datastructures.prefixed_name import PrefixedName
-from ..spatial_types.spatial_types import (
+from callbacks.callback import ModelChangeCallback
+from datastructures.prefixed_name import PrefixedName
+from spatial_types.spatial_types import (
     HomogeneousTransformationMatrix,
     Point3,
     Quaternion,
 )
-from ..world import World
-from ..world_description.connections import (
+from world import World
+from world_description.connections import (
     RevoluteConnection,
     PrismaticConnection,
     ActiveConnection1DOF,
     FixedConnection,
     Connection6DoF,
 )
-from ..world_description.geometry import (
+from world_description.geometry import (
     Box,
     Cylinder,
     Sphere,
@@ -45,7 +44,7 @@ from ..world_description.geometry import (
     Mesh,
     Color,
 )
-from ..world_description.world_entity import (
+from world_description.world_entity import (
     Region,
     Body,
     KinematicStructureEntity,
@@ -53,8 +52,8 @@ from ..world_description.world_entity import (
     WorldEntity,
     Actuator,
 )
-from ..mixin import SimulatorAdditionalProperty
-from ..world_description.world_modification import (
+from mixin import SimulatorAdditionalProperty
+from world_description.world_modification import (
     AddKinematicStructureEntityModification,
     AddActuatorModification,
     AddConnectionModification,
