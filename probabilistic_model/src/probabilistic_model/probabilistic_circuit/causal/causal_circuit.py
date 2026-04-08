@@ -22,10 +22,6 @@ from probabilistic_model.probabilistic_circuit.rx.probabilistic_circuit import (
 
 from tabulate import tabulate
 
-from probabilistic_model.probabilistic_circuit.causal.helpers import (
-    attach_marginal_circuit,
-    sum_unit_is_normalized,
-)
 
 from probabilistic_model.probabilistic_circuit.causal.exceptions import (
     SupportDeterminismViolation,
@@ -327,7 +323,7 @@ class CausalCircuit:
         """
         violations: List[UnnormalizedSumUnitViolation] = []
         for node in self.probabilistic_circuit.nodes():
-            if isinstance(node, SumUnit) and not sum_unit_is_normalized(node):
+            if isinstance(node, SumUnit) and not node.is_normalized():
                 violations.append(
                     UnnormalizedSumUnitViolation(
                         sum_unit_index=node.index,
@@ -575,8 +571,8 @@ class CausalCircuit:
             return False
 
         product_unit = ProductUnit(probabilistic_circuit=output_circuit)
-        attach_marginal_circuit(cause_region_circuit, product_unit, output_circuit)
-        attach_marginal_circuit(effect_marginal_circuit, product_unit, output_circuit)
+        product_unit.attach_marginal_circuit(cause_region_circuit, output_circuit)
+        product_unit.attach_marginal_circuit(effect_marginal_circuit, output_circuit)
         root_sum_unit.add_subcircuit(product_unit, math.log(cause_weight))
         return True
 
