@@ -2,8 +2,6 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
-from typing_extensions import TYPE_CHECKING, Callable, Any
-
 from robokudo.types.annotation import (
     BoundingBox3DAnnotation,
     Classification,
@@ -27,6 +25,7 @@ from robokudo.utils.comparators import (
     OrientationComparator,
     PoseComparator,
 )
+from typing_extensions import TYPE_CHECKING, Callable, Any
 
 if TYPE_CHECKING:
     import numpy.typing as npt
@@ -278,14 +277,14 @@ class TestUtilsComparators(object):
         ["query_value", "obj_value", "expected_similarity"],
         [
             ((0, 0, 1, 1), (0, 0, 1, 1), 1.0),  # Full overlap
-            ((1, 1, 1, 1), (0, 0, 1, 1), 0.0),  # No overlap
-            ((0, 0, 1, 1), (0, 0, 2, 2), 0.25),  # Partial overlap
+            ((2, 2, 1, 1), (0, 0, 1, 1), 0.0),  # No overlap
+            ((0, 0, 1, 1), (0, 0, 3, 3), 0.25),  # Partial overlap
         ],
     )
     def test_roi_comparator(
         self,
-        query_value: tuple[int, int, int, int],
-        obj_value: tuple[int, int, int, int],
+        query_value: Tuple[int, int, int, int],
+        obj_value: Tuple[int, int, int, int],
         expected_similarity: float,
     ):
         query_rect = Rect()
