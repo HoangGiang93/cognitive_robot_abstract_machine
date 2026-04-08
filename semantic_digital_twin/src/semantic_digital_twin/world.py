@@ -1177,6 +1177,9 @@ class World(HasSimulatorProperties):
             other_state = deepcopy(other.state)
 
             other_root_id = other.root.id
+            if other._model_manager.current_model_modification_block:
+                other._model_manager.model_modification_blocks.append(
+                    other._model_manager.current_model_modification_block)
             other._clear_world_entities()
             for modification in other._model_manager.model_modification_blocks:
                 modification.apply(self)
