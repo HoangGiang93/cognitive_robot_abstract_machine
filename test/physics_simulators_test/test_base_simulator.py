@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 
 import time
-from typing import List, Optional
-
-import pytest
+import unittest
+from typing import Optional, Tuple, List
 
 from physics_simulators.base_simulator import (
     BaseSimulator,
