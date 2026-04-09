@@ -95,6 +95,9 @@ def test_empty_multi_sim_in_5s():
     scene = loader.create_scene(scene_url=Sage10kDatasetLoader.available_scenes()[0])
 
     world = scene.create_world()
+    decomposer = BoxDecomposer()
+    pipeline = Pipeline([decomposer])
+    pipeline.apply(world)
     headless = os.environ.get("CI", "false").lower() == "true"
     multi_sim = MujocoSim(world=world, headless=headless)
 
