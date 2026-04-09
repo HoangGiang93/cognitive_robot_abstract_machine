@@ -21,9 +21,9 @@ from krrood.utils import recursive_subclasses
 from scipy.spatial.transform import Rotation
 from trimesh.visual import TextureVisuals
 
-from callbacks.callback import ModelChangeCallback
-from datastructures.prefixed_name import PrefixedName
-from spatial_types.spatial_types import (
+from semantic_digital_twin.callbacks.callback import ModelChangeCallback
+from semantic_digital_twin.datastructures.prefixed_name import PrefixedName
+from semantic_digital_twin.spatial_types.spatial_types import (
     HomogeneousTransformationMatrix,
     Point3,
     Quaternion,
@@ -53,7 +53,7 @@ from semantic_digital_twin.world_description.world_entity import (
     Actuator,
 )
 from mixin import SimulatorAdditionalProperty
-from world_description.world_modification import (
+from semantic_digital_twin.world_description.world_modification import (
     AddKinematicStructureEntityModification,
     AddActuatorModification,
     AddConnectionModification,
