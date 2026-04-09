@@ -9,8 +9,8 @@ from types import NoneType
 from typing_extensions import Dict, List, Any, ClassVar, Type, Optional, Union
 
 import numpy
-from physics_simulators.mujoco_simulator import MujocoSimulator
 import mujoco
+from physics_simulators.mujoco_simulator import MujocoSimulator
 from physics_simulators.base_simulator import (
     BaseSimulator,
     SimulatorState,
@@ -28,7 +28,7 @@ from semantic_digital_twin.spatial_types.spatial_types import (
     Point3,
     Quaternion,
 )
-from world import World
+from semantic_digital_twin.world import World
 from semantic_digital_twin.world_description.connections import (
     RevoluteConnection,
     PrismaticConnection,
@@ -52,7 +52,7 @@ from semantic_digital_twin.world_description.world_entity import (
     WorldEntity,
     Actuator,
 )
-from mixin import SimulatorAdditionalProperty
+from semantic_digital_twin.mixin import SimulatorAdditionalProperty
 from semantic_digital_twin.world_description.world_modification import (
     AddKinematicStructureEntityModification,
     AddActuatorModification,
