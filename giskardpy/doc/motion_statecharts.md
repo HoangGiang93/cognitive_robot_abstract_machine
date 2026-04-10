@@ -16,10 +16,13 @@ Motion Statecharts address these issues by using a state machine-based approach 
 
 ### Key Concepts
 
-- **Nodes**: Every state in the statechart is a node. Nodes can be **Goals** (which define what the robot should do) or **Monitors** (which check for specific conditions).
+- **Nodes**: The fundamental building blocks of a statechart. Every state or component in the statechart is a node. Nodes are specialized into:
+    - **Tasks**: Atomic units of motion that define what the robot should do at a low level by adding specific motion constraints (e.g., "maintain this Cartesian pose" or "stay within these joint limits").
+    - **Goals**: Composite nodes that encapsulate multiple other Nodes (Tasks, Goals, or Monitors). They allow for hierarchical organization and complex behavior patterns (e.g., a "Grasp Goal" that includes pre-grasp, reach, and close gripper steps).
+    - **Monitors**: Nodes that check for specific conditions in the environment or robot state (e.g., "is the goal reached?" or "is a collision imminent?").
 - **Transitions**: Transitions define the flow of execution. A transition is triggered by a condition (usually from a Monitor) and leads to another Node or ends the motion.
-- **Hierarchical Composition**: Statecharts can contain other statecharts, allowing for complex behaviors to be built from simpler components.
-- **Parallel and Sequential Execution**: Using nodes like `Parallel` and `Sequence`, you can easily specify which goals should be pursued at the same time and which must follow one another.
+- **Hierarchical Composition**: Statecharts are inherently hierarchical. Goals can contain other Goals, allowing complex behaviors to be built from simpler, reusable components.
+- **Parallel and Sequential Execution**: Using nodes like `Parallel` and `Sequence` (which are types of Goals), you can specify which tasks/goals should be pursued simultaneously and which must follow one another.
 
 ### Benefits
 
