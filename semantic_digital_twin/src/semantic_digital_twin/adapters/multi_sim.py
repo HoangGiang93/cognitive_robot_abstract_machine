@@ -58,6 +58,7 @@ from semantic_digital_twin.world_description.world_modification import (
     AddActuatorModification,
     AddConnectionModification,
 )
+from world_description.world_entity import WorldEntity
 
 logger = logging.getLogger(__name__)
 
@@ -286,9 +287,8 @@ class KinematicStructureEntityConverter(EntityConverter, ABC):
         """
 
         kinematic_structure_entity_props = EntityConverter._convert(self, entity)
-        px, py, pz, qw, qx, qy, qz = cas_pose_to_list(
-            entity.parent_connection.origin_expression
-        )
+        t = entity.parent_connection.parent_T_connection_expression @ entity.parent_connection.connection_T_child_expression
+        px, py, pz, qw, qx, qy, qz = cas_pose_to_list(t)
         kinematic_structure_entity_pos = [px, py, pz]
         kinematic_structure_entity_quat = [qw, qx, qy, qz]
         kinematic_structure_entity_props.update(
@@ -1544,6 +1544,17 @@ class MujocoBuilder(MultiSimBuilder):
             texture_name = material_spec.textures[0]
             if texture_name != "":
                 material_element.set("texture", texture_name)
+        keyframe_element = ET.SubElement(root, "keyframe")
+        key_element = ET.SubElement(keyframe_element, "key")
+        key_element.set("name", "home")
+        key_element.set("time", "0")
+        qpos = []
+        for body in self.world.bodies:
+            parent_connection = body.parent_connection
+            if isinstance(parent_connection, FixedConnection) or parent_connection is None:
+                continue
+            qpos += [self.world.state[dof.id].position for dof in parent_connection.active_dofs + parent_connection.passive_dofs]
+        key_element.set("qpos", " ".join(map(str, qpos)))
         tree.write(file_path, encoding="utf-8", xml_declaration=True)
 
     def _build_body(self, body: Body):

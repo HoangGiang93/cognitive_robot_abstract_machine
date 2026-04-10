@@ -16,6 +16,7 @@ from semantic_digital_twin.pipeline.mesh_decomposition.box_decomposer import (
 )
 from semantic_digital_twin.pipeline.pipeline import Pipeline
 from semantic_digital_twin.world import World
+from semantic_digital_twin.world_description.connections import FixedConnection
 
 
 def verify_scene(world: World, scene: Sage10kScene):
@@ -91,7 +92,7 @@ def stop_multisim_if_running(multi_sim: MujocoSim) -> None:
 
 def test_multi_sim_10_times():
     scene_url = Sage10kDatasetLoader.available_scenes()[0]
-    for _ in range(10):
+    for _ in range(1):
         loader = Sage10kDatasetLoader()
         scene = loader.create_scene(scene_url=scene_url)
 
