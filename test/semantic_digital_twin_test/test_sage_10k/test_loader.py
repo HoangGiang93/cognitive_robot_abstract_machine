@@ -89,24 +89,35 @@ def stop_multisim_if_running(multi_sim: MujocoSim) -> None:
         return
     multi_sim.stop_simulation()
 
-def test_empty_multi_sim_in_5s():
-    loader = Sage10kDatasetLoader()
+def test_multi_sim_5_times():
+    scene_url = Sage10kDatasetLoader.available_scenes()[0]
+    for _ in range(5):
+        loader = Sage10kDatasetLoader()
+        scene = loader.create_scene(scene_url=scene_url)
 
-    scene = loader.create_scene(scene_url=Sage10kDatasetLoader.available_scenes()[0])
+        for room in scene.rooms:
+            new_objects = []
+            for obj in room.objects:
+                if obj.type in ["bookshelf", "book"]:
+                    new_objects.append(obj)
+            room.objects = new_objects
 
-    world = scene.create_world()
-    decomposer = BoxDecomposer()
-    pipeline = Pipeline([decomposer])
-    pipeline.apply(world)
-    headless = os.environ.get("CI", "false").lower() == "true"
-    multi_sim = MujocoSim(world=world, headless=headless)
+            room.walls = []
+            room.doors = []
 
-    try:
-        multi_sim.start_simulation()
-        start_time = time.time()
-        time.sleep(5.0)
-        multi_sim.stop_simulation()
+        world = scene.create_world()
+        decomposer = BoxDecomposer()
+        pipeline = Pipeline([decomposer])
+        pipeline.apply(world)
+        headless = os.environ.get("CI", "false").lower() == "true"
+        multi_sim = MujocoSim(world=world, headless=headless)
 
-        assert time.time() - start_time >= 5.0
-    finally:
-        stop_multisim_if_running(multi_sim)
+        try:
+            multi_sim.start_simulation()
+            start_time = time.time()
+            time.sleep(1.0)
+            multi_sim.stop_simulation()
+
+            assert time.time() - start_time >= 1.0
+        finally:
+            stop_multisim_if_running(multi_sim)

@@ -72,7 +72,11 @@ def cas_pose_to_list(pose: HomogeneousTransformationMatrix) -> List[float]:
     pose = pose.evaluate()
     pos = pose[:3, 3]
     rotation_matrix = pose[:3, :3]
-    quat = Rotation.from_matrix(rotation_matrix).as_quat(scalar_first=True)
+    try:
+        quat = Rotation.from_matrix(rotation_matrix).as_quat(scalar_first=True)
+    except Exception as e:
+        error_msg = f"Error converting rotation matrix to quaternion. Rotation matrix:\n{rotation_matrix}\nError message: {str(e)}"
+        raise MultiSimError(error_msg)
     return [pos[0], pos[1], pos[2], quat[0], quat[1], quat[2], quat[3]]
 
 
@@ -1522,6 +1526,8 @@ class MujocoBuilder(MultiSimBuilder):
 
         tree = ET.parse(file_path)
         root = tree.getroot()
+        for compiler_element in root.iter("compiler"):
+            compiler_element.set("inertiafromgeom", "true")
         for body_id, body_element in enumerate(root.findall(".//body")):
             body_spec = self.spec.bodies[body_id + 1]
             if numpy.isclose(body_spec.mass, 0.0):
