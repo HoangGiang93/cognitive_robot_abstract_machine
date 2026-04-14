@@ -11,7 +11,6 @@ import numpy as np
 import objgraph
 import pytest
 
-from pycram.datastructures.dataclasses import Context
 from semantic_digital_twin.adapters.package_resolver import PathResolver
 from semantic_digital_twin.collision_checking.collision_matrix import (
     MaxAvoidedCollisionsOverride,
