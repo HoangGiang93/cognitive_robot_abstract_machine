@@ -99,7 +99,7 @@ class ActionServerTask(
         future.add_done_callback(self.result_callback)
 
     def result_callback(self, future):
-        self._result = future.result().result
+        self._result = future.result().status
         logger.info(
             f"Action server {self.action_topic} returned result: {self._result}"
         )
@@ -188,7 +188,7 @@ class NavigateActionServerTask(
         if self._result:
             return (
                 ObservationStateValues.TRUE
-                if self._result.error_code == NavigateToPose.Result.NONE
+                if self._result == 4 # 4 is apparently the code for success
                 else ObservationStateValues.FALSE
             )
         return ObservationStateValues.UNKNOWN

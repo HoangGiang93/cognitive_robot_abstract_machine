@@ -89,7 +89,7 @@ class StretchMoveReal(MoveMotion, AlternativeMotion[Stretch]):
         return NavigateActionServerTask(
             target_pose=self.target,
             base_link=self.robot.root,
-            action_topic="/hsrb/move_base",
+            action_topic="/navigate_to_pose",
             message_type=NavigateToPose,
         )
 
