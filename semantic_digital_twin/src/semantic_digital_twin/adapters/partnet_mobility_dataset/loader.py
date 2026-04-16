@@ -77,7 +77,7 @@ class PartNetMobilityDatasetLoader:
         """
         Load a world given the model id.
 
-        ..note::
+        .. note::
             The PartNet model ids are distributed without any structure.
             Use the browser of PartNet (https://sapien.ucsd.edu/browse) to find the model id of the model you want to
             load. Or download the entire dataset and figure it out with `available_model_ids`.
