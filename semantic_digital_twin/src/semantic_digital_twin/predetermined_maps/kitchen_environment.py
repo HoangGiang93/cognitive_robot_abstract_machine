@@ -248,7 +248,7 @@ class KitchenEnvironment:
                 world=world,
                 name=PrefixedName("cupboard_left_door"),
                 world_root_T_self=HomogeneousTransformationMatrix.from_xyz_rpy(
-                    x=4.325, y=4.52, z=0.5275  # , yaw=np.pi/2
+                    x=4.325, y=4.52, z=0.5275
                 ),
                 scale=door_scale,
             )
@@ -268,6 +268,8 @@ class KitchenEnvironment:
                 world_root_T_self=HomogeneousTransformationMatrix.from_xyz_rpy(
                     x=4.325, y=4.32, z=0.5275
                 ),
+                active_axis=Vector3.Z(),
+                connection_limits=left_door_limits,
             )
             left_door.add_handle(left_door_handle)
             left_door.add_hinge(cupboard_left_door_hinge)
@@ -278,7 +280,7 @@ class KitchenEnvironment:
                 world=world,
                 name=PrefixedName("cupboard_right_door"),
                 world_root_T_self=HomogeneousTransformationMatrix.from_xyz_rpy(
-                    x=4.325, y=4.92, z=0.5275  # , yaw=np.pi/2
+                    x=4.325, y=4.92, z=0.5275
                 ),
                 scale=door_scale,
             )
@@ -297,7 +299,9 @@ class KitchenEnvironment:
                 name=PrefixedName("cupboard_right_door_hinge"),
                 world_root_T_self=HomogeneousTransformationMatrix.from_xyz_rpy(
                     x=4.325, y=5.12, z=0.5275
-                )
+                ),
+                active_axis=Vector3.Z(),
+                connection_limits=right_door_limits,
             )
             right_door.add_handle(right_door_handle)
             right_door.add_hinge(cupboard_right_door_hinge)
