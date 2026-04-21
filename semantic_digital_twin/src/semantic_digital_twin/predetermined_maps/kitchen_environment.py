@@ -392,7 +392,6 @@ class KitchenEnvironment:
             for color in dinning_table.bodies[0].visual.shapes:
                 color.color = Color.BEIGE()
 
-            # world.add_connection(root_C_ovenArea)
         return world
 
     def _build_environment_rooms(self, world: World):
