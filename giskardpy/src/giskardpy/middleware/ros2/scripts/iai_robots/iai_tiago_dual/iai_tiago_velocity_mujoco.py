@@ -15,7 +15,7 @@ def main():
         world_config=WorldWithTiagoConfig(urdf=urdf),
         robot_interface_config=TiagoVelocityInterface(),
         qp_controller_config=QPControllerConfig(
-            target_frequency=50, prediction_horizon=15
+            target_frequency=30, prediction_horizon=15
         ),
         behavior_tree_config=ClosedLoopBTConfig(debug_mode=False),
     )

@@ -40,9 +40,9 @@ class TiagoVelocityInterface(RobotInterfaceConfig):
 
         self.sync_joint_state_topic("/joint_states")
         joints_left = [
+            "torso_lift_joint",
             "head_1_joint",
             "head_2_joint",
-            "torso_lift_joint",
             "arm_left_1_joint",
             "arm_left_2_joint",
             "arm_left_3_joint",
@@ -59,5 +59,5 @@ class TiagoVelocityInterface(RobotInterfaceConfig):
             "arm_right_7_joint"
         ]
         self.add_joint_velocity_group_controller(
-            cmd_topic="/upper_body_velocity_controller/command", connections=joints_left
+            cmd_topic="/upper_body_velocity_controller/commands", connections=joints_left
         )

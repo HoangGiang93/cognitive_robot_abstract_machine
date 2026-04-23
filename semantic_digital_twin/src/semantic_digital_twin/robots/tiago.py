@@ -462,7 +462,8 @@ class TiagoMujoco(AbstractRobot, SpecifiesLeftRightArm):
         pass
 
     def _setup_velocity_limits(self):
-        pass
+        vel_limits = defaultdict(lambda: 0.5)
+        self.tighten_dof_velocity_limits_of_1dof_connections(new_limits=vel_limits)
 
     def _setup_hardware_interfaces(self):
         pass

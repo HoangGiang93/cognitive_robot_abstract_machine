@@ -19,7 +19,7 @@ from semantic_digital_twin.spatial_types import HomogeneousTransformationMatrix
 
 
 class InteractiveMarkerNode:
-    def __init__(self) -> None:
+    def __init__(self, root_link: str | None = None, tip_link: str | None = None) -> None:
         super().__init__()
         self.giskard = GiskardWrapper(
             node_handle=rospy.node, giskard_node_name="giskard"
@@ -32,8 +32,14 @@ class InteractiveMarkerNode:
                 ("tip_link", Parameter.Type.STRING),
             ],
         )
-        self.root_link = self.giskard.node_handle.get_parameter("root_link").value
-        self.tip_link = self.giskard.node_handle.get_parameter("tip_link").value
+        if root_link is None:
+            self.root_link = self.giskard.node_handle.get_parameter("root_link").value
+        else:
+            self.root_link = root_link
+        if tip_link is None:
+            self.tip_link = self.giskard.node_handle.get_parameter("tip_link").value
+        else:
+            self.tip_link = tip_link
         for i in range(100):
             try:
                 self.root_body = (
