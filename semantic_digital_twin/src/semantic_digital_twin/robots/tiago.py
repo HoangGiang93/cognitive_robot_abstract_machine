@@ -462,7 +462,12 @@ class TiagoMujoco(AbstractRobot, SpecifiesLeftRightArm):
         pass
 
     def _setup_velocity_limits(self):
-        vel_limits = defaultdict(lambda: 0.5)
+        vel_limits = defaultdict(
+            lambda: 0.5,
+            {
+                self._world.get_connection_by_name("torso_lift_joint"): 0.1,
+            },
+        )
         self.tighten_dof_velocity_limits_of_1dof_connections(new_limits=vel_limits)
 
     def _setup_hardware_interfaces(self):
