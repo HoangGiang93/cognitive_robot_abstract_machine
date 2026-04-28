@@ -1,3 +1,4 @@
+import numpy as np
 from nav_msgs.msg import Odometry
 from py_trees.common import Status
 
@@ -38,13 +39,12 @@ class SyncOdometry(GiskardBehavior):
     @catch_and_raise_to_blackboard
     @record_time
     def update(self):
-        self.joint.origin = HomogeneousTransformationMatrix.from_xyz_quaternion(
-            pos_x=self.odom.pose.pose.position.x,
-            pos_y=self.odom.pose.pose.position.y,
-            pos_z=self.odom.pose.pose.position.z,
-            quat_w=self.odom.pose.pose.orientation.w,
-            quat_x=self.odom.pose.pose.orientation.x,
-            quat_y=self.odom.pose.pose.orientation.y,
-            quat_z=self.odom.pose.pose.orientation.z,
+        self.joint.set_origin_from_xyz_yaw(
+            position_x=self.odom.pose.pose.position.x,
+            position_y=self.odom.pose.pose.position.y,
+            yaw=2
+            * np.atan2(
+                self.odom.pose.pose.orientation.z, self.odom.pose.pose.orientation.w
+            ),
         )
         return Status.SUCCESS

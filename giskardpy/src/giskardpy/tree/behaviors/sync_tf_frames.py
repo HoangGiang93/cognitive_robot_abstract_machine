@@ -40,14 +40,14 @@ class SyncTfFrames(GiskardBehavior):
     def update(self):
         for joint, (tf_parent_frame, tf_child_frame) in self.joint_map.items():
             parent_T_child = self.tf.lookup_pose(tf_parent_frame, tf_child_frame)
-            joint.origin = HomogeneousTransformationMatrix.from_xyz_quaternion(
-                pos_x=parent_T_child.pose.position.x,
-                pos_y=parent_T_child.pose.position.y,
-                pos_z=parent_T_child.pose.position.z,
-                quat_w=parent_T_child.pose.orientation.w,
-                quat_x=parent_T_child.pose.orientation.x,
-                quat_y=parent_T_child.pose.orientation.y,
-                quat_z=parent_T_child.pose.orientation.z,
+            joint.set_origin_from_xyz_quaternion(
+                position_x=parent_T_child.pose.position.x,
+                position_y=parent_T_child.pose.position.y,
+                position_z=parent_T_child.pose.position.z,
+                quaternion_w=parent_T_child.pose.orientation.w,
+                quaternion_x=parent_T_child.pose.orientation.x,
+                quaternion_y=parent_T_child.pose.orientation.y,
+                quaternion_z=parent_T_child.pose.orientation.z,
             )
 
         return Status.SUCCESS

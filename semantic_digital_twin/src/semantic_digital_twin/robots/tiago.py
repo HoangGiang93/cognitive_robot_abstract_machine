@@ -376,22 +376,22 @@ class TiagoMujoco(AbstractRobot, SpecifiesLeftRightArm):
         # Create left arm
         left_gripper_thumb = Finger(
             name=PrefixedName("left_gripper_thumb", prefix=self.name.name),
-            root=self._world.get_body_by_name("arm_left_7_link"),
-            tip=self._world.get_body_by_name("gripper_left_left_finger_link"),
+            root=self._world.get_body_by_name("gripper_left_base_link"),
+            tip=self._world.get_body_by_name("gripper_left_left_inner_finger"),
             _world=self._world,
         )
 
         left_gripper_finger = Finger(
             name=PrefixedName("left_gripper_finger", prefix=self.name.name),
-            root=self._world.get_body_by_name("arm_left_7_link"),
-            tip=self._world.get_body_by_name("gripper_left_right_finger_link"),
+            root=self._world.get_body_by_name("gripper_left_base_link"),
+            tip=self._world.get_body_by_name("gripper_left_right_inner_finger"),
             _world=self._world,
         )
 
         left_gripper = ParallelGripper(
             name=PrefixedName("left_gripper", prefix=self.name.name),
-            root=self._world.get_body_by_name("arm_left_7_link"),
-            tool_frame=self._world.get_body_by_name("arm_left_7_link"),
+            root=self._world.get_body_by_name("gripper_left_base_link"),
+            tool_frame=self._world.get_body_by_name("gripper_left_base_link"),
             front_facing_orientation=Quaternion(0, 0, 0, 1),
             front_facing_axis=Vector3(1, 0, 0),
             thumb=left_gripper_thumb,
@@ -401,7 +401,7 @@ class TiagoMujoco(AbstractRobot, SpecifiesLeftRightArm):
         left_arm = Arm(
             name=PrefixedName("left_arm", prefix=self.name.name),
             root=self._world.get_body_by_name("torso_lift_link"),
-            tip=self._world.get_body_by_name("arm_left_7_link"),
+            tip=self._world.get_body_by_name("arm_left_tool_link"),
             manipulator=left_gripper,
             _world=self._world,
         )
@@ -411,20 +411,20 @@ class TiagoMujoco(AbstractRobot, SpecifiesLeftRightArm):
         # Create right arm
         right_gripper_thumb = Finger(
             name=PrefixedName("right_gripper_thumb", prefix=self.name.name),
-            root=self._world.get_body_by_name("arm_right_7_link"),
-            tip=self._world.get_body_by_name("gripper_right_left_finger_link"),
+            root=self._world.get_body_by_name("gripper_right_base_link"),
+            tip=self._world.get_body_by_name("gripper_right_left_inner_finger"),
             _world=self._world,
         )
         right_gripper_finger = Finger(
             name=PrefixedName("right_gripper_finger", prefix=self.name.name),
-            root=self._world.get_body_by_name("arm_right_7_link"),
-            tip=self._world.get_body_by_name("gripper_right_right_finger_link"),
+            root=self._world.get_body_by_name("gripper_right_base_link"),
+            tip=self._world.get_body_by_name("gripper_right_right_inner_finger"),
             _world=self._world,
         )
         right_gripper = ParallelGripper(
             name=PrefixedName("right_gripper", prefix=self.name.name),
-            root=self._world.get_body_by_name("arm_right_7_link"),
-            tool_frame=self._world.get_body_by_name("arm_right_7_link"),
+            root=self._world.get_body_by_name("gripper_right_base_link"),
+            tool_frame=self._world.get_body_by_name("gripper_right_base_link"),
             front_facing_orientation=Quaternion(0, 0, 0, 1),
             front_facing_axis=Vector3(0, 0, 1),
             thumb=right_gripper_thumb,
@@ -434,7 +434,7 @@ class TiagoMujoco(AbstractRobot, SpecifiesLeftRightArm):
         right_arm = Arm(
             name=PrefixedName("right_arm", prefix=self.name.name),
             root=self._world.get_body_by_name("torso_lift_link"),
-            tip=self._world.get_body_by_name("arm_right_7_link"),
+            tip=self._world.get_body_by_name("arm_right_tool_link"),
             manipulator=right_gripper,
             _world=self._world,
         )
@@ -462,7 +462,13 @@ class TiagoMujoco(AbstractRobot, SpecifiesLeftRightArm):
         pass
 
     def _setup_velocity_limits(self):
-        pass
+        vel_limits = defaultdict(
+            lambda: 0.5,
+            {
+                self._world.get_connection_by_name("torso_lift_joint"): 0.1,
+            },
+        )
+        self.tighten_dof_velocity_limits_of_1dof_connections(new_limits=vel_limits)
 
     def _setup_hardware_interfaces(self):
         pass
@@ -503,45 +509,45 @@ class TiagoMujoco(AbstractRobot, SpecifiesLeftRightArm):
 
         self.right_arm.add_joint_state(right_arm_park)
 
-        left_gripper_joints = [
-            self._world.get_connection_by_name("gripper_left_left_finger_joint"),
-            self._world.get_connection_by_name("gripper_left_right_finger_joint"),
-        ]
-
-        left_gripper_open = JointState.from_mapping(
-            name=PrefixedName("left_gripper_open", prefix=self.name.name),
-            mapping=dict(zip(left_gripper_joints, [0.044, 0.044])),
-            state_type=GripperState.OPEN,
-        )
-
-        left_gripper_close = JointState.from_mapping(
-            name=PrefixedName("left_gripper_close", prefix=self.name.name),
-            mapping=dict(zip(left_gripper_joints, [0.0, 0.0])),
-            state_type=GripperState.CLOSE,
-        )
-
-        self.left_arm.manipulator.add_joint_state(left_gripper_close)
-        self.left_arm.manipulator.add_joint_state(left_gripper_open)
-
-        right_gripper_joints = [
-            self._world.get_connection_by_name("gripper_right_left_finger_joint"),
-            self._world.get_connection_by_name("gripper_right_right_finger_joint"),
-        ]
-
-        right_gripper_open = JointState.from_mapping(
-            name=PrefixedName("right_gripper_open", prefix=self.name.name),
-            mapping=dict(zip(right_gripper_joints, [0.044, 0.044])),
-            state_type=GripperState.OPEN,
-        )
-
-        right_gripper_close = JointState.from_mapping(
-            name=PrefixedName("right_gripper_close", prefix=self.name.name),
-            mapping=dict(zip(right_gripper_joints, [0.0, 0.0])),
-            state_type=GripperState.CLOSE,
-        )
-
-        self.right_arm.manipulator.add_joint_state(right_gripper_close)
-        self.right_arm.manipulator.add_joint_state(right_gripper_open)
+        # left_gripper_joints = [
+        #     self._world.get_connection_by_name("gripper_left_left_finger_joint"),
+        #     self._world.get_connection_by_name("gripper_left_right_finger_joint"),
+        # ]
+        #
+        # left_gripper_open = JointState.from_mapping(
+        #     name=PrefixedName("left_gripper_open", prefix=self.name.name),
+        #     mapping=dict(zip(left_gripper_joints, [0.044, 0.044])),
+        #     state_type=GripperState.OPEN,
+        # )
+        #
+        # left_gripper_close = JointState.from_mapping(
+        #     name=PrefixedName("left_gripper_close", prefix=self.name.name),
+        #     mapping=dict(zip(left_gripper_joints, [0.0, 0.0])),
+        #     state_type=GripperState.CLOSE,
+        # )
+        #
+        # self.left_arm.manipulator.add_joint_state(left_gripper_close)
+        # self.left_arm.manipulator.add_joint_state(left_gripper_open)
+        #
+        # right_gripper_joints = [
+        #     self._world.get_connection_by_name("gripper_right_left_finger_joint"),
+        #     self._world.get_connection_by_name("gripper_right_right_finger_joint"),
+        # ]
+        #
+        # right_gripper_open = JointState.from_mapping(
+        #     name=PrefixedName("right_gripper_open", prefix=self.name.name),
+        #     mapping=dict(zip(right_gripper_joints, [0.044, 0.044])),
+        #     state_type=GripperState.OPEN,
+        # )
+        #
+        # right_gripper_close = JointState.from_mapping(
+        #     name=PrefixedName("right_gripper_close", prefix=self.name.name),
+        #     mapping=dict(zip(right_gripper_joints, [0.0, 0.0])),
+        #     state_type=GripperState.CLOSE,
+        # )
+        #
+        # self.right_arm.manipulator.add_joint_state(right_gripper_close)
+        # self.right_arm.manipulator.add_joint_state(right_gripper_open)
 
         torso_joint = [self._world.get_connection_by_name("torso_lift_joint")]
 
