@@ -509,45 +509,45 @@ class TiagoMujoco(AbstractRobot, SpecifiesLeftRightArm):
 
         self.right_arm.add_joint_state(right_arm_park)
 
-        # left_gripper_joints = [
-        #     self._world.get_connection_by_name("gripper_left_left_finger_joint"),
-        #     self._world.get_connection_by_name("gripper_left_right_finger_joint"),
-        # ]
-        #
-        # left_gripper_open = JointState.from_mapping(
-        #     name=PrefixedName("left_gripper_open", prefix=self.name.name),
-        #     mapping=dict(zip(left_gripper_joints, [0.044, 0.044])),
-        #     state_type=GripperState.OPEN,
-        # )
-        #
-        # left_gripper_close = JointState.from_mapping(
-        #     name=PrefixedName("left_gripper_close", prefix=self.name.name),
-        #     mapping=dict(zip(left_gripper_joints, [0.0, 0.0])),
-        #     state_type=GripperState.CLOSE,
-        # )
-        #
-        # self.left_arm.manipulator.add_joint_state(left_gripper_close)
-        # self.left_arm.manipulator.add_joint_state(left_gripper_open)
-        #
-        # right_gripper_joints = [
-        #     self._world.get_connection_by_name("gripper_right_left_finger_joint"),
-        #     self._world.get_connection_by_name("gripper_right_right_finger_joint"),
-        # ]
-        #
-        # right_gripper_open = JointState.from_mapping(
-        #     name=PrefixedName("right_gripper_open", prefix=self.name.name),
-        #     mapping=dict(zip(right_gripper_joints, [0.044, 0.044])),
-        #     state_type=GripperState.OPEN,
-        # )
-        #
-        # right_gripper_close = JointState.from_mapping(
-        #     name=PrefixedName("right_gripper_close", prefix=self.name.name),
-        #     mapping=dict(zip(right_gripper_joints, [0.0, 0.0])),
-        #     state_type=GripperState.CLOSE,
-        # )
-        #
-        # self.right_arm.manipulator.add_joint_state(right_gripper_close)
-        # self.right_arm.manipulator.add_joint_state(right_gripper_open)
+        left_gripper_joints = [
+            self._world.get_connection_by_name("gripper_left_left_driver_joint"),
+            self._world.get_connection_by_name("gripper_left_right_driver_joint"),
+        ]
+
+        left_gripper_open = JointState.from_mapping(
+            name=PrefixedName("left_gripper_open", prefix=self.name.name),
+            mapping=dict(zip(left_gripper_joints, [0, 0])),
+            state_type=GripperState.OPEN,
+        )
+
+        left_gripper_close = JointState.from_mapping(
+            name=PrefixedName("left_gripper_close", prefix=self.name.name),
+            mapping=dict(zip(left_gripper_joints, [0.6, 0.6])),
+            state_type=GripperState.CLOSE,
+        )
+
+        self.left_arm.manipulator.add_joint_state(left_gripper_close)
+        self.left_arm.manipulator.add_joint_state(left_gripper_open)
+
+        right_gripper_joints = [
+            self._world.get_connection_by_name("gripper_right_left_driver_joint"),
+            self._world.get_connection_by_name("gripper_right_right_driver_joint"),
+        ]
+
+        right_gripper_open = JointState.from_mapping(
+            name=PrefixedName("right_gripper_open", prefix=self.name.name),
+            mapping=dict(zip(right_gripper_joints, [0, 0])),
+            state_type=GripperState.OPEN,
+        )
+
+        right_gripper_close = JointState.from_mapping(
+            name=PrefixedName("right_gripper_close", prefix=self.name.name),
+            mapping=dict(zip(right_gripper_joints, [0.6, 0.6])),
+            state_type=GripperState.CLOSE,
+        )
+
+        self.right_arm.manipulator.add_joint_state(right_gripper_close)
+        self.right_arm.manipulator.add_joint_state(right_gripper_open)
 
         torso_joint = [self._world.get_connection_by_name("torso_lift_joint")]
 
