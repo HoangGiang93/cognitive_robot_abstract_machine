@@ -545,6 +545,25 @@ class Connection6DoF(Connection):
         self._world.state[self.qw.id].position = orientation[3]
         self._world.notify_state_change()
 
+    def set_origin_from_xyz_quaternion(
+        self,
+        position_x: float,
+        position_y: float,
+        position_z: float,
+        quaternion_x: float,
+        quaternion_y: float,
+        quaternion_z: float,
+        quaternion_w: float,
+    ):
+        self._world.state[self.x.id].position = position_x
+        self._world.state[self.y.id].position = position_y
+        self._world.state[self.z.id].position = position_z
+        self._world.state[self.qx.id].position = quaternion_x
+        self._world.state[self.qy.id].position = quaternion_y
+        self._world.state[self.qz.id].position = quaternion_z
+        self._world.state[self.qw.id].position = quaternion_w
+        self._world.notify_state_change()
+
     def copy_for_world(self, world: World) -> Connection6DoF:
         """
         Copies this 6DoF connection for another world. Returns a new connection with references to the given world.
@@ -828,6 +847,17 @@ class OmniDrive(ActiveConnection, HasUpdateState):
         self._world.state[self.yaw.id].position = yaw
         self._world.notify_state_change()
 
+    def set_origin_from_xyz_yaw(
+        self,
+        position_x: float,
+        position_y: float,
+        yaw: float,
+    ):
+        self._world.state[self.x.id].position = position_x
+        self._world.state[self.y.id].position = position_y
+        self._world.state[self.yaw.id].position = yaw
+        self._world.notify_state_change()
+
     def get_free_variable_names(self) -> List[UUID]:
         return [self.x.id, self.y.id, self.yaw.id]
 
@@ -1103,6 +1133,17 @@ class DifferentialDrive(ActiveConnection, HasUpdateState):
         roll, pitch, yaw = transformation.to_rotation_matrix().to_rpy()
         self._world.state[self.x.id].position = position.x
         self._world.state[self.y.id].position = position.y
+        self._world.state[self.yaw.id].position = yaw
+        self._world.notify_state_change()
+
+    def set_origin_from_xyz_yaw(
+        self,
+        position_x: float,
+        position_y: float,
+        yaw: float,
+    ):
+        self._world.state[self.x.id].position = position_x
+        self._world.state[self.y.id].position = position_y
         self._world.state[self.yaw.id].position = yaw
         self._world.notify_state_change()
 

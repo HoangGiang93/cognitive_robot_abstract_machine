@@ -35,7 +35,7 @@ class Ros2MessageJSONSerializer(ExternalClassJSONSerializer[None]):
 
     @classmethod
     def from_json(cls, data: Dict[str, Any], clazz: Type, **kwargs) -> Any:
-        return convert_dictionary_to_ros_message(clazz, data["data"], **kwargs)
+        return convert_dictionary_to_ros_message(clazz, data["data"])
 
     @classmethod
     def matches_generic_type(cls, clazz: Type):
