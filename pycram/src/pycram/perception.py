@@ -2,7 +2,8 @@ import logging
 from dataclasses import dataclass
 
 from rclpy.action import ActionClient
-from robokudo_msgs.action import Query
+
+# from robokudo_msgs.action import Query
 
 from pycram.datastructures.dataclasses import Context
 from semantic_digital_twin.reasoning.predicates import visible

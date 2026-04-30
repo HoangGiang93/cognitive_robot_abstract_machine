@@ -1,4 +1,6 @@
 from giskardpy.motion_statechart.goals.cartesian_goals import DifferentialDriveBaseGoal
+from giskardpy.motion_statechart.goals.templates import Parallel
+from giskardpy.motion_statechart.monitors.payload_monitors import CountSeconds
 from giskardpy.motion_statechart.ros2_nodes.gripper_nodes import SendFloat64
 from pycram.datastructures.enums import ExecutionType
 from pycram.robot_plans import MoveMotion, MoveGripperMotion
@@ -40,5 +42,15 @@ class TiagoMoveGripperMotion(MoveGripperMotion, AlternativeMotion[TiagoMujoco]):
     def _motion_chart(self):
         value = 0 if self.motion == GripperState.OPEN else 255
         if "l" in self.gripper.name:
-            return SendFloat64(topic_name="/gripper_left", msg=Float64(data=value))
-        return SendFloat64(topic_name="/gripper_right", msg=Float64(data=value))
+            return Parallel(
+                [
+                    SendFloat64(topic_name="/gripper_left", msg=Float64(data=value)),
+                    CountSeconds(seconds=3),
+                ]
+            )
+        return Parallel(
+            [
+                SendFloat64(topic_name="/gripper_right", msg=Float64(data=value)),
+                CountSeconds(seconds=3),
+            ]
+        )

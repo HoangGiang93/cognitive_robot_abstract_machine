@@ -54,7 +54,7 @@ class Tiago(AbstractRobot, SpecifiesLeftRightArm, HasNeck):
             name=PrefixedName("tiago", prefix=world.name),
             root=world.get_body_by_name("base_footprint"),
             _world=world,
-            full_body_controlled=False,
+            full_body_controlled=True,
         )
 
     def _setup_semantic_annotations(self):
@@ -370,6 +370,7 @@ class TiagoMujoco(AbstractRobot, SpecifiesLeftRightArm):
             name=PrefixedName("tiago", prefix=world.name),
             root=world.get_body_by_name("base_link"),
             _world=world,
+            full_body_controlled=True,
         )
 
     def _setup_semantic_annotations(self):
@@ -391,9 +392,9 @@ class TiagoMujoco(AbstractRobot, SpecifiesLeftRightArm):
         left_gripper = ParallelGripper(
             name=PrefixedName("left_gripper", prefix=self.name.name),
             root=self._world.get_body_by_name("gripper_left_base_link"),
-            tool_frame=self._world.get_body_by_name("gripper_left_base_link"),
-            front_facing_orientation=Quaternion(0, 0, 0, 1),
-            front_facing_axis=Vector3(1, 0, 0),
+            tool_frame=self._world.get_body_by_name("gripper_left_tool_frame"),
+            front_facing_orientation=Quaternion(0.5, -0.5, 0.5, -0.5),
+            front_facing_axis=Vector3(0, 0, 1),
             thumb=left_gripper_thumb,
             finger=left_gripper_finger,
             _world=self._world,
@@ -425,7 +426,7 @@ class TiagoMujoco(AbstractRobot, SpecifiesLeftRightArm):
             name=PrefixedName("right_gripper", prefix=self.name.name),
             root=self._world.get_body_by_name("gripper_right_base_link"),
             tool_frame=self._world.get_body_by_name("gripper_right_base_link"),
-            front_facing_orientation=Quaternion(0, 0, 0, 1),
+            front_facing_orientation=Quaternion(0.5, -0.5, 0.5, -0.5),
             front_facing_axis=Vector3(0, 0, 1),
             thumb=right_gripper_thumb,
             finger=right_gripper_finger,
