@@ -6,8 +6,11 @@ from rclpy.executors import SingleThreadedExecutor
 from pycram.datastructures.dataclasses import Context
 from pycram.datastructures.enums import Arms, ApproachDirection, VerticalAlignment
 from pycram.datastructures.grasp import GraspDescription
+from pycram.locations.locations import CostmapLocation
 from pycram.motion_executor import real_robot
 from pycram.plans.factories import sequential
+from pycram.robot_plans.actions.core.container import OpenAction
+from pycram.robot_plans.actions.core.navigation import NavigateAction
 from pycram.robot_plans.actions.core.pick_up import PickUpAction
 from pycram.robot_plans.actions.core.robot_body import ParkArmsAction
 from semantic_digital_twin.adapters.mjcf import MJCFParser
@@ -23,7 +26,10 @@ from semantic_digital_twin.robots.abstract_robot import AbstractRobot
 from semantic_digital_twin.spatial_types import HomogeneousTransformationMatrix
 
 import pycram.alternative_motion_mappings.tiago_motion_mapping  # type: ignore
-from semantic_digital_twin.world_description.connections import FixedConnection
+from semantic_digital_twin.world_description.connections import (
+    FixedConnection,
+    DifferentialDrive,
+)
 
 rclpy.init()
 node = rclpy.create_node("demo")
@@ -51,6 +57,15 @@ if not world.is_entity_in_world_by_name("milk_box"):
 
     print(len(world.bodies))
 
+    with world.modify_world():
+        tiago_root = world.get_body_by_name("base_footprint")
+        c_root_bf = DifferentialDrive.create_with_dofs(
+            world=world,
+            parent=world.root,
+            child=tiago_root,
+        )
+        world.merge_world(world, c_root_bf)
+
 context = Context(
     world=world,
     robot=world.get_semantic_annotations_by_type(AbstractRobot)[0],
@@ -69,6 +84,19 @@ plan = sequential(
                 vertical_alignment=VerticalAlignment.NoAlignment,
                 manipulator=context.robot.left_arm.manipulator,
             ),
+        ),
+        NavigateAction(
+            target_location=CostmapLocation(
+                world.get_body_by_name("fridge_door1_handle").global_pose,
+                reachable=True,
+                visible=False,
+                context=context,
+                reachable_arm=Arms.RIGHT,
+            ).resolve()
+        ),
+        OpenAction(
+            object_designator=world.get_body_by_name("fridge_door1_handle"),
+            arm=Arms.RIGHT,
         ),
     ],
     context=context,
