@@ -368,7 +368,7 @@ class TiagoMujoco(AbstractRobot, SpecifiesLeftRightArm):
     def _init_empty_robot(cls, world: World) -> Self:
         return cls(
             name=PrefixedName("tiago", prefix=world.name),
-            root=world.get_body_by_name("base_link"),
+            root=world.get_body_by_name("base_footprint"),
             _world=world,
             full_body_controlled=True,
         )
@@ -425,7 +425,7 @@ class TiagoMujoco(AbstractRobot, SpecifiesLeftRightArm):
         right_gripper = ParallelGripper(
             name=PrefixedName("right_gripper", prefix=self.name.name),
             root=self._world.get_body_by_name("gripper_right_base_link"),
-            tool_frame=self._world.get_body_by_name("gripper_right_base_link"),
+            tool_frame=self._world.get_body_by_name("gripper_right_tool_frame"),
             front_facing_orientation=Quaternion(0.5, -0.5, 0.5, -0.5),
             front_facing_axis=Vector3(0, 0, 1),
             thumb=right_gripper_thumb,
@@ -485,7 +485,7 @@ class TiagoMujoco(AbstractRobot, SpecifiesLeftRightArm):
                         for c in self.left_arm.connections
                         if type(c) != FixedConnection
                     ],
-                    [0.27, -1.07, 1.5, 1.96, -2.0, 1.2, 0.5],
+                    [0.32, -1.11, 1.48, 1.93, 0.398, -0.495, 0.524],
                 )
             ),
             state_type=StaticJointState.PARK,
@@ -502,7 +502,7 @@ class TiagoMujoco(AbstractRobot, SpecifiesLeftRightArm):
                         for c in self.right_arm.connections
                         if type(c) != FixedConnection
                     ],
-                    [0.27, -1.07, 1.5, 1.96, -2.0, 1.2, 0.5],
+                    [0.32, -1.11, 1.48, 1.93, 0.398, -0.495, 0.524],
                 )
             ),
             state_type=StaticJointState.PARK,

@@ -43,7 +43,7 @@ thread.start()
 world = fetch_world_from_service(node=node)
 ModelSynchronizer(node=node, _world=world, synchronous=False)
 StateSynchronizer(node=node, _world=world, synchronous=False)
-VizMarkerPublisher(_world=world, node=node)
+# VizMarkerPublisher(_world=world, node=node)
 
 
 if not world.is_entity_in_world_by_name("milk_box"):
@@ -57,14 +57,14 @@ if not world.is_entity_in_world_by_name("milk_box"):
 
     print(len(world.bodies))
 
-    with world.modify_world():
-        tiago_root = world.get_body_by_name("base_footprint")
-        c_root_bf = DifferentialDrive.create_with_dofs(
-            world=world,
-            parent=world.root,
-            child=tiago_root,
-        )
-        world.merge_world(world, c_root_bf)
+    # with world.modify_world():
+    #     tiago_root = world.get_body_by_name("base_footprint")
+    #     c_root_bf = DifferentialDrive.create_with_dofs(
+    #         world=world,
+    #         parent=apartment_world.root,
+    #         child=tiago_root,
+    #     )
+    #     apartment_world.merge_world(world, c_root_bf)
 
 context = Context(
     world=world,
@@ -78,25 +78,27 @@ plan = sequential(
         ParkArmsAction(arm=Arms.BOTH),
         PickUpAction(
             object_designator=world.get_body_by_name("milk_box"),
-            arm=Arms.LEFT,
+            arm=Arms.RIGHT,
             grasp_description=GraspDescription(
                 approach_direction=ApproachDirection.FRONT,
                 vertical_alignment=VerticalAlignment.NoAlignment,
-                manipulator=context.robot.left_arm.manipulator,
+                manipulator=context.robot.right_arm.manipulator,
+                manipulation_offset=0.1,
             ),
         ),
+        ParkArmsAction(arm=Arms.BOTH),
         NavigateAction(
             target_location=CostmapLocation(
                 world.get_body_by_name("fridge_door1_handle").global_pose,
                 reachable=True,
                 visible=False,
                 context=context,
-                reachable_arm=Arms.RIGHT,
+                reachable_arm=Arms.LEFT,
             ).resolve()
         ),
         OpenAction(
             object_designator=world.get_body_by_name("fridge_door1_handle"),
-            arm=Arms.RIGHT,
+            arm=Arms.LEFT,
         ),
     ],
     context=context,
