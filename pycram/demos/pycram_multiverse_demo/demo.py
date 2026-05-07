@@ -1,5 +1,6 @@
 import threading
 
+import numpy as np
 import rclpy
 from rclpy.executors import SingleThreadedExecutor
 
@@ -12,7 +13,7 @@ from pycram.plans.factories import sequential
 from pycram.robot_plans.actions.core.container import OpenAction
 from pycram.robot_plans.actions.core.navigation import NavigateAction
 from pycram.robot_plans.actions.core.pick_up import PickUpAction
-from pycram.robot_plans.actions.core.robot_body import ParkArmsAction
+from pycram.robot_plans.actions.core.robot_body import ParkArmsAction, MoveTorsoAction
 from semantic_digital_twin.adapters.mjcf import MJCFParser
 from semantic_digital_twin.adapters.ros.visualization.viz_marker import (
     VizMarkerPublisher,
@@ -22,10 +23,12 @@ from semantic_digital_twin.adapters.ros.world_synchronizer import (
     ModelSynchronizer,
     StateSynchronizer,
 )
+from semantic_digital_twin.datastructures.definitions import TorsoState
 from semantic_digital_twin.robots.abstract_robot import AbstractRobot
 from semantic_digital_twin.spatial_types import HomogeneousTransformationMatrix
 
 import pycram.alternative_motion_mappings.tiago_motion_mapping  # type: ignore
+from semantic_digital_twin.spatial_types.spatial_types import Pose
 from semantic_digital_twin.world_description.connections import (
     FixedConnection,
     DifferentialDrive,
@@ -76,6 +79,7 @@ context = Context(
 plan = sequential(
     children=[
         ParkArmsAction(arm=Arms.BOTH),
+        # MoveTorsoAction(TorsoState.HIGH),
         PickUpAction(
             object_designator=world.get_body_by_name("milk_box"),
             arm=Arms.RIGHT,
@@ -88,13 +92,16 @@ plan = sequential(
         ),
         ParkArmsAction(arm=Arms.BOTH),
         NavigateAction(
-            target_location=CostmapLocation(
-                world.get_body_by_name("fridge_door1_handle").global_pose,
-                reachable=True,
-                visible=False,
-                context=context,
-                reachable_arm=Arms.LEFT,
-            ).resolve()
+            target_location=Pose.from_xyz_rpy(
+                0, 0.2, 0, yaw=np.pi, reference_frame=world.root
+            ),
+            # target_location=CostmapLocation(
+            #     world.get_body_by_name("fridge_door1_handle").global_pose,
+            #     reachable=True,
+            #     visible=False,
+            #     context=context,
+            #     reachable_arm=Arms.LEFT,
+            # ).resolve()
         ),
         OpenAction(
             object_designator=world.get_body_by_name("fridge_door1_handle"),

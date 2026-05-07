@@ -470,8 +470,10 @@ class MJCFParser:
             else:
                 lower_limits = DerivativeMap()
                 lower_limits.position = mujoco_joint.range[0]
+                lower_limits.velocity = -numpy.pi
                 upper_limits = DerivativeMap()
                 upper_limits.position = mujoco_joint.range[1]
+                upper_limits.velocity = numpy.pi
                 dof = DegreeOfFreedom(
                     name=PrefixedName(dof_name),
                     limits=DegreeOfFreedomLimits(

@@ -2,7 +2,7 @@ from giskardpy.motion_statechart.goals.cartesian_goals import DifferentialDriveB
 from giskardpy.motion_statechart.goals.templates import Parallel
 from giskardpy.motion_statechart.monitors.payload_monitors import CountSeconds
 from giskardpy.motion_statechart.ros2_nodes.gripper_nodes import SendFloat64
-from pycram.datastructures.enums import ExecutionType
+from pycram.datastructures.enums import ExecutionType, Arms
 from pycram.robot_plans import MoveMotion, MoveGripperMotion
 from pycram.robot_plans.motions.base import AlternativeMotion
 from semantic_digital_twin.datastructures.definitions import GripperState
@@ -28,6 +28,24 @@ class TiagoMoveSim(MoveMotion, AlternativeMotion[Tiago]):
         )
 
 
+class TiagoMoveReal(MoveMotion, AlternativeMotion[TiagoMujoco]):
+    """
+    Uses a diff drive goal for the tiago base.
+    """
+
+    execution_type = ExecutionType.REAL
+
+    def perform(self):
+        return
+
+    @property
+    def _motion_chart(self):
+
+        return DifferentialDriveBaseGoal(
+            goal_pose=self.target,
+        )
+
+
 class TiagoMoveGripperMotion(MoveGripperMotion, AlternativeMotion[TiagoMujoco]):
     """
     Use topics to open/close Tiago in mujoco.
@@ -41,7 +59,7 @@ class TiagoMoveGripperMotion(MoveGripperMotion, AlternativeMotion[TiagoMujoco]):
     @property
     def _motion_chart(self):
         value = 0 if self.motion == GripperState.OPEN else 255
-        if "l" in self.gripper.name:
+        if self.gripper == Arms.LEFT:
             return Parallel(
                 [
                     SendFloat64(topic_name="/gripper_left", msg=Float64(data=value)),
