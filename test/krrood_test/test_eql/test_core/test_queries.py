@@ -954,11 +954,11 @@ def test_flatten_iterable_attribute_and_use_not_equal(handles_and_containers_wor
     assert {row.handle.name for row in results} == {"Handle2", "Handle3"}
 
 
-def visualize_query_graph(query):
+def visualize_query_graph(query, **kwargs):
     try:
         from krrood.entity_query_language.query_graph import QueryGraph
 
-        QueryGraph(query).visualize()
+        QueryGraph(query).visualize(**kwargs)
     except ImportError as e:
         print(f"Failed to visualize query graph: {e}")
 
@@ -1307,9 +1307,5 @@ def test_presentation_example():
     ]
     r = variable(Robot, robots)
     q = an(entity(r).where(r.battery > 50, not_(r.tasks[0].completed)))
-    visualize = False
-    if visualize:
-        from krrood.entity_query_language.query_graph import QueryGraph
-
-        QueryGraph(q).visualize((20, 20), spacing_x=2, spacing_y=2)
+    visualize_query_graph(q, figure_size=(20, 20), spacing_x=2, spacing_y=2)
     assert q.tolist() == [robots[2]]
