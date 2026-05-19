@@ -19,7 +19,9 @@ from semantic_digital_twin.robots.abstract_robot import (
     AbstractRobot,
     Arm,
     Base,
+    Camera,
     Finger,
+    FieldOfView,
     Neck,
     ParallelGripper,
     Torso,
@@ -84,17 +86,27 @@ class Garmi(AbstractRobot, SpecifiesLeftRightArm, HasNeck):
             arm = self._create_arm(side=side, arm_id=arm_id, mount=mount)
             self.add_arm(arm)
 
+        head_camera = Camera(
+            name=PrefixedName("head_camera", prefix=self.name.name),
+            root=self._world.get_body_by_name("head"),
+            forward_facing_axis=Vector3(1, 0, 0),
+            field_of_view=FieldOfView(horizontal_angle=0.99483, vertical_angle=0.75049),
+            minimal_height=0.75049,
+            maximal_height=0.99483,
+            _world=self._world,
+            default_camera=True,
+        )
+
         neck = Neck(
             name=PrefixedName("neck", prefix=self.name.name),
+            sensors=[head_camera],
             root=self._world.get_body_by_name("neck_1"),
             tip=self._world.get_body_by_name("head"),
             yaw_body=self._world.get_body_by_name("neck_2"),
             pitch_body=self._world.get_body_by_name("head"),
             _world=self._world,
         )
-        self.neck = neck
-        self._semantic_annotations.add(neck)
-        neck.assign_to_robot(self)
+        self.add_neck(neck)
 
     def _create_arm(self, side: str, arm_id: str, mount: str) -> Arm:
         gripper_thumb = Finger(
