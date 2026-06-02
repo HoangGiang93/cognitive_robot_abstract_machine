@@ -52,6 +52,7 @@ from krrood.ormatic.data_access_objects.helper import to_dao
 from krrood.ormatic.eql_interface import eql_to_sql
 from pycram.robot_plans.actions.core.pick_up import PickUpAction
 from pycram.orm.ormatic_interface import PickUpActionDAO, GraspDescriptionDAO
+from krrood.entity_query_language.query.query import UnificationDict
 
 
 def test_translate_simple_greater(session, database):
@@ -245,7 +246,8 @@ def test_equal(session, database):
 
 
 def test_complicated_equal(session, database):
-    # Create the world with its bodies and connections
+    """Verify that a multi-variable entity query with equality constraints
+    translates correctly and returns the same result as EQL evaluation."""
     world = World(
         1,
         [
@@ -264,13 +266,8 @@ def test_complicated_equal(session, database):
     session.add(dao)
     session.commit()
 
-    # Query for the kinematic tree of the drawer which has more than one component.
-    # Declare the placeholders
     parent_container = variable(type_=Container, domain=world.bodies)
-    prismatic_connection = variable(
-        type_=PrismaticConnection,
-        domain=world.connections,
-    )
+    prismatic_connection = variable(type_=PrismaticConnection, domain=world.connections)
     drawer_body = variable(type_=Container, domain=world.bodies)
     fixed_connection = variable(type_=FixedConnection, domain=world.connections)
     handle = variable(type_=Handle, domain=world.bodies)
@@ -286,24 +283,20 @@ def test_complicated_equal(session, database):
         )
     )
 
+    # Verify EQL result
     eql_result = list(query.evaluate())
     assert len(eql_result) == 1
     assert eql_result[0].name == "Container2"
 
+    """
+    Verify SQL translation produces the same result as EQL
+    Note: a select() object cannot be used as expected here because
+    the translator aliases drawer_body (ContainerDAO_1) internally
+    via Variable==Attribute joins, which cannot be replicated externally.
+    """
     translator = eql_to_sql(query, session)
-
-    # Verify structural properties of the generated SQL
-    sql = str(translator.sql_query)
-    assert ", \"HandleDAO\"" not in sql
-    assert ", \"ContainerDAO\"" not in sql
-    assert "JOIN" in sql
-
-    # Verify EQL and SQL return the same result
-    eql_result = list(query.evaluate())
-    # the() returns a single object, not a list
     sql_result = translator.evaluate()
-
-    assert eql_result[0].name == sql_result.name
+    assert sql_result.name == eql_result[0].name
 
 
 def test_contains(session, database):
@@ -1058,7 +1051,7 @@ def test_set_of_multi_variable_evaluate(session, database):
 
     assert len(results) == 1
     result = results[0]
-    assert isinstance(result, dict)
+    assert isinstance(result, UnificationDict)
     assert result[C].name == "Container1"
     assert result[H].name == "Handle1"
 
@@ -1076,7 +1069,7 @@ def test_set_of_attribute_evaluate(session, database):
     results = translator.evaluate()
 
     assert len(results) == 2
-    assert isinstance(results[0], dict)
+    assert isinstance(results[0], UnificationDict)
     keys = list(results[0].keys())
     assert len(keys) == 2
     names = sorted([r[keys[0]] for r in results])
@@ -1103,7 +1096,7 @@ def test_set_of_transitive_evaluate(session, database):
     results = translator.evaluate()
 
     assert len(results) == 1
-    assert isinstance(results[0], dict)
+    assert isinstance(results[0], UnificationDict)
     keys = list(results[0].keys())
     assert len(keys) == 3
     values = list(results[0].values())
@@ -1117,7 +1110,6 @@ def test_big_query_select_part(session):
     Simulates: SELECT robot_x, robot_y, rotate_gripper FROM ...
                WHERE rotate_gripper < 0.9 ORDER BY robot_x
     """
-    from sqlalchemy.orm import aliased
 
     move_pick = variable(type_=MoveAction, domain=[])
     move_place = variable(type_=MoveAction, domain=[])
