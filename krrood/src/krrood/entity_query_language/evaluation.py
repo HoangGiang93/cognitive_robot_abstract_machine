@@ -52,7 +52,7 @@ class EvaluationObserver(ABC):
     """Observer for evaluation events in the EQL evaluation pipeline."""
 
     def on_evaluate_enter(
-        self, expression: SymbolicExpression, sources: Bindings
+        self, expression: SymbolicExpression, sources: Optional[OperationResult] = None
     ) -> None:
         """Called when entering an expression's _evaluate_ method."""
 
@@ -62,7 +62,7 @@ class EvaluationObserver(ABC):
     def on_result_yielded(
         self, expression: SymbolicExpression, result: OperationResult
     ) -> None:
-        """Called for each OperationResult yielded from _evaluate__."""
+        """Called for each OperationResult yielded from _evaluate_."""
 
     def on_conclusions_processed(
         self, expression: SymbolicExpression, result: OperationResult
@@ -93,7 +93,7 @@ class EvaluationContext:
         self,
         *,
         expression: SymbolicExpression,
-        sources: Optional[OperationResult],
+        sources: Optional[OperationResult] = None,
     ) -> None:
         """
         Notify all observers that evaluation of *expression* is about to begin.

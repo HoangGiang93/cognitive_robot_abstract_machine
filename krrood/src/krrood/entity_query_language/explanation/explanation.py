@@ -14,11 +14,9 @@ from uuid import UUID
 from ordered_set import OrderedSet
 from typing_extensions import TYPE_CHECKING
 
-# Import monitoring infrastructure from the isolated sub-module that has no
-# EQL dependencies, breaking the variable.py ↔ explanation.py import cycle.
 from krrood.entity_query_language._monitoring import monitored
 from krrood.entity_query_language._stack import CallStack, StackFrame
-from krrood.entity_query_language.core.base_expressions import Selectable
+from krrood.entity_query_language.core.base_expressions import Selectable, Bindings
 from krrood.entity_query_language.core.mapped_variable import (
     Attribute,
     FlatVariable,
@@ -142,7 +140,7 @@ class ConditionAndBindings:
     """
     The condition expression.
     """
-    bindings: dict[UUID, Any]
+    bindings: Bindings
     """
     A dictionary mapping UUIDs of condition children to their corresponding bindings.
     """

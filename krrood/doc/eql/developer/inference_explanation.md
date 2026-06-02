@@ -223,19 +223,6 @@ The `weakref` breaks the cycle: only the instance holds a strong reference to it
 the explanation can be collected along with the instance when the instance's reference count
 drops to zero.
 
-## Layer 4 — Memory Management: Avoiding the `lru_cache` Pitfall
-
-`SymbolicExpression._get_expression_by_id_` is called by meta-query methods to look up a
-symbolic expression by its UUID. A `@lru_cache` on an instance method is a class-level cache
-whose keys contain `self`. This means every expression object ever looked up is kept strongly
-referenced by the cache for the lifetime of the class — a memory leak that, in EQL, chains
-through `Variable` instances (which hold their entire domain in memory) all the way up to the
-`World` object.
-
-The fix is a per-instance dict stored in `self.__dict__` under a private key. The cache is
-allocated on demand the first time it is needed and is collected along with the expression
-object when that object's reference count drops to zero. No external root is created.
-
 ## Benefits and Drawbacks
 
 **Benefits**
