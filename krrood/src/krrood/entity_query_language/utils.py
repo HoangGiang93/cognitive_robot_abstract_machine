@@ -119,6 +119,7 @@ def cartesian_product_while_passing_the_bindings_around(
     :param sources: The current OperationResult carrying bindings, or None.
     :return: An Iterable of Bindings for each combination of values.
     """
+
     def _make_stage(inner_expression):
         def stage(prev: Optional[OperationResult]):
             for result in inner_expression._evaluate_(prev):

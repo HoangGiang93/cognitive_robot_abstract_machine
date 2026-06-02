@@ -6,12 +6,13 @@ safely imported by modules (variable.py, query.py) that are themselves
 dependencies of the main explanation module, without triggering circular
 imports.
 """
+
 from __future__ import annotations
 
 import inspect
 from dataclasses import dataclass, field
 from functools import wraps
-from typing import Any, Optional, Type, Callable, Union
+from typing_extensions import Any, Optional, Type, Callable, Union
 
 from krrood.entity_query_language._stack import CallStack, StackFrame
 
@@ -22,6 +23,7 @@ class MonitoredRegistry:
     Registry for monitoring EQL object creation stacks.
     Acts as a class decorator and provides lookup methods.
     """
+
     _monitored: set[type] = field(default_factory=set)
 
     def __call__(self, cls: Type) -> Type:
@@ -34,7 +36,9 @@ class MonitoredRegistry:
         @wraps(original_post_init)
         def new_post_init(self, *args, **kwargs):
             raw_frames = inspect.stack()[1:]
-            stack = CallStack([StackFrame.from_frame_info(fi) for fi in raw_frames])
+            stack = CallStack(
+                [StackFrame.from_frame_info(frame_info) for frame_info in raw_frames]
+            )
             self._creation_stack = stack.filter()  # drop site-packages immediately
             original_post_init(self, *args, **kwargs)
 
@@ -49,7 +53,9 @@ class MonitoredRegistry:
 
     def is_monitored(self, target: Union[Type, Callable]) -> bool:
         """Check whether a class or callable is monitored."""
-        return target in self._monitored or bool(getattr(target, "_is_monitored_", False))
+        return target in self._monitored or bool(
+            getattr(target, "_is_monitored_", False)
+        )
 
     def unregister(self, cls: Type) -> None:
         """Remove a class from monitoring."""

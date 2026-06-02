@@ -167,7 +167,9 @@ class OrderedBy(BinaryExpression, DerivedExpression):
         var = self.variable
         var_id = var._id_
         if var_id not in result.all_bindings:
-            variable_value = next(var._evaluate_(OperationResult(result.all_bindings))).value
+            variable_value = next(
+                var._evaluate_(OperationResult(result.all_bindings))
+            ).value
         else:
             variable_value = result.all_bindings[var_id]
         if self.key:
@@ -202,7 +204,9 @@ class GroupedBy(MultiArityExpressionThatPerformsACartesianProduct):
     The variables to group the results by their values.
     """
 
-    def _evaluate__(self, sources: Optional[OperationResult] = None) -> Iterator[OperationResult]:
+    def _evaluate__(
+        self, sources: Optional[OperationResult] = None
+    ) -> Iterator[OperationResult]:
         """
         Generate results grouped by the specified variables in the grouped_by clause.
 

@@ -7,10 +7,17 @@ from __future__ import annotations
 import inspect
 import operator
 from inspect import isclass
-from typing import List, Optional, Type, Tuple, Any
+from typing_extensions import (
+    Any,
+    Iterable,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+    overload,
+)
 from uuid import UUID
-
-from typing_extensions import Union, Iterable, List, overload
 
 from krrood.entity_query_language.core.base_expressions import (
     SymbolicExpression,

@@ -17,6 +17,7 @@ from typing_extensions import Any, Dict, List, Optional
 from typing_extensions import TYPE_CHECKING
 
 from krrood.entity_query_language.enums import EvaluationContextKey
+
 if TYPE_CHECKING:
     from krrood.entity_query_language.core.base_expressions import (
         Bindings,
@@ -34,16 +35,22 @@ def get_evaluation_context() -> Optional[EvaluationContext]:
     return _evaluation_context_var.get()
 
 
-def set_evaluation_context(ctx: Optional[EvaluationContext]) -> None:
-    """Set or clear the current evaluation context."""
-    _evaluation_context_var.set(ctx)
+def set_evaluation_context(evaluation_context: Optional[EvaluationContext]):
+    """
+    Set or clear the current evaluation context and return the reset token.
+
+    :param evaluation_context: The context to set, or ``None`` to clear.
+    :return: A :class:`contextvars.Token` that can be passed to
+        :meth:`contextvars.ContextVar.reset` to restore the previous value.
+    """
+    return _evaluation_context_var.set(evaluation_context)
 
 
 class EvaluationObserver(ABC):
     """Observer for evaluation events in the EQL evaluation pipeline."""
 
     def on_evaluate_enter(
-            self, expression: SymbolicExpression, sources: Bindings
+        self, expression: SymbolicExpression, sources: Bindings
     ) -> None:
         """Called when entering an expression's _evaluate_ method."""
 
@@ -51,12 +58,12 @@ class EvaluationObserver(ABC):
         """Called when exiting an expression's _evaluate_ method."""
 
     def on_result_yielded(
-            self, expression: SymbolicExpression, result: OperationResult
+        self, expression: SymbolicExpression, result: OperationResult
     ) -> None:
         """Called for each OperationResult yielded from _evaluate__."""
 
     def on_conclusions_processed(
-            self, expression: SymbolicExpression, result: OperationResult
+        self, expression: SymbolicExpression, result: OperationResult
     ) -> None:
         """Called after _evaluate_conclusions_and_update_bindings_ completes."""
 
@@ -80,29 +87,67 @@ class EvaluationContext:
      condition expressions have been satisfied.
     """
 
-    def on_evaluate_enter(self, *, expression, sources):
-        """Notify all observers that an expression is about to be evaluated."""
-        for obs in self.observers:
-            obs.on_evaluate_enter(expression, sources)
+    def on_evaluate_enter(
+        self,
+        *,
+        expression: SymbolicExpression,
+        sources: Optional[OperationResult],
+    ) -> None:
+        """
+        Notify all observers that evaluation of *expression* is about to begin.
 
-    def on_evaluate_exit(self, *, expression):
-        """Notify all observers that an expression has finished evaluating."""
-        for obs in self.observers:
-            obs.on_evaluate_exit(expression)
+        :param expression: The expression being entered.
+        :param sources: The incoming :class:`OperationResult` carrying bindings, or ``None``.
+        """
+        for observer in self.observers:
+            observer.on_evaluate_enter(expression, sources)
 
-    def on_result_yielded(self, *, expression, result):
-        """Notify all observers that a result has been yielded from an expression."""
-        for obs in self.observers:
-            obs.on_result_yielded(expression, result)
+    def on_evaluate_exit(self, *, expression: SymbolicExpression) -> None:
+        """
+        Notify all observers that evaluation of *expression* has finished.
 
-    def on_conclusions_processed(self, *, expression, result):
-        """Notify all observers that conclusions have been processed for an expression."""
-        for obs in self.observers:
-            obs.on_conclusions_processed(expression, result)
+        :param expression: The expression that just finished evaluating.
+        """
+        for observer in self.observers:
+            observer.on_evaluate_exit(expression)
+
+    def on_result_yielded(
+        self,
+        *,
+        expression: SymbolicExpression,
+        result: OperationResult,
+    ) -> None:
+        """
+        Notify all observers that *expression* has yielded *result*.
+
+        :param expression: The expression that produced the result.
+        :param result: The :class:`OperationResult` that was yielded.
+        """
+        for observer in self.observers:
+            observer.on_result_yielded(expression, result)
+
+    def on_conclusions_processed(
+        self,
+        *,
+        expression: SymbolicExpression,
+        result: OperationResult,
+    ) -> None:
+        """
+        Notify all observers that conclusions have been processed for *expression*.
+
+        :param expression: The expression whose conclusions were processed.
+        :param result: The :class:`OperationResult` after conclusion processing.
+        """
+        for observer in self.observers:
+            observer.on_conclusions_processed(expression, result)
 
 
-def is_condition_participant(expr) -> bool:
-    """Return True if the expression participates in condition evaluation."""
+def is_condition_participant(expr: SymbolicExpression) -> bool:
+    """Return ``True`` if the expression participates in condition evaluation.
+
+    :param expr: The symbolic expression to test.
+    :return: ``True`` if *expr* is a condition or a direct child of a truth-value operator.
+    """
     from krrood.entity_query_language.operators.comparator import Comparator
     from krrood.entity_query_language.predicate import Predicate
     from krrood.entity_query_language.operators.core_logical_operators import (
@@ -115,7 +160,8 @@ def is_condition_participant(expr) -> bool:
     _condition_types = (Comparator, Predicate, LogicalOperator)
     if isinstance(expr, _condition_types):
         return True
-    if isinstance(expr._parent_, TruthValueOperator):
+    parent = expr._parent_
+    if parent is not None and isinstance(parent, TruthValueOperator):
         return True
     return False
 
@@ -127,7 +173,7 @@ class EvaluationTracker(EvaluationObserver):
     on :meth:`on_evaluate_enter`. On :meth:`on_result_yielded`, snapshots the current set onto the result
     as ``evaluated_expression_ids``.
 
-    This tracking is the foundation for distinguishing evaluated-from-skipped logical operators (e.g.
+    This tracking is the foundation for distinguishing evaluated-from-skipped logical operators (for example,
     short-circuited OR/AND branches) in inference explanations.
     """
 
@@ -136,29 +182,31 @@ class EvaluationTracker(EvaluationObserver):
             OperationResult,
         )
 
-        ctx = get_evaluation_context()
-        if ctx is None:
+        evaluation_context = get_evaluation_context()
+        if evaluation_context is None:
             return
-        evaluated = ctx.data.setdefault(EvaluationContextKey.EVALUATED_IDS_KEY, OrderedSet())
+        evaluated = evaluation_context.data.setdefault(
+            EvaluationContextKey.EVALUATED_IDS_KEY, OrderedSet()
+        )
         evaluated.add(expression._id_)
 
         if isinstance(sources, OperationResult) and sources.evaluated_expression_ids:
             evaluated.update(sources.evaluated_expression_ids)
 
     def on_result_yielded(self, expression, result):
-        ctx = get_evaluation_context()
-        if ctx is None:
+        evaluation_context = get_evaluation_context()
+        if evaluation_context is None:
             return
-        evaluated = ctx.data.get(EvaluationContextKey.EVALUATED_IDS_KEY)
+        evaluated = evaluation_context.data.get(EvaluationContextKey.EVALUATED_IDS_KEY)
         if evaluated is not None and result.evaluated_expression_ids is None:
             result.evaluated_expression_ids = OrderedSet(evaluated)
 
 
 class SatisfiedConditionTracker(EvaluationObserver):
-    """Observer that tracks which condition expressions were satisfied during evaluation.
+    """Observer that tracks which condition expressions were satisfied during a single evaluation pass.
 
-    Replaces the ad-hoc ``_carried_satisfied_ids_``, ``@captures_satisfied_conditions``,
-    and inline propagation that was previously scattered across the evaluation pipeline.
+    Records truth values on :meth:`on_result_yielded` and populates
+    ``result.satisfied_condition_ids`` at the conditions root after all conditions have been evaluated.
     """
 
     def on_evaluate_enter(self, expression, sources):
@@ -166,21 +214,21 @@ class SatisfiedConditionTracker(EvaluationObserver):
             OperationResult,
         )
 
-        ctx = get_evaluation_context()
-        if ctx is None:
+        evaluation_context = get_evaluation_context()
+        if evaluation_context is None:
             return
 
         satisfied = None
         if isinstance(sources, OperationResult):
             satisfied = sources.satisfied_condition_ids
         if satisfied is not None:
-            ctx.data[EvaluationContextKey.SATISFIED_IDS_KEY] = satisfied
+            evaluation_context.data[EvaluationContextKey.SATISFIED_IDS_KEY] = satisfied
 
     def on_result_yielded(self, expression, result):
-        ctx = get_evaluation_context()
-        if ctx is None:
+        evaluation_context = get_evaluation_context()
+        if evaluation_context is None:
             return
-        satisfied = ctx.data.get(EvaluationContextKey.SATISFIED_IDS_KEY)
+        satisfied = evaluation_context.data.get(EvaluationContextKey.SATISFIED_IDS_KEY)
         if satisfied is not None and result.satisfied_condition_ids is None:
             result.satisfied_condition_ids = satisfied
 
@@ -193,8 +241,12 @@ class SatisfiedConditionTracker(EvaluationObserver):
         if expression._conditions_root_ is expression._root_:
             return
 
-        ctx = get_evaluation_context()
-        evaluated = ctx.data.get(EvaluationContextKey.EVALUATED_IDS_KEY) if ctx is not None else None
+        evaluation_context = get_evaluation_context()
+        evaluated = (
+            evaluation_context.data.get(EvaluationContextKey.EVALUATED_IDS_KEY)
+            if evaluation_context is not None
+            else None
+        )
         if evaluated is None:
             return
 
@@ -234,19 +286,22 @@ class SatisfiedConditionTracker(EvaluationObserver):
                     satisfied.add(expr_id)
 
         result.satisfied_condition_ids = satisfied
-        if ctx is not None:
-            ctx.data[EvaluationContextKey.SATISFIED_IDS_KEY] = satisfied
+        if evaluation_context is not None:
+            evaluation_context.data[EvaluationContextKey.SATISFIED_IDS_KEY] = satisfied
 
 
 class InferenceRecorder(EvaluationObserver):
     """Observer that records inferred instances for later explanation.
 
-    Replaces the ``@record_inferences`` decorator that was previously applied to
-    ``InstantiatedVariable._instantiate_using_child_vars_and_yield_results_``.
+    Attaches an :class:`~krrood.entity_query_language.explanation.explanation.InferenceExplanation`
+    to each newly inferred :class:`~krrood.symbol_graph.symbol_graph.Symbol` instance so that
+    callers can retrieve it via
+    :func:`~krrood.entity_query_language.explanation.explanation.explain_inference`.
     """
 
     def on_result_yielded(self, expression, result):
         from krrood.entity_query_language._monitoring import monitored
+
         if not monitored.is_monitored(type(expression)):
             return
         if expression._id_ not in result.bindings:
@@ -265,6 +320,28 @@ class InferenceRecorder(EvaluationObserver):
             return
         if isinstance(expression, Query):
             return
-        from krrood.entity_query_language.explanation.explanation import register_inference
+        from krrood.entity_query_language.explanation.explanation import (
+            register_inference,
+        )
 
         register_inference(result.bindings[expression._id_], expression, result)
+
+
+def create_default_evaluation_context() -> EvaluationContext:
+    """
+    Create an :class:`EvaluationContext` populated with the standard set of observers.
+
+    This is the authoritative factory for evaluation contexts used during normal
+    query evaluation.  Callers that need custom observer configurations should
+    construct an :class:`EvaluationContext` directly rather than calling this function.
+
+    :return: A new :class:`EvaluationContext` with :class:`EvaluationTracker`,
+        :class:`SatisfiedConditionTracker`, and :class:`InferenceRecorder` observers attached.
+    """
+    return EvaluationContext(
+        observers=[
+            EvaluationTracker(),
+            SatisfiedConditionTracker(),
+            InferenceRecorder(),
+        ]
+    )
