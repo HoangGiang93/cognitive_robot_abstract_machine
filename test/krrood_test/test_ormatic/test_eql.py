@@ -282,19 +282,33 @@ def test_complicated_equal(session, database):
             ),
         )
     )
+    translator = eql_to_sql(query, session)
 
-    # Verify EQL result
+    prismatic_alias = aliased(PrismaticConnectionDAO, flat=True)
+    drawer_alias = aliased(ContainerDAO, flat=True)
+    fixed_alias = aliased(FixedConnectionDAO, flat=True)
+    handle_alias = aliased(HandleDAO, flat=True)
+
+    expected = (
+        select(ContainerDAO)
+        .join(prismatic_alias,
+              onclause=prismatic_alias.parent_id == ContainerDAO.database_id)
+        .join(drawer_alias,
+              onclause=prismatic_alias.child_id == drawer_alias.database_id)
+        .join(fixed_alias,
+              onclause=fixed_alias.parent_id == drawer_alias.database_id )
+        .join(handle_alias,
+              onclause=fixed_alias.child_id == handle_alias.database_id)
+        .with_only_columns(drawer_alias)
+    )
+
     eql_result = list(query.evaluate())
     assert len(eql_result) == 1
     assert eql_result[0].name == "Container2"
 
-    """
-    Verify SQL translation produces the same result as EQL
-    Note: a select() object cannot be used as expected here because
-    the translator aliases drawer_body (ContainerDAO_1) internally
-    via Variable==Attribute joins, which cannot be replicated externally.
-    """
-    translator = eql_to_sql(query, session)
+    assert str(translator.sql_query) == str(expected)
+
+    # SQL result matches EQL result
     sql_result = translator.evaluate()
     assert sql_result.name == eql_result[0].name
 
