@@ -92,25 +92,5 @@ class CaseWhen(Selectable):
             return None
 
 
-def case_when(
-    condition: SymbolicExpression,
-    then_value: SymbolicExpression,
-    else_value: Optional[SymbolicExpression] = None,
-) -> CaseWhen:
-    """
-    Create a CASE WHEN ... THEN ... ELSE ... END expression.
 
-    .. code-block:: python
-
-        action = variable(MoveAction, domain=[])
-        query = an(set_of(
-            min(case_when(action.polymorphic_type == 'PickUpActionDAO', action.database_id))
-        ))
-
-    :param condition: The condition to evaluate
-    :param then_value: The value if condition is true
-    :param else_value: The value if condition is false
-    :return: A CaseWhen expression
-    """
-    return CaseWhen(condition, then_value, else_value)
 
