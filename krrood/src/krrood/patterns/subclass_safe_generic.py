@@ -181,11 +181,10 @@ class AbstractSubClassSafeGeneric(ABC):
                     type_var_tuple_content_length = (
                         len(resolved_types) - prefix_length - suffix_length
                     )
-                    matched_pairs = []
-                    for index in range(prefix_length):
-                        matched_pairs.append(
-                            (root_parameters[index], resolved_types[index])
-                        )
+                    matched_pairs = [
+                        (root_parameters[index], resolved_types[index])
+                        for index in range(prefix_length)
+                    ]
                     matched_pairs.append(
                         (
                             root_parameters[type_var_tuple_index],
