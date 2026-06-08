@@ -23,9 +23,8 @@ from sqlalchemy.orm import Session
 
 from krrood.ormatic.utils import drop_database, create_engine
 from semantic_digital_twin.adapters.ros.world_synchronizer import (
-    StateSynchronizer,
     ModelReloadSynchronizer,
-    ModelSynchronizer,
+    WorldSynchronizer,
 )
 from semantic_digital_twin.adapters.urdf import URDFParser
 from semantic_digital_twin.datastructures.prefixed_name import PrefixedName
@@ -62,6 +61,7 @@ from semantic_digital_twin.adapters.ros.messages import (
     WorldStateUpdate,
     LoadModel,
     Acknowledgment,
+    WorldUpdate,
 )
 from semantic_digital_twin.orm.ormatic_interface import Base, WorldMappingDAO
 
@@ -148,11 +148,11 @@ def test_state_synchronization(rclpy_node):
     w1 = create_dummy_world()
     w2 = create_dummy_world()
 
-    synchronizer_1 = StateSynchronizer(
+    synchronizer_1 = WorldSynchronizer(
         node=rclpy_node,
         _world=w1,
     )
-    synchronizer_2 = StateSynchronizer(
+    synchronizer_2 = WorldSynchronizer(
         node=rclpy_node,
         _world=w2,
     )
@@ -174,13 +174,13 @@ def test_state_synchronization_world_model_change_after_init(rclpy_node):
     w1 = World()
     w2 = World()
 
-    synchronizer_1 = StateSynchronizer(
+    synchronizer_1 = WorldSynchronizer(
         node=rclpy_node,
         _world=w1,
     )
     create_dummy_world(w1)
     create_dummy_world(w2)
-    synchronizer_2 = StateSynchronizer(
+    synchronizer_2 = WorldSynchronizer(
         node=rclpy_node,
         _world=w2,
     )
@@ -240,11 +240,11 @@ def test_model_synchronization_body_only(rclpy_node):
     w1 = World(name="w1")
     w2 = World(name="w2")
 
-    synchronizer_1 = ModelSynchronizer(
+    synchronizer_1 = WorldSynchronizer(
         node=rclpy_node,
         _world=w1,
     )
-    synchronizer_2 = ModelSynchronizer(
+    synchronizer_2 = WorldSynchronizer(
         node=rclpy_node,
         _world=w2,
     )
@@ -269,11 +269,11 @@ def test_model_synchronization_creation_only(rclpy_node):
     w1 = World(name="w1")
     w2 = World(name="w2")
 
-    synchronizer_1 = ModelSynchronizer(
+    synchronizer_1 = WorldSynchronizer(
         node=rclpy_node,
         _world=w1,
     )
-    synchronizer_2 = ModelSynchronizer(
+    synchronizer_2 = WorldSynchronizer(
         node=rclpy_node,
         _world=w2,
     )
@@ -302,11 +302,11 @@ def test_model_synchronization_merge_full_world_stress_test(rclpy_node):
         w1 = World(name="w1")
         w2 = World(name="w2")
 
-        synchronizer_1 = ModelSynchronizer(
+        synchronizer_1 = WorldSynchronizer(
             node=rclpy_node,
             _world=w1,
         )
-        synchronizer_2 = ModelSynchronizer(
+        synchronizer_2 = WorldSynchronizer(
             node=rclpy_node,
             _world=w2,
         )
@@ -382,15 +382,11 @@ def test_callback_pausing(rclpy_node):
     w1 = World(name="w1")
     w2 = World(name="w2")
 
-    model_synchronizer_1 = ModelSynchronizer(node=rclpy_node, _world=w1)
-    model_synchronizer_2 = ModelSynchronizer(node=rclpy_node, _world=w2)
-    state_synchronizer_1 = StateSynchronizer(node=rclpy_node, _world=w1)
-    state_synchronizer_2 = StateSynchronizer(node=rclpy_node, _world=w2)
+    ws1 = WorldSynchronizer(node=rclpy_node, _world=w1)
+    ws2 = WorldSynchronizer(node=rclpy_node, _world=w2)
 
-    model_synchronizer_2.pause()
-    state_synchronizer_2.pause()
-    assert model_synchronizer_2._is_paused
-    assert state_synchronizer_2._is_paused
+    ws2.pause()
+    assert ws2._is_paused
 
     with w1.modify_world():
         b2 = Body(name=PrefixedName("b2"))
@@ -403,16 +399,14 @@ def test_callback_pausing(rclpy_node):
         w1.add_connection(c)
 
     time.sleep(0.2)
-    assert len(model_synchronizer_2.missed_messages) == 1
+    assert len(ws2.missed_messages) == 2
     assert len(w1.kinematic_structure_entities) == 2
     assert len(w2.kinematic_structure_entities) == 0
     assert len(w1.connections) == 1
     assert len(w2.connections) == 0
 
-    model_synchronizer_2.resume()
-    state_synchronizer_2.resume()
-    model_synchronizer_2.apply_missed_messages()
-    state_synchronizer_2.apply_missed_messages()
+    ws2.resume()
+    ws2.apply_missed_messages()
 
     time.sleep(0.2)
     assert len(w1.kinematic_structure_entities) == 2
@@ -426,11 +420,11 @@ def test_ChangeDifHasHardwareInterface(rclpy_node):
     w1 = World(name="w1")
     w2 = World(name="w2")
 
-    synchronizer_1 = ModelSynchronizer(
+    synchronizer_1 = WorldSynchronizer(
         node=rclpy_node,
         _world=w1,
     )
-    synchronizer_2 = ModelSynchronizer(
+    synchronizer_2 = WorldSynchronizer(
         node=rclpy_node,
         _world=w2,
     )
@@ -473,11 +467,11 @@ def test_semantic_annotation_modifications(rclpy_node):
     w1 = World(name="w1")
     w2 = World(name="w2")
 
-    synchronizer_1 = ModelSynchronizer(
+    synchronizer_1 = WorldSynchronizer(
         node=rclpy_node,
         _world=w1,
     )
-    synchronizer_2 = ModelSynchronizer(
+    synchronizer_2 = WorldSynchronizer(
         node=rclpy_node,
         _world=w2,
     )
@@ -517,11 +511,11 @@ def test_semantic_annotation_modifications_merge_world(rclpy_node):
     w1 = World(name="w1")
     w2 = World(name="w2")
 
-    synchronizer_1 = ModelSynchronizer(
+    synchronizer_1 = WorldSynchronizer(
         node=rclpy_node,
         _world=w1,
     )
-    synchronizer_2 = ModelSynchronizer(
+    synchronizer_2 = WorldSynchronizer(
         node=rclpy_node,
         _world=w2,
     )
@@ -541,11 +535,11 @@ def test_semantic_annotation_change_parameter_during_same_modification_block(
     w1 = World(name="w1")
     w2 = World(name="w2")
 
-    synchronizer_1 = ModelSynchronizer(
+    synchronizer_1 = WorldSynchronizer(
         node=rclpy_node,
         _world=w1,
     )
-    synchronizer_2 = ModelSynchronizer(
+    synchronizer_2 = WorldSynchronizer(
         node=rclpy_node,
         _world=w2,
     )
@@ -579,16 +573,8 @@ def test_synchronize_6dof(rclpy_node):
     w1 = World(name="w1")
     w2 = World(name="w2")
 
-    synchronizer_1 = ModelSynchronizer(
-        node=rclpy_node,
-        _world=w1,
-    )
-    synchronizer_2 = ModelSynchronizer(
-        node=rclpy_node,
-        _world=w2,
-    )
-    state_synch = StateSynchronizer(_world=w1, node=rclpy_node)
-    state_synch2 = StateSynchronizer(_world=w2, node=rclpy_node)
+    ws1 = WorldSynchronizer(node=rclpy_node, _world=w1)
+    ws2 = WorldSynchronizer(node=rclpy_node, _world=w2)
 
     b1 = Body(name=PrefixedName("b1"))
     b2 = Body(name=PrefixedName("b2"))
@@ -604,6 +590,9 @@ def test_synchronize_6dof(rclpy_node):
     assert isinstance(c2, Connection6DoF)
     assert w1.state[c1.qw_id].position == w2.state[c2.qw_id].position
     np.testing.assert_array_almost_equal(w1.state._data, w2.state._data)
+
+    ws1.close()
+    ws2.close()
 
 
 def test_synchronous_state_synchronization(rclpy_node):
@@ -626,12 +615,12 @@ def test_synchronous_state_synchronization(rclpy_node):
         w1 = create_dummy_world()
         w2 = create_dummy_world()
 
-        synchronizer_1 = StateSynchronizer(
+        synchronizer_1 = WorldSynchronizer(
             node=rclpy_node,
             _world=w1,
             synchronous=True,
         )
-        synchronizer_2 = StateSynchronizer(
+        synchronizer_2 = WorldSynchronizer(
             node=receiver_node,
             _world=w2,
         )
@@ -674,12 +663,12 @@ def test_synchronous_model_synchronization(rclpy_node):
         w1 = World(name="w1")
         w2 = World(name="w2")
 
-        synchronizer_1 = ModelSynchronizer(
+        synchronizer_1 = WorldSynchronizer(
             node=rclpy_node,
             _world=w1,
             synchronous=True,
         )
-        synchronizer_2 = ModelSynchronizer(
+        synchronizer_2 = WorldSynchronizer(
             node=receiver_node,
             _world=w2,
         )
@@ -731,8 +720,8 @@ def test_synchronous_publish_blocks_until_receiver_acknowledges(rclpy_node):
         w1 = create_dummy_world()
         w2 = create_dummy_world()
 
-        synchronizer_1 = StateSynchronizer(node=rclpy_node, _world=w1, synchronous=True)
-        synchronizer_2 = StateSynchronizer(node=receiver_node, _world=w2)
+        synchronizer_1 = WorldSynchronizer(node=rclpy_node, _world=w1, synchronous=True)
+        synchronizer_2 = WorldSynchronizer(node=receiver_node, _world=w2)
 
         # Allow time for publishers/subscribers to discover each other
         time.sleep(0.2)
@@ -797,7 +786,7 @@ def test_synchronous_publish_blocks_until_receiver_acknowledges(rclpy_node):
 
 def test_compute_state_changes_no_changes(rclpy_node):
     w = create_dummy_world()
-    s = StateSynchronizer(node=rclpy_node, _world=w)
+    s = WorldSynchronizer(node=rclpy_node, _world=w)
     # Immediately compare without changing state
     changes = s.compute_state_changes()
     assert changes == {}
@@ -806,7 +795,7 @@ def test_compute_state_changes_no_changes(rclpy_node):
 
 def test_compute_state_changes_single_change(rclpy_node):
     w = create_dummy_world()
-    s = StateSynchronizer(node=rclpy_node, _world=w)
+    s = WorldSynchronizer(node=rclpy_node, _world=w)
     # change first position
     w.state._data[0, 0] += 1e-3
     changes = s.compute_state_changes()
@@ -818,7 +807,7 @@ def test_compute_state_changes_single_change(rclpy_node):
 
 def test_compute_state_changes_shape_change_full_snapshot(rclpy_node):
     w = create_dummy_world()
-    s = StateSynchronizer(node=rclpy_node, _world=w)
+    s = WorldSynchronizer(node=rclpy_node, _world=w)
     # append a new DOF by writing a new name into state
     new_uuid = uuid4()
     w.state._add_dof(new_uuid)
@@ -831,7 +820,7 @@ def test_compute_state_changes_shape_change_full_snapshot(rclpy_node):
 
 def test_compute_state_changes_nan_handling(rclpy_node):
     w = create_dummy_world()
-    s = StateSynchronizer(node=rclpy_node, _world=w)
+    s = WorldSynchronizer(node=rclpy_node, _world=w)
     # set both previous and current to NaN for entry 0
     w.state._data[0, 0] = np.nan
     s.previous_world_state_data[0] = np.nan
@@ -845,11 +834,11 @@ def test_attribute_updates(rclpy_node):
     world1._id = uuid.UUID(int=1)
     world2._id = uuid.UUID(int=2)
 
-    synchronizer_1 = ModelSynchronizer(
+    synchronizer_1 = WorldSynchronizer(
         node=rclpy_node,
         _world=world1,
     )
-    synchronizer_2 = ModelSynchronizer(
+    synchronizer_2 = WorldSynchronizer(
         node=rclpy_node,
         _world=world2,
     )
@@ -908,8 +897,8 @@ class TestAnnotation(SemanticAnnotation):
 def test_synchronized_attribute_modification(rclpy_node):
     w1 = World(name="w1")
     w2 = World(name="w2")
-    sync1 = ModelSynchronizer(node=rclpy_node, _world=w1)
-    sync2 = ModelSynchronizer(node=rclpy_node, _world=w2)
+    sync1 = WorldSynchronizer(node=rclpy_node, _world=w1)
+    sync2 = WorldSynchronizer(node=rclpy_node, _world=w2)
 
     # Allow time for publishers/subscribers to connect
     time.sleep(0.5)
@@ -1032,11 +1021,11 @@ def test_skipping_incorrect_message(rclpy_node):
     w1 = World(name="w1")
     w2 = World(name="w2")
 
-    synchronizer_1 = ModelSynchronizer(
+    synchronizer_1 = WorldSynchronizer(
         node=rclpy_node,
         _world=w1,
     )
-    synchronizer_2 = ModelSynchronizer(
+    synchronizer_2 = WorldSynchronizer(
         node=rclpy_node,
         _world=w2,
     )
@@ -1069,11 +1058,11 @@ def test_world_simultaneous_synchronization_stress_test(
     w1 = World(name="w1")
     w2 = World(name="w2")
 
-    synchronizer_1 = ModelSynchronizer(
+    synchronizer_1 = WorldSynchronizer(
         node=rclpy_node,
         _world=w1,
     )
-    synchronizer_2 = ModelSynchronizer(
+    synchronizer_2 = WorldSynchronizer(
         node=rclpy_node,
         _world=w2,
     )
@@ -1110,11 +1099,11 @@ def test_nested_modify_world_publish_changes_true_false(rclpy_node):
     w1 = World(name="w1")
     w2 = World(name="w2")
 
-    synchronizer_1 = ModelSynchronizer(
+    synchronizer_1 = WorldSynchronizer(
         node=rclpy_node,
         _world=w1,
     )
-    synchronizer_2 = ModelSynchronizer(
+    synchronizer_2 = WorldSynchronizer(
         node=rclpy_node,
         _world=w2,
     )
@@ -1153,11 +1142,11 @@ def test_dont_publish_changes(rclpy_node):
     w1 = World(name="w1")
     w2 = World(name="w2")
 
-    synchronizer_1 = ModelSynchronizer(
+    synchronizer_1 = WorldSynchronizer(
         node=rclpy_node,
         _world=w1,
     )
-    synchronizer_2 = ModelSynchronizer(
+    synchronizer_2 = WorldSynchronizer(
         node=rclpy_node,
         _world=w2,
     )
@@ -1246,12 +1235,12 @@ def test_acknowledgement_with_missed_messages(rclpy_node):
         w1 = create_dummy_world()
         w2 = create_dummy_world()
 
-        synchronizer_1 = StateSynchronizer(
+        synchronizer_1 = WorldSynchronizer(
             node=rclpy_node,
             _world=w1,
             synchronous=True,
         )
-        synchronizer_2 = StateSynchronizer(
+        synchronizer_2 = WorldSynchronizer(
             node=receiver_node,
             _world=w2,
         )
@@ -1284,23 +1273,8 @@ def test_simultaneous_state_and_model_updates(rclpy_node):
     b1 = Body(name=PrefixedName("b1"))
     b2 = Body(name=PrefixedName("b2"))
 
-    model_sync_1 = ModelSynchronizer(
-        node=rclpy_node,
-        _world=w1,
-    )
-    state_sync_1 = StateSynchronizer(
-        node=rclpy_node,
-        _world=w1,
-    )
-
-    model_sync_2 = ModelSynchronizer(
-        node=rclpy_node,
-        _world=w2,
-    )
-    state_sync_2 = StateSynchronizer(
-        node=rclpy_node,
-        _world=w2,
-    )
+    ws1 = WorldSynchronizer(node=rclpy_node, _world=w1)
+    ws2 = WorldSynchronizer(node=rclpy_node, _world=w2)
 
     with w1.modify_world():
         w1.add_body(b1)
@@ -1382,10 +1356,8 @@ def test_modify_world_then_sync_state_no_deadlock(rclpy_node):
         w1 = World(name="w1")
         w2 = World(name="w2")
 
-        ms1 = ModelSynchronizer(node=rclpy_node, _world=w1)
-        ms2 = ModelSynchronizer(node=receiver_node, _world=w2)
-        ss1 = StateSynchronizer(node=rclpy_node, _world=w1, synchronous=True)
-        ss2 = StateSynchronizer(node=receiver_node, _world=w2)
+        ws1 = WorldSynchronizer(node=rclpy_node, _world=w1, synchronous=True)
+        ws2 = WorldSynchronizer(node=receiver_node, _world=w2)
 
         time.sleep(0.2)
 
@@ -1401,10 +1373,8 @@ def test_modify_world_then_sync_state_no_deadlock(rclpy_node):
         np.testing.assert_array_almost_equal(w1.state._data, w2.state._data)
         assert len(w2.kinematic_structure_entities) == 1
 
-        ms1.close()
-        ms2.close()
-        ss1.close()
-        ss2.close()
+        ws1.close()
+        ws2.close()
     finally:
         receiver_executor.shutdown()
         rx_thread.join(timeout=2.0)
@@ -1428,10 +1398,8 @@ def test_sync_model_vs_async_state_no_deadlock(rclpy_node):
         w1 = World(name="w1")
         w2 = World(name="w2")
 
-        ms1 = ModelSynchronizer(node=rclpy_node, _world=w1, synchronous=True)
-        ms2 = ModelSynchronizer(node=receiver_node, _world=w2)
-        ss1 = StateSynchronizer(node=rclpy_node, _world=w1)  # async
-        ss2 = StateSynchronizer(node=receiver_node, _world=w2)
+        ws1 = WorldSynchronizer(node=rclpy_node, _world=w1, synchronous=True)
+        ws2 = WorldSynchronizer(node=receiver_node, _world=w2)
 
         # Seed a root
         with w1.modify_world():
@@ -1469,10 +1437,8 @@ def test_sync_model_vs_async_state_no_deadlock(rclpy_node):
 
         assert w2.get_kinematic_structure_entity_by_name("new_part") is not None
 
-        ms1.close()
-        ms2.close()
-        ss1.close()
-        ss2.close()
+        ws1.close()
+        ws2.close()
     finally:
         exec2.shutdown()
         t.join(timeout=2.0)
@@ -1501,7 +1467,7 @@ def test_state_diff_during_concurrent_dof_add_remove_is_consistent(rclpy_node):
     When DOFs change concurrently, state diff must not observe torn shapes.
     """
     w = World(name="w")
-    ss = StateSynchronizer(node=rclpy_node, _world=w)
+    ss = WorldSynchronizer(node=rclpy_node, _world=w)
 
     with w.modify_world():
         b1 = Body(name=PrefixedName("b1"))
@@ -1548,8 +1514,8 @@ def test_bidirectional_nested_modify_worlds_no_deadlock(rclpy_node):
     """
     w1 = World(name="w1")
     w2 = World(name="w2")
-    ms1 = ModelSynchronizer(node=rclpy_node, _world=w1)
-    ms2 = ModelSynchronizer(node=rclpy_node, _world=w2)
+    ms1 = WorldSynchronizer(node=rclpy_node, _world=w1)
+    ms2 = WorldSynchronizer(node=rclpy_node, _world=w2)
 
     # Seed
     with w1.modify_world():
@@ -1607,90 +1573,146 @@ def test_reentrant_modify_world_same_thread():
     }
 
 
-def test_state_update_before_model_update_handled_gracefully(rclpy_node):
-    """
-    Regression test for the cross-topic ordering bug.
+def test_world_update_serialization_round_trip():
+    """WorldUpdate round-trips through to_json / from_json correctly."""
+    from krrood.adapters.json_serializer import to_json, from_json
+    import json
 
-    When a model change adds new DOFs, two messages are published on separate topics:
-      1. A model update on /world_model
-      2. A full state snapshot (all DOF positions) on /world_state
+    w = create_dummy_world()
+    meta = MetaData(node_name="test_node", process_id=1, world_id=w._id)
+    state_msg = WorldStateUpdate(
+        meta_data=meta,
+        ids=list(w.state.keys())[:2],
+        states=[0.1, 0.2],
+    )
+    update = WorldUpdate(meta_data=meta, state_update=state_msg)
 
-    Because these are different topics, DDS gives no ordering guarantee.  The state
-    message can be delivered to the subscriber before the model message is applied.
-    When that happens, StateSynchronizer.apply_message does:
+    serialized = json.dumps(to_json(update))
+    restored = from_json(json.loads(serialized))
 
-        indices = [self._world.state._index[_id] for _id in msg.ids]
+    assert restored.meta_data.node_name == update.meta_data.node_name
+    assert restored.modification_block is None
+    assert restored.state_update is not None
+    assert restored.state_update.states == [0.1, 0.2]
 
-    ...and raises KeyError for every DOF UUID that does not yet exist in the
-    receiving world's state index.
 
-    This test simulates the race by pausing model_sync_2 (holding back the model
-    update) while leaving state_sync_2 running, so the state update is processed
-    against a world that has no knowledge of the new DOFs yet.
+def test_world_synchronizer_basic_state_sync(rclpy_node):
+    """State changes on w1 are reflected on w2 via the single combined topic."""
+    w1 = create_dummy_world()
+    w2 = create_dummy_world()
 
-    The test asserts the DESIRED behaviour: apply_message must not raise.
-    It currently FAILS because the dict lookup is unguarded.
-    """
-    w1 = World(name="w1")
-    w2 = World(name="w2")
-
-    model_sync_1 = ModelSynchronizer(node=rclpy_node, _world=w1)
-    model_sync_2 = ModelSynchronizer(node=rclpy_node, _world=w2)
-    state_sync_1 = StateSynchronizer(node=rclpy_node, _world=w1)
-    state_sync_2 = StateSynchronizer(node=rclpy_node, _world=w2)
-
+    ws1 = WorldSynchronizer(node=rclpy_node, _world=w1)
+    ws2 = WorldSynchronizer(node=rclpy_node, _world=w2)
     time.sleep(0.2)
 
-    # Hold back model updates on w2 — simulates the state message winning the race.
-    model_sync_2.pause()
+    w1.state._data[0, 0] = 3.14
+    w1.notify_state_change()
+    time.sleep(0.3)
 
-    apply_was_called = threading.Event()
-    key_error_caught = threading.Event()
-    original_apply = state_sync_2.apply_message
+    assert w2.state._data[0, 0] == pytest.approx(3.14, abs=1e-9)
 
-    def catching_apply(msg):
-        apply_was_called.set()
-        try:
-            original_apply(msg)
-        except KeyError:
-            key_error_caught.set()
+    ws1.close()
+    ws2.close()
 
-    state_sync_2.apply_message = catching_apply
 
-    b1 = Body(name=PrefixedName("b1"))
-    b2 = Body(name=PrefixedName("b2"))
+def test_world_synchronizer_basic_model_sync(rclpy_node):
+    """Model changes on w1 (new bodies + connection) are applied on w2."""
+    w1 = World(name="ws_model_w1")
+    w2 = World(name="ws_model_w2")
 
-    # Adding a PrismaticConnection creates a new DOF.  _notify_model_change then:
-    #   1. notifies model callbacks  → model_sync_1 publishes the model update
-    #   2. calls notify_state_change → state_sync_1 detects a shape change and
-    #      publishes a full DOF snapshot (including the new DOF's UUID)
-    # On w2 the model update is buffered (paused); the state update is processed
-    # immediately against a world that has no record of the new DOF.
+    ws1 = WorldSynchronizer(node=rclpy_node, _world=w1)
+    ws2 = WorldSynchronizer(node=rclpy_node, _world=w2)
+    time.sleep(0.2)
+
+    b1 = Body(name=PrefixedName("ws_b1"))
+    b2 = Body(name=PrefixedName("ws_b2"))
     with w1.modify_world():
         w1.add_body(b1)
         w1.add_body(b2)
-        connection = PrismaticConnection.create_with_dofs(
+        conn = PrismaticConnection.create_with_dofs(
             world=w1, parent=b1, child=b2, axis=Vector3.X()
         )
-        w1.add_connection(connection)
+        w1.add_connection(conn)
 
-    time.sleep(0.5)
+    ids1, ids2 = wait_for_sync_kse_and_return_ids(w1, w2, timeout=5.0)
+    assert ids1 == ids2
 
-    assert apply_was_called.is_set(), (
-        "state_sync_2.apply_message was never called — the state update did not "
-        "arrive. Check that the model change triggers a state publish."
-    )
+    ws1.close()
+    ws2.close()
+
+
+def test_world_synchronizer_ordering_no_key_error_after_model_change(rclpy_node):
+    """
+    Single-topic ordering guarantee: state update is never applied before the model
+    update that introduced the DOF UUIDs, so no KeyError or silent data loss occurs.
+    """
+    w1 = World(name="ws_order_w1")
+    w2 = World(name="ws_order_w2")
+
+    ws1 = WorldSynchronizer(node=rclpy_node, _world=w1)
+    ws2 = WorldSynchronizer(node=rclpy_node, _world=w2)
+    time.sleep(0.2)
+
+    key_error_caught = threading.Event()
+    original_apply_state = ws2._apply_state
+
+    def catching_apply_state(msg):
+        try:
+            original_apply_state(msg)
+        except KeyError:
+            key_error_caught.set()
+
+    ws2._apply_state = catching_apply_state
+
+    b1 = Body(name=PrefixedName("ws_ord_b1"))
+    b2 = Body(name=PrefixedName("ws_ord_b2"))
+    with w1.modify_world():
+        w1.add_body(b1)
+        w1.add_body(b2)
+        conn = PrismaticConnection.create_with_dofs(
+            world=w1, parent=b1, child=b2, axis=Vector3.X()
+        )
+        w1.add_connection(conn)
+
+    # Wait for both model and state to propagate
+    wait_for_sync_kse_and_return_ids(w1, w2, timeout=5.0)
+    time.sleep(0.3)
+
     assert not key_error_caught.is_set(), (
-        "state_sync_2.apply_message raised KeyError: the state update referenced "
-        "DOF UUIDs that do not yet exist in w2 because the model update has not "
-        "been applied yet. apply_message must handle unknown DOF UUIDs gracefully "
-        "instead of crashing."
+        "KeyError raised in _apply_state — state update arrived before model update "
+        "despite single-topic FIFO ordering guarantee."
     )
 
-    model_sync_1.close()
-    model_sync_2.close()
-    state_sync_1.close()
-    state_sync_2.close()
+    ws1.close()
+    ws2.close()
+
+
+def test_world_synchronizer_missed_messages_applied_in_order(rclpy_node):
+    """Messages buffered while paused are applied (in order) after apply_missed_messages()."""
+    w1 = create_dummy_world()
+    w2 = create_dummy_world()
+
+    ws1 = WorldSynchronizer(node=rclpy_node, _world=w1)
+    ws2 = WorldSynchronizer(node=rclpy_node, _world=w2)
+    time.sleep(0.2)
+
+    ws2.pause()
+
+    w1.state._data[0, 0] = 9.9
+    w1.notify_state_change()
+    time.sleep(0.3)
+
+    # While paused w2 must not have the new value
+    assert w2.state._data[0, 0] != pytest.approx(9.9, abs=1e-6)
+    assert len(ws2.missed_messages) > 0
+
+    ws2.apply_missed_messages()
+    time.sleep(0.1)
+
+    assert w2.state._data[0, 0] == pytest.approx(9.9, abs=1e-9)
+
+    ws1.close()
+    ws2.close()
 
 
 if __name__ == "__main__":

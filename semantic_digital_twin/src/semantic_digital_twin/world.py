@@ -336,7 +336,7 @@ class WorldModelManager:
         """
         self.version += 1
         for callback in self.model_change_callbacks:
-            callback.notify(**kwargs)
+            callback.notify_model_change(**kwargs)
 
 
 _LRU_CACHE_SIZE: int = 2048
@@ -1739,7 +1739,7 @@ class World(HasSimulatorProperties):
             crashes if its not the case. Also using this in a method that is called a lot, it may cause performance
             issues because of unnecessary recompilations.
         """
-        self._forward_kinematic_manager._notify()
+        self._forward_kinematic_manager.notify_model_change()
         self._forward_kinematic_manager.recompute()
 
     # %% Inverse Kinematics
