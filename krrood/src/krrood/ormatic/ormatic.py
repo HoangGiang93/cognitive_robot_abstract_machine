@@ -10,7 +10,9 @@ from typing import Set
 
 import rustworkx as rx
 import sqlalchemy
-from hypothesis.internal.conjecture.junkdrawer import startswith
+import krrood.ormatic.custom_types  # type: ignore
+import krrood.ormatic.data_access_objects.alternative_mappings  # type: ignore
+from krrood.ormatic.helper import get_classes_of_ormatic_interface
 from sortedcontainers import SortedSet
 from sqlalchemy import JSON
 from typing_extensions import List, Type, Dict
@@ -265,9 +267,6 @@ class ORMatic:
 
         :return: The ORMatic instance.
         """
-        import krrood.ormatic.custom_types  # type: ignore
-        import krrood.ormatic.data_access_objects.alternative_mappings  # type: ignore
-        from krrood.ormatic.helper import get_classes_of_ormatic_interface
 
         all_classes, all_alternative_mappings, all_type_mappings = set(), set(), {}
 
