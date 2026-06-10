@@ -9468,58 +9468,6 @@ class DegreeOfFreedomDAO(
     }
 
 
-class SynchronizerDAO(
-    WorldEntityWithIDDAO,
-    DataAccessObject[
-        semantic_digital_twin.adapters.ros.world_synchronizer.Synchronizer
-    ],
-):
-
-    __tablename__ = "SynchronizerDAO"
-
-    database_id: Mapped[builtins.int] = mapped_column(
-        ForeignKey(WorldEntityWithIDDAO.database_id),
-        primary_key=True,
-        use_existing_column=True,
-    )
-
-    topic_name: Mapped[typing.Optional[builtins.str]] = mapped_column(
-        sqlalchemy.sql.sqltypes.Text, use_existing_column=True
-    )
-    acknowledge_topic_name: Mapped[typing.Optional[builtins.str]] = mapped_column(
-        sqlalchemy.sql.sqltypes.Text, use_existing_column=True
-    )
-    wait_for_synchronization_timeout: Mapped[builtins.float] = mapped_column(
-        use_existing_column=True
-    )
-
-    __mapper_args__ = {
-        "polymorphic_identity": "SynchronizerDAO",
-        "inherit_condition": database_id == WorldEntityWithIDDAO.database_id,
-    }
-
-
-class ModelReloadSynchronizerDAO(
-    SynchronizerDAO,
-    DataAccessObject[
-        semantic_digital_twin.adapters.ros.world_synchronizer.ModelReloadSynchronizer
-    ],
-):
-
-    __tablename__ = "ModelReloadSynchronizerDAO"
-
-    database_id: Mapped[builtins.int] = mapped_column(
-        ForeignKey(SynchronizerDAO.database_id),
-        primary_key=True,
-        use_existing_column=True,
-    )
-
-    __mapper_args__ = {
-        "polymorphic_identity": "ModelReloadSynchronizerDAO",
-        "inherit_condition": database_id == SynchronizerDAO.database_id,
-    }
-
-
 class WorldEntityWithClassBasedIDDAO(
     WorldEntityWithIDDAO,
     DataAccessObject[
@@ -9913,93 +9861,6 @@ class TFPublisherDAO(
     }
 
 
-class SynchronizerOnCallbackDAO(
-    SynchronizerDAO,
-    DataAccessObject[
-        semantic_digital_twin.adapters.ros.world_synchronizer.SynchronizerOnCallback
-    ],
-):
-
-    __tablename__ = "SynchronizerOnCallbackDAO"
-
-    database_id: Mapped[builtins.int] = mapped_column(
-        ForeignKey(SynchronizerDAO.database_id),
-        primary_key=True,
-        use_existing_column=True,
-    )
-
-    synchronous: Mapped[builtins.bool] = mapped_column(use_existing_column=True)
-
-    __mapper_args__ = {
-        "polymorphic_identity": "SynchronizerOnCallbackDAO",
-        "inherit_condition": database_id == SynchronizerDAO.database_id,
-    }
-
-
-class ModelSynchronizerDAO(
-    ModelChangeCallbackDAO,
-    DataAccessObject[
-        semantic_digital_twin.adapters.ros.world_synchronizer.ModelSynchronizer
-    ],
-):
-
-    __tablename__ = "ModelSynchronizerDAO"
-
-    database_id: Mapped[builtins.int] = mapped_column(
-        ForeignKey(ModelChangeCallbackDAO.database_id),
-        primary_key=True,
-        use_existing_column=True,
-    )
-
-    topic_name: Mapped[builtins.str] = mapped_column(
-        sqlalchemy.sql.sqltypes.Text, use_existing_column=True
-    )
-    acknowledge_topic_name: Mapped[typing.Optional[builtins.str]] = mapped_column(
-        sqlalchemy.sql.sqltypes.Text, use_existing_column=True
-    )
-    wait_for_synchronization_timeout: Mapped[builtins.float] = mapped_column(
-        use_existing_column=True
-    )
-    synchronous: Mapped[builtins.bool] = mapped_column(use_existing_column=True)
-
-    __mapper_args__ = {
-        "polymorphic_identity": "ModelSynchronizerDAO",
-        "inherit_condition": database_id == ModelChangeCallbackDAO.database_id,
-    }
-
-
-class StateSynchronizerDAO(
-    StateChangeCallbackDAO,
-    DataAccessObject[
-        semantic_digital_twin.adapters.ros.world_synchronizer.StateSynchronizer
-    ],
-):
-
-    __tablename__ = "StateSynchronizerDAO"
-
-    database_id: Mapped[builtins.int] = mapped_column(
-        ForeignKey(StateChangeCallbackDAO.database_id),
-        primary_key=True,
-        use_existing_column=True,
-    )
-
-    topic_name: Mapped[builtins.str] = mapped_column(
-        sqlalchemy.sql.sqltypes.Text, use_existing_column=True
-    )
-    acknowledge_topic_name: Mapped[typing.Optional[builtins.str]] = mapped_column(
-        sqlalchemy.sql.sqltypes.Text, use_existing_column=True
-    )
-    wait_for_synchronization_timeout: Mapped[builtins.float] = mapped_column(
-        use_existing_column=True
-    )
-    synchronous: Mapped[builtins.bool] = mapped_column(use_existing_column=True)
-
-    __mapper_args__ = {
-        "polymorphic_identity": "StateSynchronizerDAO",
-        "inherit_condition": database_id == StateChangeCallbackDAO.database_id,
-    }
-
-
 class CollisionDetectorDAO(
     WorldEntityWithClassBasedIDDAO,
     DataAccessObject[
@@ -10073,6 +9934,59 @@ class FCLCollisionDetectorDAO(
     __mapper_args__ = {
         "polymorphic_identity": "FCLCollisionDetectorDAO",
         "inherit_condition": database_id == CollisionDetectorDAO.database_id,
+    }
+
+
+class SynchronizerDAO(
+    WorldEntityWithClassBasedIDDAO,
+    DataAccessObject[
+        semantic_digital_twin.adapters.ros.world_synchronizer.Synchronizer
+    ],
+):
+
+    __tablename__ = "SynchronizerDAO"
+
+    database_id: Mapped[builtins.int] = mapped_column(
+        ForeignKey(WorldEntityWithClassBasedIDDAO.database_id),
+        primary_key=True,
+        use_existing_column=True,
+    )
+
+    topic_name: Mapped[typing.Optional[builtins.str]] = mapped_column(
+        sqlalchemy.sql.sqltypes.Text, use_existing_column=True
+    )
+    synchronous: Mapped[builtins.bool] = mapped_column(use_existing_column=True)
+    acknowledge_topic_name: Mapped[typing.Optional[builtins.str]] = mapped_column(
+        sqlalchemy.sql.sqltypes.Text, use_existing_column=True
+    )
+    wait_for_synchronization_timeout: Mapped[builtins.float] = mapped_column(
+        use_existing_column=True
+    )
+
+    __mapper_args__ = {
+        "polymorphic_identity": "SynchronizerDAO",
+        "inherit_condition": database_id == WorldEntityWithClassBasedIDDAO.database_id,
+    }
+
+
+class ModelReloadSynchronizerDAO(
+    SynchronizerDAO,
+    DataAccessObject[
+        semantic_digital_twin.adapters.ros.world_synchronizer.ModelReloadSynchronizer
+    ],
+):
+
+    __tablename__ = "ModelReloadSynchronizerDAO"
+
+    database_id: Mapped[builtins.int] = mapped_column(
+        ForeignKey(SynchronizerDAO.database_id),
+        primary_key=True,
+        use_existing_column=True,
+    )
+
+    __mapper_args__ = {
+        "polymorphic_identity": "ModelReloadSynchronizerDAO",
+        "inherit_condition": database_id == SynchronizerDAO.database_id,
     }
 
 
@@ -19205,6 +19119,71 @@ class WorldStateViewDAO(
     database_id: Mapped[builtins.int] = mapped_column(
         Integer, primary_key=True, use_existing_column=True
     )
+
+
+class WorldSynchronizerDAO(
+    SynchronizerDAO,
+    DataAccessObject[
+        semantic_digital_twin.adapters.ros.world_synchronizer.WorldSynchronizer
+    ],
+):
+
+    __tablename__ = "WorldSynchronizerDAO"
+
+    database_id: Mapped[builtins.int] = mapped_column(
+        ForeignKey(SynchronizerDAO.database_id),
+        primary_key=True,
+        use_existing_column=True,
+    )
+
+    synchronize_model: Mapped[builtins.bool] = mapped_column(use_existing_column=True)
+    synchronize_state: Mapped[builtins.bool] = mapped_column(use_existing_column=True)
+
+    __mapper_args__ = {
+        "polymorphic_identity": "WorldSynchronizerDAO",
+        "inherit_condition": database_id == SynchronizerDAO.database_id,
+    }
+
+
+class WorldUpdateDAO(
+    MessageDAO,
+    DataAccessObject[semantic_digital_twin.adapters.ros.messages.WorldUpdate],
+):
+
+    __tablename__ = "WorldUpdateDAO"
+
+    database_id: Mapped[builtins.int] = mapped_column(
+        ForeignKey(MessageDAO.database_id), primary_key=True, use_existing_column=True
+    )
+
+    modification_block_id: Mapped[typing.Optional[builtins.int]] = mapped_column(
+        ForeignKey("ModificationBlockDAO.database_id", use_alter=True),
+        nullable=True,
+        use_existing_column=True,
+    )
+    state_update_id: Mapped[typing.Optional[builtins.int]] = mapped_column(
+        ForeignKey("WorldStateUpdateDAO.database_id", use_alter=True),
+        nullable=True,
+        use_existing_column=True,
+    )
+
+    modification_block: Mapped[ModificationBlockDAO] = relationship(
+        "ModificationBlockDAO",
+        uselist=False,
+        foreign_keys=[modification_block_id],
+        post_update=True,
+    )
+    state_update: Mapped[WorldStateUpdateDAO] = relationship(
+        "WorldStateUpdateDAO",
+        uselist=False,
+        foreign_keys=[state_update_id],
+        post_update=True,
+    )
+
+    __mapper_args__ = {
+        "polymorphic_identity": "WorldUpdateDAO",
+        "inherit_condition": database_id == MessageDAO.database_id,
+    }
 
 
 class WrongWorldModelVersionDAO(
