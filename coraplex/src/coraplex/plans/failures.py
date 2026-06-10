@@ -14,7 +14,6 @@ if TYPE_CHECKING:
     from coraplex.validation.goal_validator import MultiJointPositionGoalValidator
     from coraplex.language import LanguageNode
     from semantic_digital_twin.datastructures.definitions import StaticJointState
-    from coraplex.robot_plans.actions.composite.searching import SearchAction
 
 
 @dataclass
@@ -38,15 +37,15 @@ class AllChildrenFailed(PlanFailure):
     def __post_init__(self):
         self.message = f"All children of {self.language_node} failed"
 
-
-@dataclass
-class PerceptionObjectNotFound(PlanFailure):
-    search_action: SearchAction
-
-    def __post_init__(self):
-        self.message = (
-            f"Perception object not found in search action {self.search_action}"
-        )
+#todo: rename when searchaction is refactored
+# @dataclass
+# class PerceptionObjectNotFound(PlanFailure):
+#     search_action: SearchAction
+#
+#     def __post_init__(self):
+#         self.message = (
+#             f"Perception object not found in search action {self.search_action}"
+#         )
 
 
 @dataclass

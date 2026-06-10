@@ -34,7 +34,7 @@ from semantic_digital_twin.world_description.world_entity import (
     KinematicStructureEntity,
 )
 
-logger = logging.getLogger("pycram")
+logger = logging.getLogger("coraplex")
 
 
 @dataclass
@@ -67,7 +67,7 @@ class IsVisibleBy(PoseValidator):
         :return: True if the target pose is visible for the robot, False otherwise
         """
         gen_body = Body(
-            name=PrefixedName("vist_test_obj", "pycram"),
+            name=PrefixedName("vist_test_obj", "coraplex"),
             collision=ShapeCollection([Box(scale=Scale(0.1, 0.1, 0.1))]),
         )
         with self.world.modify_world():

@@ -20,7 +20,7 @@ from semantic_digital_twin.robots.robot_parts import AbstractRobot
 from semantic_digital_twin.spatial_types.spatial_types import Pose
 from semantic_digital_twin.world import World
 
-logger = logging.getLogger("pycram")
+logger = logging.getLogger("coraplex")
 
 
 @dataclass

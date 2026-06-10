@@ -124,7 +124,7 @@ designator you can spawn them with the following cell.
 
 ```python
 from semantic_digital_twin.spatial_types.spatial_types import Pose, Point3
-from pycram.locations.factories import visibility_location
+from coraplex.locations.factories import visibility_location
 
 location = visibility_location(world.get_body_by_name("milk.stl"), context=context)
 

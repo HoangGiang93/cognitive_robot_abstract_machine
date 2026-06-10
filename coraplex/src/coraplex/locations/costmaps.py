@@ -13,7 +13,7 @@ from matplotlib import colors
 from skimage.measure import label
 from typing_extensions import Tuple, List, Optional, Iterator, Callable, TYPE_CHECKING
 
-from pycram.locations.base import PoseGeneratorBackend
+from coraplex.locations.base import PoseGeneratorBackend
 from semantic_digital_twin.robots.robot_parts import AbstractRobot
 from semantic_digital_twin.spatial_computations.raytracer import RayTracer
 from semantic_digital_twin.spatial_types import (
@@ -26,9 +26,9 @@ from semantic_digital_twin.world import World
 from semantic_digital_twin.world_description.world_entity import Body
 
 if TYPE_CHECKING:
-    from pycram.datastructures.dataclasses import Context
+    from coraplex.datastructures.dataclasses import Context
 
-logger = logging.getLogger("pycram")
+logger = logging.getLogger("coraplex")
 
 
 class OrientationGenerator:

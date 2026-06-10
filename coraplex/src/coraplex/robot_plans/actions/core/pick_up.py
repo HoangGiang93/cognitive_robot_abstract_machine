@@ -22,9 +22,6 @@ from coraplex.datastructures.enums import (
 )
 from coraplex.datastructures.grasp import GraspDescription
 from coraplex.plans.factories import sequential, execute_single
-from coraplex.pose_validator import (
-    pose_sequence_reachability_validator,
-)
 from coraplex.querying.predicates import GripperIsFree
 from coraplex.robot_plans.actions.base import ActionDescription
 from coraplex.robot_plans.motions.gripper import (
