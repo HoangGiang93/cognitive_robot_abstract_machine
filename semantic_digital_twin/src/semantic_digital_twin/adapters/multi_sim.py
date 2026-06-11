@@ -917,12 +917,12 @@ class MujocoTendon(SimulatorAdditionalProperty):
     Range for clamping total actuator forces acting on this tendon.
     """
 
-    armature: Union[float, List[float]] = 0.0
+    armature: float = 0.0
     """
     Inertia associated with changes in tendon length.
     """
 
-    damping: float = 0.0
+    damping: Union[float, List[float]] = 0.0
     """
     Damping coefficient. A positive value generates a damping force (linear in velocity) acting along the tendon.
     """
