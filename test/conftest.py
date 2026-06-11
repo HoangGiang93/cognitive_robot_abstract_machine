@@ -91,10 +91,10 @@ Some basic facts about fixtures:
     * This only works the requesting fixture is scoped less or equal the the requested fixture (function requesting session works)
  * The return/yield value of fixtures is being cached. 
     * In case of worlds this is important since always the same world is returned by a session scoped fixture
-    
+
 General Remarks:
     * Apparently generating the robot semantic view takes some time so it should be done in the session scoped setup
-    
+
 The structure of fixtures in this conftest: 
     * World setup fixtures: 
         These setup a world and return it, they are scoped for a whole session
@@ -375,11 +375,11 @@ def cylinder_bot_diff_world():
 
 
 def world_with_urdf_factory(
-    robot_semantic_annotation: Type[AbstractRobot],
-    drive_connection_type: Type[OmniDrive | DifferentialDrive],
-    robot_starting_pose: HomogeneousTransformationMatrix | None = None,
-    urdf_path_resolver: PathResolver | None = None,
-    robot_localization_pose: HomogeneousTransformationMatrix | None = None,
+        robot_semantic_annotation: Type[AbstractRobot],
+        drive_connection_type: Type[OmniDrive | DifferentialDrive],
+        robot_starting_pose: HomogeneousTransformationMatrix | None = None,
+        urdf_path_resolver: PathResolver | None = None,
+        robot_localization_pose: HomogeneousTransformationMatrix | None = None,
 ):
     """
     Builds this tree:
