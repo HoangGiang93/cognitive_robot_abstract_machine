@@ -96,7 +96,6 @@ with simulated_robot:
 ```
 
 ```python
-from coraplex.locations.locations import CostmapLocation, Arms
 from coraplex.robot_plans.actions.core.navigation import NavigateAction
 from coraplex.motion_executor import simulated_robot
 
